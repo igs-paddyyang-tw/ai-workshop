@@ -1,0 +1,79 @@
+# ═══════════════════════════════════════════════════
+# AI Agent Team — team.yaml 範例
+# 5 人團隊：admin + leader + ai-dev + coder + qa
+# 更新：2026-05-27
+# ═══════════════════════════════════════════════════
+
+defaults:
+  backend: kiro-cli
+  model: auto
+
+# 費用控管
+cost_guard:
+  daily_limit_usd: 30.0
+  warn_at_percentage: 80
+  timezone: Asia/Taipei
+
+# 掛起偵測
+hang_detector:
+  enabled: true
+  timeout_minutes: 60
+  escalation_minutes: 180
+
+# Telegram 設定
+channel:
+  bot_token_env: TELEGRAM_BOT_TOKEN
+  # group_id: -100xxxxxxxxxx        # 有值 = Group Topics 模式
+  # general_topic_id: 1             # 無值 = 純私聊 @mention 模式
+
+# Forum Topics 定義（Group Topics 模式時使用）
+# topics:
+#   project_daily: 2    # 專案日報
+#   assistant_chat: 1   # 助理對話區（leader 接收）
+
+access:
+  mode: locked
+  allowed_users:
+    - 123456789                      # 你的 Telegram user ID
+
+# 團隊成員
+instances:
+  # Admin — 服務管理（不接業務，working_directory 必須是 "."）
+  admin-agent:
+    working_directory: "."
+    description: "👑 服務管理與系統維護"
+    private_chat: 123456789          # reply 出口（你的 Telegram ID）
+    role: admin
+    skip_resume: true                # MCP 設定變更後不帶 --resume
+
+  # Leader — 業務入口（接收所有使用者訊息）
+  leader-agent:
+    working_directory: agents/leader-agent
+    description: "🧠 專案經理，負責需求分析與任務分派"
+    # topic_id: 1                    # Group Topics 模式時綁定 Topic
+    # general_topic: true            # 設為預設對話入口
+    role: leader
+    skip_resume: true
+
+  # AI Dev — AI 工程
+  ai-dev-agent:
+    working_directory: agents/ai-dev-agent
+    description: "🤖 AI 工程師，負責 LLM 整合與 Skill 開發"
+    role: worker
+    skip_resume: true
+
+  # Coder — 全端開發
+  coder-agent:
+    working_directory: agents/coder-agent
+    description: "💻 全端開發者，負責功能實作與程式碼品質"
+    role: worker
+    skip_resume: true
+
+  # QA — 測試
+  qa-agent:
+    working_directory: agents/qa-agent
+    description: "🧪 QA 工程師，負責測試策略與品質驗證"
+    role: worker
+    skip_resume: true
+
+health_port: 13030                   # 第二個團隊用 23030 避免衝突
