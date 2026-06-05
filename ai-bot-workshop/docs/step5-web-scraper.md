@@ -1,79 +1,76 @@
-# Step 5：網頁爬蟲與素材處理 — 建置紀錄
+# Step 5：網頁爬蟲與素材處理
 
-> 日期：2026-05-29
+> 使用 Skill：`ark-web-scraper`
+> 觸發語句：「在 src/skills/internal/ 產出新聞爬蟲 Skill」
 
 ---
 
 ## 1. 詢問時用的提詞
 
 ```
-那你接下來幫我執行Step5的內容
+在 src/skills/internal/ 產出新聞爬蟲 Skill，
+使用 httpx + BeautifulSoup，支援 CSS selector 設定，
+產出結構化 Markdown 素材檔，來源設定參考 config/news_sources.yaml
 ```
 
 ---
 
-## 2. 遇到的問題
+## 2. 常見問題
 
 ### 問題 A：部分新聞來源有反爬蟲機制
 
 **現象：** TechCrunch AI 和 The Verge AI 抓取失敗（回傳空結果）。
 
-**原因：** 這些網站有 Cloudflare 或 JavaScript 渲染保護，httpx 純 HTTP 請求無法取得完整頁面內容。
+**原因：** Cloudflare 或 JavaScript 渲染保護，httpx 純 HTTP 請求無法取得完整頁面。
 
-### 問題 B：Gemini CLI 處理結構化 prompt 超時
+**解法：**
+- 優先用 Hacker News（純 HTML 最穩定）
+- 系統已內建容錯：失敗來源記錄在 `failed_sources`，不影響其他
+- 未來可加入 Playwright 備援
 
-**現象：** `news_structurer` 呼叫 LLM 時超時，走了 keyword fallback 路徑。
+### 問題 B：Windows asyncio event loop 關閉警告
 
-**原因：** 結構化 prompt 較長，Gemini CLI 回應時間超過 30 秒。
+**現象：** `RuntimeError: Event loop is closed`
 
-### 問題 C：Windows asyncio event loop 關閉警告
+**原因：** Windows ProactorEventLoop 已知問題，subprocess transport 在 loop 關閉後才被 GC。
 
-**現象：** 測試腳本結束時出現 `RuntimeError: Event loop is closed`。
-
-**原因：** Windows 上 asyncio ProactorEventLoop 的已知問題，subprocess transport 在 loop 關閉後才被 GC 回收。不影響功能。
-
----
-
-## 3. 解決方法
-
-### 問題 A 解法
-
-- 系統設計已包含容錯：失敗來源記錄在 `failed_sources`，不影響其他來源
-- 未來可加入 Playwright 備援（JS 渲染頁面）
-- 目前 Hacker News 可正常抓取
-
-### 問題 B 解法
-
-- `news_structurer` 已內建 keyword fallback 機制
-- LLM 不可用或超時時，自動產出基礎結構化資料
-- 可透過增加 timeout 參數（預設 30s → 60s）改善
-
-### 問題 C 解法
-
-- 不影響功能，僅在測試腳本結束時出現
-- 在正式 Bot 運行中（持續 event loop）不會出現此問題
+**解法：** 不影響功能，僅在測試腳本結束時出現。正式 Bot 運行中（持續 event loop）不會出現。
 
 ---
 
-## 4. 結果
-
-### 產出的檔案結構
+## 3. 產出結構
 
 ```
 src/skills/internal/
-├── news_scraper.py      ← 網頁爬蟲（httpx，多來源併發，Semaphore 限流）
-└── news_structurer.py   ← LLM 結構化（含 keyword fallback）
+├── news_scraper.py      ← 網頁爬蟲（httpx + CSS selector，多來源併發）
+└── news_parser.py       ← 解析 → 結構化 Markdown
 
 config/
-└── news_sources.yaml    ← 3 個新聞來源設定
+└── news_sources.yaml    ← 新聞來源設定
 
 output/news/
-├── raw/
-│   └── 2026-05-29-news.md   ← 抓取產出
-└── structured/               ← 結構化 JSON 產出目錄
+├── raw/                 ← Markdown 素材產出
+└── structured/          ← 結構化 JSON 產出目錄（Step 6 使用）
 ```
 
-### news_scraper 功能
+---
+
+## 4. 可抓取的新聞來源
+
+| 來源 | 網址 | 類別 | 穩定度 |
+|------|------|------|--------|
+| **Hacker News** | https://news.ycombinator.com/ | 綜合科技 | ⭐⭐⭐ 推薦 |
+| TechCrunch AI | https://techcrunch.com/.../artificial-intelligence/ | AI 焦點 | ⭐⭐ |
+| Skills-Hub.ai | https://skills-hub.ai/ | AI Skills | ⭐⭐ |
+| AgentSkillsHub.top | https://agentskillshub.top/ | AI Skills | ⭐⭐ |
+| AgentSkillsHub.dev | https://agentskillshub.dev/ | AI Skills | ⭐⭐ |
+| LobeHub Skills | https://lobehub.com/skills | AI Skills | ⭐⭐ |
+
+> 💡 教學建議用 **Hacker News**（純 HTML，最穩定）。
+
+---
+
+## 5. news_scraper 功能
 
 | 功能 | 說明 |
 |------|------|
@@ -84,38 +81,68 @@ output/news/
 | Markdown 產出 | 自動存檔到 output/news/raw/ |
 | CSS Selector | 每個來源可自訂 selector |
 
-### news_structurer 功能
+---
 
-| 功能 | 說明 |
-|------|------|
-| LLM 結構化 | 呼叫 Gemini CLI 產出 JSON |
-| JSON 解析 | 自動移除 markdown code block，提取 JSON |
-| keyword fallback | LLM 不可用時產出基礎結構 |
-| 截斷保護 | content 超過 2000 字自動截斷 |
+## 6. news_sources.yaml 設定
 
-### 驗證結果
+```yaml
+sources:
+  - name: "Hacker News"
+    url: "https://news.ycombinator.com/"
+    selector: ".athing"
+    title_selector: ".titleline a"
+    link_selector: ".titleline a"
+    category: general
+
+  - name: "TechCrunch AI"
+    url: "https://techcrunch.com/category/artificial-intelligence/"
+    selector: "h3"
+    title_selector: "a"
+    link_selector: "a"
+    category: ai_focus
+
+schedule:
+  cron: "0 8 * * *"
+  timezone: "Asia/Taipei"
+```
+
+---
+
+## 7. Markdown 產出格式
+
+```markdown
+---
+source: Hacker News
+date: 2026-05-29
+category: general
+url: https://www.anthropic.com/news/claude-opus-4-8
+---
+
+# Claude Opus 4.8
+
+Anthropic 發布 Claude Opus 4.8，新增 dynamic workflow 工具...
+```
+
+---
+
+## 8. 驗證
+
+**📝 在 AI IDE 聊天框輸入：**
+```
+測試 news_scraper 抓取 https://news.ycombinator.com/
+```
 
 | 測試項目 | 結果 |
 |---------|------|
-| Hacker News 抓取 | ✅ 10 篇文章 |
-| 多來源併發 | ✅ 成功（2/3 來源有結果） |
-| 失敗來源處理 | ✅ TechCrunch/Verge 失敗但不 crash |
-| Markdown 產出 | ✅ output/news/raw/2026-05-29-news.md |
-| news_structurer fallback | ✅ 產出結構化 JSON |
-| Skills 總數 | ✅ 5 個 |
+| Hacker News 抓取 | ✅ 10+ 篇文章 |
+| 多來源併發 | ✅ 成功 |
+| 失敗來源處理 | ✅ 不 crash |
+| Markdown 產出 | ✅ output/news/raw/ |
+| Skills 總數 | ✅ 增加 |
 
-### 抓取結果範例
+---
 
-```
---- Test 1: Single URL (Hacker News) ---
-Status: success
-Count: 10
-  • Claude Opus 4.8
-  • Bricks and Minifigs Stole a Man's $200k Lego Collection
-  • ...
-```
-
-### 新增的依賴
+## 9. 新增依賴
 
 ```
 httpx>=0.27.0
@@ -123,5 +150,7 @@ beautifulsoup4>=4.12.0
 ```
 
 ---
+
+> 💡 Step 5 產出的 Markdown 素材 = Step 6 的輸入。Gemini CLI 會把它結構化為日報 JSON。
 
 *Step 5 完成，爬蟲與素材處理就緒，可進入 Step 6。*
