@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Bot Builder — 一句話建 Bot 速成指南</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+  background: #0f1419;
+  color: #e8edf5;
+  display: flex; flex-direction: column; align-items: center;
+  gap: 32px; padding: 32px 16px; min-height: 100vh;
+}
+.card {
+  width: 860px; max-width: 100%; background: #1a2332;
+  border-radius: 16px; overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  border: 1px solid #2a3a4e;
+}
+.card-header {
+  background: linear-gradient(135deg, #1e3a5f, #0d2847);
+  padding: 24px 32px; border-bottom: 2px solid #00d4aa;
+}
+.card-header h2 { font-size: 28px; font-weight: 900; color: #00d4aa; letter-spacing: 1px; }
+.card-header .subtitle { font-size: 14px; color: #8899aa; margin-top: 6px; }
+.card-body { padding: 28px 32px; }
+.card-body p { font-size: 15px; line-height: 1.8; color: #c8d6e5; margin-bottom: 14px; }
+.card-body strong { color: #00d4aa; font-weight: 700; }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+th { background: #0d2847; color: #00d4aa; padding: 10px 14px; text-align: left; font-weight: 700; border-bottom: 2px solid #00d4aa; }
+td { padding: 10px 14px; border-bottom: 1px solid #2a3a4e; color: #c8d6e5; }
+tr:hover td { background: rgba(0,212,170,0.05); }
+.code-block {
+  background: #0d1b2a; border: 1px solid #2a3a4e; border-radius: 10px;
+  padding: 16px 20px; margin: 14px 0; overflow-x: auto;
+  font-family: "JetBrains Mono", monospace; font-size: 13px;
+  line-height: 1.7; color: #a8d8ea;
+}
+.code-block .comment { color: #5c7a8a; }
+.code-block .cmd { color: #00d4aa; }
+.code-block .string { color: #ffd700; }
+.tip {
+  background: rgba(0,212,170,0.08); border-left: 4px solid #00d4aa;
+  border-radius: 0 8px 8px 0; padding: 12px 16px; margin: 14px 0;
+  font-size: 14px; color: #a8d8ea;
+}
+.tip::before { content: "💡 "; }
+.warning {
+  background: rgba(255,215,0,0.08); border-left: 4px solid #ffd700;
+  border-radius: 0 8px 8px 0; padding: 12px 16px; margin: 14px 0;
+  font-size: 14px; color: #ffd700;
+}
+.warning::before { content: "⚠️ "; }
+.success {
+  background: rgba(0,212,170,0.12); border-left: 4px solid #00d4aa;
+  border-radius: 0 8px 8px 0; padding: 12px 16px; margin: 14px 0;
+  font-size: 14px; color: #00d4aa; font-weight: 700;
+}
+.success::before { content: "🎉 "; }
+.card-footer {
+  background: #0d1b2a; padding: 12px 32px;
+  display: flex; justify-content: space-between; align-items: center;
+  border-top: 1px solid #2a3a4e;
+}
+.page-num { color: #5c7a8a; font-size: 13px; font-weight: 700; }
+.brand { color: #00d4aa; font-weight: 900; font-size: 16px; letter-spacing: 1px; }
+a { color: #00d4aa; text-decoration: none; }
+a:hover { text-decoration: underline; }
+ul { margin: 10px 0 10px 20px; }
+li { font-size: 14px; line-height: 1.8; color: #c8d6e5; margin-bottom: 4px; }
+h3 { color: #ffd700; font-size: 18px; margin: 20px 0 10px; font-weight: 900; }
+code { background: #0d2847; padding: 2px 6px; border-radius: 4px; font-size: 13px; color: #00d4aa; }
+.section-num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; background: #00d4aa; color: #0f1419;
+  border-radius: 50%; font-weight: 900; font-size: 16px; margin-right: 10px;
+}
+.flow-box {
+  background: #0d1b2a; border: 1px solid #2a3a4e; border-radius: 10px;
+  padding: 16px 20px; margin: 14px 0; text-align: center;
+  font-family: "JetBrains Mono", monospace; font-size: 13px;
+  line-height: 2; color: #a8d8ea;
+}
+.flow-box .arrow { color: #00d4aa; font-weight: 700; }
+.badge {
+  display: inline-block; background: #00d4aa; color: #0f1419;
+  padding: 2px 10px; border-radius: 10px; font-size: 12px; font-weight: 700;
+  margin-right: 6px;
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════ Card 1: 封面 ═══════════════════ -->
+<div class="card">
+  <div class="card-header">
+    <h2>⚡ AI Bot Builder — 一句話建 Bot</h2>
+    <div class="subtitle">一句提詞，全自動產出完整 Telegram AI Bot 專案</div>
+  </div>
+  <div class="card-body">
+    <p><strong>核心理念：</strong>不需逐步操作 7 個步驟，<code>ark-ai-bot-builder</code> Skill 一次產出完整可運行專案。</p>
+
+    <h3>⏱ 30 分鐘完成</h3>
+    <table>
+      <tr><th>時間</th><th>步驟</th><th>你做什麼</th><th>產出</th></tr>
+      <tr><td>0-5 min</td><td>Step 0</td><td>clone skills + 確認環境</td><td>環境就緒</td></tr>
+      <tr><td>5-10 min</td><td>Step 1</td><td>📝 一句話建專案</td><td>完整 Bot 骨架</td></tr>
+      <tr><td>10-15 min</td><td>Step 2</td><td>💻 pip install + .env</td><td>依賴安裝</td></tr>
+      <tr><td>15-20 min</td><td>Step 3</td><td>💻 啟動 + 📱 測試</td><td>Bot 上線</td></tr>
+      <tr><td>20-25 min</td><td>Step 4</td><td>📱 自然語言對話</td><td>AI 即時回應</td></tr>
+      <tr><td>25-30 min</td><td>Step 5</td><td>📱 /daily</td><td>科技日報 🎉</td></tr>
+    </table>
+
+    <h3>✅ 完成標準</h3>
+    <ul>
+      <li>Bot 回應 <code>/start</code> <code>/skills</code></li>
+      <li>自然語言訊息 → Agent CLI 回答</li>
+      <li><code>/daily</code> → 產出科技日報 HTML 卡片</li>
+    </ul>
+
+    <h3>📋 前提條件</h3>
+    <ul>
+      <li>Python 3.12+ / Git / Node.js 20+</li>
+      <li>Telegram Bot Token（@BotFather）</li>
+      <li>Gemini API Key（<a href="https://aistudio.google.com/apikeys">aistudio.google.com</a>）</li>
+      <li>AI IDE（Kiro 或 Antigravity）</li>
+    </ul>
+  </div>
+  <div class="card-footer">
+    <span class="brand">AI Bot Builder</span>
+    <span class="page-num">1 / 6</span>
+  </div>
+</div>
+
+<!-- ═══════════════════ Card 2: Step 0 ═══════════════════ -->
+<div class="card">
+  <div class="card-header">
+    <h2><span class="section-num">0</span>環境準備</h2>
+    <div class="subtitle">5 min — clone Skills + 確認環境</div>
+  </div>
+  <div class="card-body">
+    <h3>取得 Skills</h3>
+    <div class="code-block">
+      <span class="comment"># Kiro 使用者</span><br>
+      <span class="cmd">git clone</span> https://github.com/igs-paddyyang-tw/ark-kiro-skills <span class="string">.kiro/skills/</span><br><br>
+      <span class="comment"># Antigravity 使用者</span><br>
+      <span class="cmd">git clone</span> https://github.com/igs-paddyyang-tw/ark-kiro-skills <span class="string">.agents/skills/</span>
+    </div>
+
+    <h3>確認環境</h3>
+    <p><span class="badge">📝 IDE</span> 在 AI IDE 聊天框輸入：</p>
+    <div class="code-block">
+      檢查我的開發環境
+    </div>
+
+    <div class="tip">全部通過即進入 Step 1。如有缺失，Skill 會告訴你怎麼安裝。</div>
+  </div>
+  <div class="card-footer">
+    <span class="brand">AI Bot Builder</span>
+    <span class="page-num">2 / 6</span>
+  </div>
+</div>
+
+<!-- ═══════════════════ Card 3: Step 1 ═══════════════════ -->
+<div class="card">
+  <div class="card-header">
+    <h2><span class="section-num">1</span>一句話建 Bot 專案</h2>
+    <div class="subtitle">5 min — 核心步驟！一句提詞產出整個專案</div>
+  </div>
+  <div class="card-body">
+    <p><span class="badge">📝 IDE</span> 在 AI IDE 聊天框輸入：</p>
+    <div class="code-block">
+      <span class="cmd">ark-ai-bot-builder</span>，專案名稱 <span class="string">news-bot</span>
+    </div>
+
+    <h3>自動產出完整專案</h3>
+    <div class="code-block">
+      news-bot/<br>
+      ├── src/<br>
+      │   ├── skills/&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># BaseSkill 插件系統</span><br>
+      │   │   ├── base.py<br>
+      │   │   ├── registry.py<br>
+      │   │   └── internal/<br>
+      │   │       ├── echo.py<br>
+      │   │       ├── llm_cli.py&nbsp;&nbsp;&nbsp;<span class="comment"># Agent CLI 多後端</span><br>
+      │   │       ├── news_scraper.py<br>
+      │   │       └── news_renderer.py<br>
+      │   ├── bot/&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># Telegram Bot</span><br>
+      │   ├── llm/&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># Gemini API</span><br>
+      │   └── conversation/&nbsp;&nbsp;&nbsp;<span class="comment"># 意圖路由</span><br>
+      ├── config/<br>
+      ├── .env.example<br>
+      ├── requirements.txt<br>
+      └── start.bat
+    </div>
+
+    <div class="success">所有檔案一次到位！不需要逐步 prompt。</div>
+  </div>
+  <div class="card-footer">
+    <span class="brand">AI Bot Builder</span>
+    <span class="page-num">3 / 6</span>
+  </div>
+</div>
+
+<!-- ═══════════════════ Card 4: Step 2+3 ═══════════════════ -->
+<div class="card">
+  <div class="card-header">
+    <h2><span class="section-num">2</span>安裝 → 啟動 → 測試</h2>
+    <div class="subtitle">10 min — 安裝依賴、設定 Token、啟動 Bot</div>
+  </div>
+  <div class="card-body">
+    <h3>安裝依賴</h3>
+    <p><span class="badge">💻 終端</span></p>
+    <div class="code-block">
+      <span class="cmd">cd</span> news-bot<br>
+      <span class="cmd">pip install</span> -r requirements.txt
+    </div>
+
+    <h3>設定環境變數</h3>
+    <div class="code-block">
+      <span class="cmd">cp</span> .env.example .env<br><br>
+      <span class="comment"># 編輯 .env 填入：</span><br>
+      TELEGRAM_BOT_TOKEN=<span class="string">你的token</span><br>
+      GEMINI_API_KEY=<span class="string">你的key</span><br>
+      LLM_BACKEND=gemini
+    </div>
+
+    <h3>啟動 Bot</h3>
+    <div class="code-block">
+      <span class="cmd">python</span> -m src.bot.main<br><br>
+      <span class="comment"># 預期輸出：</span><br>
+      📦 Skills loaded: 4<br>
+      🤖 AI Agent Bot started polling...
+    </div>
+
+    <h3>📱 測試指令</h3>
+    <table>
+      <tr><th>Telegram 輸入</th><th>預期結果</th></tr>
+      <tr><td><code>/start</code></td><td>✅ 歡迎訊息 + 功能介紹</td></tr>
+      <tr><td><code>/skills</code></td><td>✅ 列出 4 個 Skills</td></tr>
+    </table>
+  </div>
+  <div class="card-footer">
+    <span class="brand">AI Bot Builder</span>
+    <span class="page-num">4 / 6</span>
+  </div>
+</div>
+
+<!-- ═══════════════════ Card 5: Step 4+5 ═══════════════════ -->
+<div class="card">
+  <div class="card-header">
+    <h2><span class="section-num">3</span>自然語言對話 + 科技日報</h2>
+    <div class="subtitle">10 min — AI 即時回應 + /daily 產出日報</div>
+  </div>
+  <div class="card-body">
+    <h3>📱 自然語言對話</h3>
+    <p>直接打字，不需要指令前綴：</p>
+    <div class="code-block">
+      <span class="string">你是誰？你能做什麼？</span><br>
+      → 1-5 秒收到 Agent CLI 回應 ✅<br><br>
+      <span class="string">什麼是 Python 的 async await？</span><br>
+      → 收到技術回答 ✅
+    </div>
+
+    <h3>📱 科技日報</h3>
+    <div class="code-block">
+      <span class="cmd">/daily</span>
+    </div>
+
+    <div class="flow-box">
+      /daily 觸發<br>
+      <span class="arrow">↓</span><br>
+      news_scraper（httpx 多來源併發）<br>
+      <span class="arrow">↓</span><br>
+      news_renderer（HTML 卡片渲染）<br>
+      <span class="arrow">↓</span><br>
+      Telegram 發送 HTML 檔案 📰
+    </div>
+
+    <h3>✅ 驗證</h3>
+    <ul>
+      <li>📱 收到「📡 抓取新聞中...」提示</li>
+      <li>📱 收到 HTML 檔案</li>
+      <li>瀏覽器開啟 → 多張精美卡片</li>
+    </ul>
+
+    <div class="success">課程完成！一句提詞建好的 Bot 能自動抓新聞產日報。</div>
+  </div>
+  <div class="card-footer">
+    <span class="brand">AI Bot Builder</span>
+    <span class="page-num">5 / 6</span>
+  </div>
+</div>
+
+<!-- ═══════════════════ Card 6: 比較 + FAQ ═══════════════════ -->
+<div class="card">
+  <div class="card-header">
+    <h2>📊 Workshop 比較 &amp; FAQ</h2>
+    <div class="subtitle">三種 Workshop 的定位差異</div>
+  </div>
+  <div class="card-body">
+    <table>
+      <tr><th>項目</th><th>初階班</th><th>進階班</th><th>Builder（本課）</th></tr>
+      <tr><td>時長</td><td>100 min（2 堂）</td><td>50 min（1 堂）</td><td><strong>30 min</strong></td></tr>
+      <tr><td>提詞次數</td><td>7+ 次</td><td>5+ 次</td><td><strong>1 次</strong></td></tr>
+      <tr><td>適合對象</td><td>第一次接觸</td><td>有 Python 基礎</td><td>想最快看到成果</td></tr>
+      <tr><td>學到什麼</td><td>每層原理</td><td>API 整合</td><td>Skill 系統全貌</td></tr>
+    </table>
+
+    <h3>🔧 提詞公式</h3>
+    <div class="code-block">
+      <span class="cmd">ark-ai-bot-builder</span> + 專案名稱 [+ 選項]
+    </div>
+    <table>
+      <tr><th>想做的事</th><th>提詞</th></tr>
+      <tr><td>建基礎 Bot</td><td><code>ark-ai-bot-builder，專案名稱 my-bot</code></td></tr>
+      <tr><td>擴充 Skill</td><td><code>在 src/skills/internal/ 新增 XXX Skill</code></td></tr>
+      <tr><td>改 Bug</td><td><code>執行出現 ModuleNotFoundError，請修復</code></td></tr>
+      <tr><td>加功能</td><td><code>加入排程系統，每天 9 點觸發 /daily</code></td></tr>
+    </table>
+
+    <h3>❓ FAQ</h3>
+    <p><strong>Q：一句話就能建好？</strong><br>
+    是的。<code>ark-ai-bot-builder</code> 內含完整模板，一次產出所有檔案。後續可逐步擴充。</p>
+    <p><strong>Q：Bot 沒回應？</strong><br>
+    確認 <code>.env</code> Token 正確 + 沒有其他程式在 polling 同一 Token + 先按 /start。</p>
+    <p><strong>Q：/daily 抓不到新聞？</strong><br>
+    優先用 Hacker News（純 HTML 最穩定）。確認 <code>pip install httpx beautifulsoup4</code>。</p>
+
+    <div class="tip">
+      Skills repo：<a href="https://github.com/igs-paddyyang-tw/ark-kiro-skills">github.com/igs-paddyyang-tw/ark-kiro-skills</a>
+    </div>
+  </div>
+  <div class="card-footer">
+    <span class="brand">AI Bot Builder</span>
+    <span class="page-num">6 / 6</span>
+  </div>
+</div>
+
+</body>
+</html>
