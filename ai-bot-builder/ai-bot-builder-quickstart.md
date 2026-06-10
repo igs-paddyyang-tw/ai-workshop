@@ -6,9 +6,34 @@
 **日期：** 2026
 
 **操作位置圖示說明：**
-- 📝 = 在 **AI IDE 聊天框**（Kiro / Antigravity）輸入
+- 📝 = 在 **AI IDE 聊天框**（Kiro / Antigravity）輸入，觸發 Skill 產出程式碼
 - 📱 = 在 **Telegram 聊天窗**，對你的 Bot 發送訊息
 - 💻 = 在**終端機 / 命令列**執行指令
+
+---
+
+## 📦 教材包取得
+
+```bash
+# 下載教材包（含完整可運行專案）
+git clone https://github.com/igs-paddyyang-tw/ai-bot-builder-workshop.git
+```
+
+或從講師提供的連結下載 `.7z` 壓縮檔解壓即可。
+
+```
+ai-bot-builder/
+├── ai-bot-builder-quickstart.md ← 本文件（快速上手指南）
+├── ai-bot-builder-quickstart.html ← HTML 版（可瀏覽器開啟）
+├── README.md                    ← 目錄說明
+└── news-bot/                    ← 完整可運行專案
+    ├── src/                     ← 全部程式碼
+    ├── config/                  ← 設定檔
+    ├── .env.example             ← 環境變數範本
+    ├── requirements.txt         ← Python 依賴
+    ├── start.bat                ← Windows 啟動
+    └── README.md                ← 專案說明
+```
 
 ---
 
@@ -76,9 +101,32 @@ git clone https://github.com/igs-paddyyang-tw/ark-kiro-skills .agents/skills/
 ark-ai-bot-builder，專案名稱 news-bot
 ```
 
-### Skill 自動產出
+### 提詞拆解
 
-`ark-ai-bot-builder` 會一次產出完整專案：
+```
+ark-ai-bot-builder     → 觸發 Skill 名稱（AI IDE 用這個找到對應 Skill）
+專案名稱 news-bot      → Skill 參數（決定產出資料夾名稱）
+```
+
+**完整格式：**
+```
+ark-ai-bot-builder，專案名稱 {name}[，stages {n-m}][，llm {backend}]
+```
+
+### ark-ai-bot-builder 六階段
+
+| Stage | 產出內容 | 何時用 |
+|-------|---------|--------|
+| 1 | BaseSkill + Registry + echo | 只要 Skill 系統 |
+| 2 | Bot + handlers + 自然語言路由 | 加 Telegram |
+| 3 | Gemini API 對話 + LLM Router | 加 AI 能力 |
+| 4 | news_scraper + news_renderer | 加日報 |
+| 5 | ConversationPlanner + Session | 加意圖路由 |
+| 6 | 全部整合 + start.bat | 完整體（預設） |
+
+> 💡 不指定 stages 時，預設產出全部 6 階段。
+
+### Skill 自動產出
 
 ```
 news-bot/
@@ -188,6 +236,16 @@ Bot 支援直接打字對話，不需要指令前綴。
 
 → 收到技術回答 ✅
 
+### 📱 自然語言觸發對照表（Bot 端）
+
+| 你說 | Planner 路由到 | 實際執行 |
+|------|--------------|---------|
+| 「今天有什麼科技新聞」 | news_scraper | 抓取新聞 |
+| 「幫我寫一個計算機」 | llm_cli (codegen) | 產出程式碼 |
+| 「echo 測試」 | echo | 回音 |
+| 「什麼是 FastAPI」 | Agent CLI (chat) | LLM 深度回答 |
+| `/news_scraper` | 直接指定 Skill | 按 ID 執行 |
+
 ### 運作原理
 
 ```
@@ -197,8 +255,11 @@ Bot 支援直接打字對話，不需要指令前綴。
 ConversationPlanner（意圖路由）
     │
     ├─ keyword 命中 → 直接執行 Skill
+    ├─ /skill_id 指令 → 直接執行 Skill
     └─ 其他 → Agent CLI（Gemini）對話
 ```
+
+> 💡 路由邏輯：keyword 命中 → 執行 Skill → 否則走 Agent CLI 對話
 
 ---
 
@@ -235,16 +296,74 @@ Telegram 發送 HTML 檔案 📰
 
 ---
 
-## 與其他 Workshop 比較
+## 📐 提詞場景對照
 
-| 項目 | ai-bot-workshop（初階） | ai-bot-advanced（進階） | ai-bot-builder（本課） |
-|------|------------------------|------------------------|----------------------|
-| 時長 | 100 分鐘（2 堂） | 50 分鐘（1 堂） | 30 分鐘（1 堂） |
-| 步驟數 | 7 步驟逐步建 | 6 步驟逐步建 | 1 步產出 + 設定啟動 |
-| 提詞次數 | 7+ 次 | 5+ 次 | 1 次（一句搞定） |
-| 結構化方式 | Gemini CLI | Gemini API | Agent CLI |
-| 適合對象 | 第一次接觸 | 有 Python 基礎 | 想最快看到成果 |
-| 學到什麼 | 每層原理 | API 整合 | Skill 系統全貌 |
+### IDE 端 vs Bot 端
+
+| 場景 | 在哪裡 | 對象 | 目的 | 範例 |
+|------|--------|------|------|------|
+| 建置/修改程式碼 | 📝 AI IDE | Kiro Agent | 產出檔案 | `新增 weather Skill` |
+| 使用 Bot 功能 | 📱 Telegram | 你的 Bot | 執行 Skill | `今天有什麼新聞` |
+| 修 Bug | 📝 AI IDE | Kiro Agent | 修復程式碼 | `貼錯誤 + 請修復` |
+| 日常對話 | 📱 Telegram | Bot → Agent CLI | 知識問答 | `什麼是 Python` |
+
+> 💡 **記住：** IDE 提詞 = 改程式碼（產出檔案） ／ Bot 提詞 = 用功能（執行 Skill）
+
+---
+
+## 📝 IDE 提詞公式
+
+```
+[動作] + [目標] + [細節（選填）]
+```
+
+### 建專案提詞
+
+| 想做的事 | 提詞 |
+|---------|------|
+| 建完整 Bot | `ark-ai-bot-builder，專案名稱 my-bot` |
+| 只建 Skill 系統 + Bot | `ark-ai-bot-builder，專案名稱 my-bot，stages 1-3` |
+| 指定 LLM 後端 | `ark-ai-bot-builder，專案名稱 my-bot，llm kiro` |
+
+### 擴充功能提詞
+
+| 想做的事 | 提詞 |
+|---------|------|
+| 新增 Skill | `在 src/skills/internal/ 新增一個天氣查詢 Skill，用 httpx 呼叫 wttr.in/{city}?format=3` |
+| 改路由 | `修改 ConversationPlanner，新增 keyword 路由：「天氣」→ weather Skill` |
+| 加排程 | `加入排程系統，每天早上 9 點觸發 /daily 並推送到指定 chat_id` |
+| 改回覆風格 | `修改 config/llm_prompts.yaml，改為幽默風格回覆` |
+
+### 修 Bug 提詞模板
+
+**❌ 太模糊：**
+```
+Bot 壞了
+```
+
+**✅ 有效提詞：**
+```
+執行 python -m src.bot.main 出現以下錯誤：
+Traceback (most recent call last):
+  File "src/bot/main.py", line 3, in <module>
+    from telegram import Update
+ModuleNotFoundError: No module named 'telegram'
+請修復
+```
+
+**公式：** `[執行了什麼指令] + [完整錯誤訊息] + [請修復]`
+
+---
+
+## 🏋️ 課後練習
+
+| 難度 | 提詞 | 學到什麼 |
+|------|------|---------|
+| ⭐ | `在 src/skills/internal/ 新增 weather Skill，用 httpx 呼叫 wttr.in/{city}?format=3` | 新增 Skill |
+| ⭐⭐ | `修改 ConversationPlanner，新增 keyword 路由：「天氣」→ weather Skill` | 路由機制 |
+| ⭐⭐ | `加入 Gemini API 結構化新聞，用 response_mime_type="application/json"` | API JSON mode |
+| ⭐⭐⭐ | `加入排程系統，每天 09:00 自動執行 /daily 並推送到 TELEGRAM_CHAT_ID` | APScheduler 整合 |
+| ⭐⭐⭐ | `加入 /report 指令，將最近 7 天日報統計為週報 HTML` | 多 Skill 串接 |
 
 ---
 
@@ -269,12 +388,13 @@ Telegram 發送 HTML 檔案 📰
 sources:
   - name: "Hacker News"
     url: "https://news.ycombinator.com/"
-    selector: ".athing"
-    title_selector: ".titleline a"
-    category: general
+    type: html
+    selector: ".titleline a"
+    category: tech_general
 
   - name: "你想加的網站"
     url: "https://example.com"
+    type: html
     selector: "h3 a"
     category: ai
 ```
@@ -286,24 +406,6 @@ sources:
 ```bash
 LLM_BACKEND=kiro      # gemini / kiro / claude
 ```
-
----
-
-## 提詞公式
-
-```
-ark-ai-bot-builder + 專案名稱 [+ 選項]
-```
-
-### 範例
-
-| 想做的事 | 提詞 |
-|---------|------|
-| 建基礎 Bot | `ark-ai-bot-builder，專案名稱 my-bot` |
-| 指定階段 | `ark-ai-bot-builder，專案名稱 my-bot，stages 1-3` |
-| 擴充 Skill | `在 src/skills/internal/ 新增 XXX Skill` |
-| 改 Bug | `執行出現 ModuleNotFoundError，請修復` |
-| 加功能 | `加入排程系統，每天早上 9 點觸發 /daily` |
 
 ---
 
@@ -336,23 +438,6 @@ ark-ai-bot-builder + 專案名稱 [+ 選項]
 
 專案已內建 `src/llm/gemini_chat.py`，在 `.env` 填入 `GEMINI_API_KEY` 即可。
 可在 handlers.py 的 `handle_message` 中改為優先走 API（延遲 1-3 秒）。
-
----
-
-## 教材包檔案
-
-```
-ai-bot-builder/
-├── QUICKSTART.md                ← 本文件
-├── README.md                    ← 目錄說明
-└── news-bot/                    ← 完整可運行專案
-    ├── src/                     ← 全部程式碼
-    ├── config/                  ← 設定檔
-    ├── .env.example             ← 環境變數範本
-    ├── requirements.txt         ← Python 依賴
-    ├── start.bat                ← Windows 啟動
-    └── README.md                ← 專案說明
-```
 
 ---
 

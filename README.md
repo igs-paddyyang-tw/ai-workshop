@@ -10,10 +10,10 @@
 | Workshop | 目標 | 時長 | 適合誰 |
 |----------|------|------|--------|
 | [ai-bot-workshop](ai-bot-workshop/) | 建立科技日報 Telegram Bot | 2 堂 × 50 min | 初學者，第一次接觸 |
-| [ai-bot-advanced](ai-bot-advanced/) | 同上，濃縮一堂課完成 | 1 堂 × 50 min | 進階班，有 Python 基礎 |
+| [ai-bot-builder](ai-bot-builder/) | 一句話建好完整 Bot | 1 堂 × 30 min | 想最快看到成果 |
 | [agent-team-workshop](agent-team-workshop/) | 建立多 Agent 協作團隊 | 1 堂 × 50 min | 想用 AI 團隊開發 |
 
-> 💡 **ai-bot-advanced** = ai-bot-workshop 的進階速成版，改用 Gemini API 結構化（不依賴 CLI 工具）。
+> 💡 **ai-bot-builder** = 使用 `ark-ai-bot-builder` Skill 一次產出完整專案，30 分鐘完成。
 
 ---
 
