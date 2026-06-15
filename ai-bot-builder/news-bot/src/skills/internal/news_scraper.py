@@ -80,17 +80,26 @@ class NewsScraperSkill(BaseSkill):
 
     async def _scrape_source(self, source: dict) -> list[dict]:
         """依 source 設定抓取。"""
-        async with httpx.AsyncClient(headers=HEADERS, timeout=15) as client:
+        src_type = source.get("type", "html")
+
+        async with httpx.AsyncClient(headers=HEADERS, timeout=15, follow_redirects=True) as client:
             resp = await client.get(source["url"])
             resp.raise_for_status()
 
+        # RSS 來源用 feedparser
+        if src_type == "rss":
+            return self._parse_rss(resp.text, source)
+
+        # HTML 來源
         soup = BeautifulSoup(resp.text, "html.parser")
         selector = source.get("selector", "h3")
         title_sel = source.get("title_selector", "a")
         link_sel = source.get("link_selector", "a")
 
         articles = []
-        for item in soup.select(selector)[:10]:
+        seen_titles = set()
+
+        for item in soup.select(selector)[:20]:
             title_el = item.select_one(title_sel) if title_sel != selector else item
             link_el = item.select_one(link_sel) if link_sel != selector else item
 
@@ -104,15 +113,57 @@ class NewsScraperSkill(BaseSkill):
                     from urllib.parse import urljoin
                     link = urljoin(source["url"], href)
 
-            if title:
-                articles.append({
-                    "title": title,
-                    "url": link,
-                    "source": source["name"],
-                    "description": title,
-                })
+            # 過濾：標題太短、重複、或只是 domain 名稱
+            if not title or len(title) < 8:
+                continue
+            if title in seen_titles:
+                continue
+            # 過濾 Hacker News 的 "(domain.com)" 類連結
+            if title.startswith("(") and title.endswith(")"):
+                continue
+            # 過濾純 domain 名稱（如 "andreklein.net"）
+            if "." in title and " " not in title and len(title) < 40:
+                continue
+
+            seen_titles.add(title)
+            articles.append({
+                "title": title,
+                "url": link,
+                "source": source["name"],
+                "description": title,
+            })
+
+            if len(articles) >= 10:
+                break
 
         return articles
+
+    def _parse_rss(self, content: str, source: dict) -> list[dict]:
+        """解析 RSS feed。"""
+        try:
+            import feedparser
+            feed = feedparser.parse(content)
+            articles = []
+            for entry in feed.entries[:10]:
+                title = entry.get("title", "").strip()
+                link = entry.get("link", "")
+                summary = entry.get("summary", "")
+                # 移除 HTML tags from summary
+                if summary:
+                    summary_soup = BeautifulSoup(summary, "html.parser")
+                    summary = summary_soup.get_text(strip=True)[:200]
+
+                if title:
+                    articles.append({
+                        "title": title,
+                        "url": link,
+                        "source": source["name"],
+                        "description": summary or title,
+                    })
+            return articles
+        except Exception as e:
+            logger.warning("RSS 解析失敗 %s: %s", source["name"], e)
+            return []
 
     def _parse_html(self, html: str, url: str) -> list[dict]:
         """通用 HTML 解析（fallback）。"""
