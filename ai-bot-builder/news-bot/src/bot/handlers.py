@@ -1,4 +1,5 @@
 """Telegram Bot handlers — 自然語言進 Agent CLI。"""
+import json
 import logging
 from pathlib import Path
 
@@ -8,6 +9,7 @@ from telegram.ext import ContextTypes
 
 from src.skills.registry import SkillRegistry
 from src.conversation.planner import ConversationPlanner, PlanAction
+from src.llm import gemini_chat
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +72,7 @@ async def cmd_skills(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
 
 
 async def cmd_daily(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """手動觸發科技日報：scrape → render → 發送 HTML。"""
+    """手動觸發科技日報：scrape → LLM 結構化 → render → 發送 HTML。"""
     if not _registry:
         await update.message.reply_text("❌ Skill 系統未就緒")
         return
@@ -83,26 +85,37 @@ async def cmd_daily(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         await update.message.reply_text(f"❌ 抓取失敗：{result.error[:200]}")
         return
 
-    # Step 2: 整理 articles
-    articles = []
+    # Step 2: 收集原始素材（帶描述）
+    raw_items = []
     for cat, items in result.data.get("categories", {}).items():
-        for item in items[:3]:
-            articles.append({
-                "topic": cat,
+        for item in items[:5]:
+            desc = item.get("description", "")
+            # 如果 description 只是重複標題，標記為空
+            if desc == item["title"]:
+                desc = ""
+            raw_items.append({
+                "category": cat,
                 "title": item["title"],
-                "what": item.get("description", item["title"]),
-                "why": "",
-                "summary": item["title"][:30],
-                "tags": [],
-                "source": "auto",
-                "emoji": "📰",
+                "description": desc,
+                "url": item.get("url", ""),
+                "source": item.get("source", ""),
             })
 
-    if not articles:
+    if not raw_items:
         await update.message.reply_text("📭 今日無新聞")
         return
 
-    # Step 3: 渲染 HTML
+    # Step 3: 用 Gemini API 結構化為日報卡片（優先使用有描述的素材）
+    # 排序：有 description 的放前面
+    raw_items.sort(key=lambda x: (0 if x.get("description") else 1))
+    articles = await _structure_news_with_llm(raw_items[:10])
+
+    # 如果 LLM 失敗，fallback 到基本格式
+    if not articles:
+        articles = _fallback_structure(raw_items[:5])
+
+    # Step 4: 渲染 HTML
+    await update.message.reply_text("🎨 渲染日報中...")
     render_result = await _registry.invoke("news_renderer", {"articles": articles[:5]})
     if render_result.success:
         path = render_result.data["path"]
@@ -113,6 +126,109 @@ async def cmd_daily(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         )
     else:
         await update.message.reply_text(f"❌ 渲染失敗：{render_result.error[:200]}")
+
+
+# ── 日報 LLM 結構化 ──────────────────────────────────────────
+
+_CATEGORY_MAP = {
+    "tech_general": "科技綜合",
+    "ai_focus": "AI 焦點",
+    "dev_tools": "開發工具",
+    "hardware": "硬體趨勢",
+    "general": "科技綜合",
+}
+
+_STRUCTURE_PROMPT = """你是科技日報編輯。請根據以下新聞素材，撰寫結構化日報卡片。
+
+重要規則：
+1. 只使用素材中提供的真實資訊，禁止編造不存在的數據或細節
+2. 如果素材只有標題沒有描述，就根據標題如實概述，不要臆測具體數字或細節
+3. 從提供的新聞中挑選最有價值的 5 則
+4. 用繁體中文撰寫
+5. "what" 欄位要基於素材中的 description 來寫，如果沒有 description 就簡述標題含義
+6. "why" 欄位簡述該新聞的潛在影響
+
+回傳純 JSON（不要 markdown code block），格式：
+{
+  "cards": [
+    {
+      "topic": "分類名稱（如：AI 焦點、開發工具、科技綜合、硬體趨勢、資安）",
+      "title": "新聞標題（精煉中文，15 字內）",
+      "what": "發生了什麼（2-3 句，基於素材的 description，可用 <span class=\\"hl\\">重點</span> 標記關鍵字）",
+      "why": "為什麼重要（1-2 句話說明影響）",
+      "summary": "一句話總結（10 字內）",
+      "source": "來源名稱",
+      "tags": [
+        {"icon": "emoji", "text": "標籤文字（4字內）"}
+      ]
+    }
+  ]
+}
+
+以下是今日新聞素材：
+"""
+
+
+async def _structure_news_with_llm(raw_items: list[dict]) -> list[dict]:
+    """用 Gemini API 將原始新聞結構化為日報卡片。"""
+    if not gemini_chat.is_available():
+        return []
+
+    # 組裝素材 — 包含 description
+    lines = []
+    for item in raw_items:
+        line = f"- [{item['category']}] {item['title']} (來源: {item['source']})"
+        if item.get("description"):
+            line += f"\n  描述: {item['description']}"
+        lines.append(line)
+    material = "\n".join(lines)
+
+    try:
+        response = await gemini_chat.chat(
+            message=_STRUCTURE_PROMPT + material,
+            system_prompt="你是專業的科技日報編輯，擅長將新聞素材轉化為精煉的中文日報卡片。只回傳 JSON。",
+        )
+        if not response:
+            logger.warning("LLM 結構化：Gemini 回傳空字串")
+            return []
+
+        # 清理回應（移除可能的 markdown code block 標記）
+        text = response.strip()
+        if text.startswith("```"):
+            # 移除第一行 (```json 或 ```)
+            lines = text.split("\n")
+            text = "\n".join(lines[1:])
+        if text.endswith("```"):
+            text = text[:-3]
+        text = text.strip()
+
+        data = json.loads(text)
+        cards = data.get("cards", [])
+        logger.info("LLM 結構化成功：%d 張卡片", len(cards))
+        return cards if cards else []
+    except json.JSONDecodeError as e:
+        logger.error("LLM JSON 解析失敗: %s | 原始回應前200字: %s", e, response[:200] if response else "")
+        return []
+    except Exception as e:
+        logger.error("LLM 結構化異常: %s", e, exc_info=True)
+        return []
+
+
+def _fallback_structure(raw_items: list[dict]) -> list[dict]:
+    """LLM 不可用時的 fallback：基本格式化。"""
+    articles = []
+    for item in raw_items:
+        cat_name = _CATEGORY_MAP.get(item["category"], "科技綜合")
+        articles.append({
+            "topic": cat_name,
+            "title": item["title"],
+            "what": f"「{item['title']}」— 來自 {item['source']} 的最新報導。",
+            "why": "值得關注的科技動態。",
+            "summary": item["title"][:15],
+            "tags": [{"icon": "📰", "text": cat_name}],
+            "source": item.get("source", ""),
+        })
+    return articles
 
 
 # ── 自然語言主流程 ────────────────────────────────────────────
