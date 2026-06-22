@@ -1,49 +1,30 @@
-# 🎓 AI Workshop 教材包
+# AI Workshop
 
-**作者：** paddyyang
-**日期：** 2026
+> 漸進式 AI Agent 開發教學：Bot → Team → Platform → Skills
 
----
+## Workshop 列表
 
-## 三個 Workshop，選你需要的
+| # | Workshop | 時長 | 一鍵指令 | 學什麼 |
+|---|----------|------|---------|--------|
+| 01 | [AI Bot](01-ai-bot-workshop/) | 50 min | `build_bot.py` | 單一 Bot 對話 + 意圖路由 |
+| 02 | [Agent Team](02-agent-team-workshop/) | 50 min | `build_team.py` | 多 Agent 協作 + TG 派工 |
+| 03 | [Platform](03-platform-workshop/) | 50 min | 續用 02 | API + Web + A2A + 四層架構 |
+| 04 | [Skills](04-skills-workshop/) | 50 min | AI 自動產出 | Skill 架構 + AI 協作開發 |
 
-| Workshop | 目標 | 時長 | 適合誰 |
-|----------|------|------|--------|
-| [ai-bot-workshop](ai-bot-workshop/) | 建立科技日報 Telegram Bot | 2 堂 × 50 min | 初學者，第一次接觸 |
-| [ai-bot-builder](ai-bot-builder/) | 一句話建好完整 Bot | 1 堂 × 30 min | 想最快看到成果 |
-| [agent-team-workshop](agent-team-workshop/) | 建立多 Agent 協作團隊 | 1 堂 × 50 min | 想用 AI 團隊開發 |
+## 前置條件
 
-> 💡 **ai-bot-builder** = 使用 `ark-ai-bot-builder` Skill 一次產出完整專案，30 分鐘完成。
-
----
-
-## 共同前置需求
-
-| 工具 | 版本 |
-|------|------|
-| Python | 3.12+ |
-| Git | 最新 |
-| AI IDE（擇一） | Kiro 或 Antigravity |
-| Gmail 帳號 | Gemini CLI 登入用 |
-
-### 取得 Skills
-
-```bash
-# Kiro
-git clone https://github.com/igs-paddyyang-tw/ark-kiro-skills .kiro/skills/
-
-# Antigravity
-git clone https://github.com/igs-paddyyang-tw/ark-kiro-skills .agents/skills/
-```
-
----
+- Python 3.12+
+- Git
+- Kiro CLI 2.7+（Workshop 02+）
+- Telegram 帳號 + Bot Token
+- Node.js 20+（僅 Workshop 03）
 
 ## 快速開始
 
-1. 選一個 Workshop
-2. 打開該資料夾的 `QUICKSTART.md`
-3. 照著提詞步驟做
+```bash
+# 取得 Skills
+git clone https://github.com/igs-paddyyang-tw/ark-kiro-skills .kiro/skills/
 
----
-
-*paddyyang · 2026*
+# 選一個 Workshop 開始
+cd 01-ai-bot-workshop && cat QUICKSTART.md
+```
