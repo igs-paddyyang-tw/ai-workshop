@@ -14,7 +14,7 @@
 | 時間 | 動作 | 你做什麼 | Script 做什麼 |
 |------|------|---------|-------------|
 | 0-10 min | 環境確認 | clone skills + `kiro-cli --version` | ark-env-doctor 自動檢查 |
-| 10-20 min | 建團隊 | 執行 `build_team.py` | 一次產出完整平台（63 項） |
+| 10-20 min | 建團隊 | 執行 `build_team.py` | 一次產出完整平台（110 項） |
 | 20-30 min | 配角色 | 執行 `build_kiro.py` | 批次產出所有 agent .kiro/ |
 | 30-40 min | 設定 TG | venv + pip install + 填 .env + 對 Bot 發訊取 user_id | （唯一手動步驟） |
 | 40-45 min | 啟動 | `python start.py` | 一鍵啟動 5 服務 |
@@ -86,7 +86,7 @@ git clone https://github.com/igs-paddyyang-tw/ark-agent-skills .kiro/skills/
 ### Script 直接產出（推薦）
 
 ```bash
-# 產出完整平台（63 項：Backend API + TG Bot + Agent Daemon + Docker）
+# 產出完整平台（110 項：Backend API + TG Bot + Agent Daemon + Docker）
 python3 .kiro/skills/ark-agent-team-builder/scripts/build_team.py my-team
 
 # 驗證結構
@@ -97,15 +97,18 @@ python3 .kiro/skills/ark-agent-team-builder/scripts/build_team.py --validate my-
 
 ```
 my-team/
-├── start.py               ← 一鍵啟動全平台
-├── team.yaml              ← 5 人團隊配置
+├── start.py                 ← 一鍵啟動全平台
+├── team.yaml                ← 5 人團隊配置
 ├── src/
-│   ├── ark_team_core/     ← Agent Runtime（spawn kiro-cli）
-│   ├── backend/           ← REST API（21 端點 + EventBus）
-│   └── tg_ui/             ← Telegram Bot（11 指令）
-├── agents/                ← 5 個 Agent 工作目錄
-├── Dockerfile             ← 容器化部署
-└── tests/test_api.py      ← 測試
+│   ├── gateway/             ← 入口層（API + Telegram + Gemini Chat）
+│   ├── coordinator/         ← 協調層（A2A + DB + Events + Services）
+│   ├── runtime/             ← 執行層（spawn kiro-cli）
+│   ├── business/            ← 業務技能（news + web_search）
+│   └── bootstrap.py         ← 啟動邏輯
+├── agents/                  ← 5 個 Agent 工作目錄
+├── apps/web/                ← Web Dashboard（Next.js）
+├── Dockerfile               ← 容器化部署
+└── tests/                   ← 測試
 ```
 
 ### AI 觸發（自動呼叫 script）
