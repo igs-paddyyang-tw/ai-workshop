@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Workshop 04：Skills（50 min）</title>
+<style>
+:root { --bg: #0f172a; --card: #1e293b; --text: #e2e8f0; --muted: #94a3b8; --accent: #22d3ee; --border: #334155; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; padding: 2rem; max-width: 900px; margin: 0 auto; }
+h1 { color: var(--accent); font-size: 2rem; margin: 1.5rem 0 1rem; border-bottom: 2px solid var(--border); padding-bottom: 0.5rem; }
+h2 { color: var(--accent); font-size: 1.5rem; margin: 2rem 0 0.8rem; }
+h3 { color: #f1f5f9; font-size: 1.2rem; margin: 1.5rem 0 0.5rem; }
+p { margin: 0.5rem 0; }
+code { background: var(--card); padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.9em; color: var(--accent); }
+pre { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; overflow-x: auto; margin: 1rem 0; }
+pre code { background: none; padding: 0; color: var(--text); }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+th, td { border: 1px solid var(--border); padding: 0.5rem 0.8rem; text-align: left; }
+th { background: var(--card); color: var(--accent); }
+tr:nth-child(even) { background: rgba(30,41,59,0.5); }
+blockquote { border-left: 3px solid var(--accent); padding-left: 1rem; color: var(--muted); margin: 1rem 0; }
+ul, ol { padding-left: 1.5rem; margin: 0.5rem 0; }
+li { margin: 0.3rem 0; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
+</style>
+</head>
+<body>
+<h1>Workshop 04：Skill 開發（50 分鐘）</h1>
+<blockquote>
+<p><strong>核心理念</strong>：你不寫 Skill，你讓 AI 寫 Skill。</p>
+</blockquote>
+<hr />
+<h2>什麼是 Skill？</h2>
+<p>Skill 是 Kiro 的「記憶模組」——當使用者提到特定關鍵字時，AI 自動載入對應的指令集。</p>
+<pre><code>使用者說「幫我寫 spec」→ Kiro 載入 ark-superpowers Skill → 產出標準化規格文件
+</code></pre>
+<hr />
+<h2>Skill 三層架構</h2>
+<pre><code>my-skill/
+├── SKILL.md          ← 第 2 層：完整指令（觸發時載入）
+│   ├── frontmatter   ← 第 1 層：name + description（永遠在 context）
+│   └── markdown body ← 指令內容
+├── references/       ← 第 3 層：按需載入（大型參考文件）
+├── scripts/          ← 可執行程式碼
+└── evals/            ← 評估測試集
+</code></pre>
+<h3>三層載入邏輯</h3>
+<table>
+<thead>
+<tr>
+<th>層級</th>
+<th>載入時機</th>
+<th>大小建議</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>第 1 層：<code>description</code></td>
+<td>永遠在 context</td>
+<td>~100 字</td>
+</tr>
+<tr>
+<td>第 2 層：<code>SKILL.md</code> body</td>
+<td>Skill 觸發時</td>
+<td>&lt; 500 行</td>
+</tr>
+<tr>
+<td>第 3 層：<code>references/</code></td>
+<td>SKILL.md 中明確指示時</td>
+<td>無限制</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>觸發機制：description 是關鍵</h2>
+<pre><code class="language-yaml">---
+name: my-daily-news
+description: |
+  每日科技新聞日報：抓取 RSS Feed，產出 HTML 日報頁面。
+  使用此 Skill 當使用者提及新聞日報、RSS、tech news、
+  每日摘要、news digest、或任何需要自動抓取新聞並產出報告的場景。
+---
+</code></pre>
+<p><strong>原則</strong>：description 要「稍微積極」——寧可多觸發，也不要漏觸發。</p>
+<hr />
+<h2>一鍵產出 Skill</h2>
+<h3>Step 1：在 Kiro 聊天框輸入</h3>
+<pre><code>建立新 Skill：每日科技新聞日報，抓取 RSS，產出 HTML 日報頁面，可瀏覽器開啟
+</code></pre>
+<h3>Step 2：AI 自動產出</h3>
+<p>Kiro 會使用 <code>ark-skill-creator</code> 框架，自動產出：</p>
+<pre><code>.kiro/skills/my-daily-news/
+├── SKILL.md              # 完整 Skill 指令
+├── scripts/
+│   └── fetch_rss.py      # 可執行腳本（如需要）
+├── references/
+│   └── rss-sources.md    # 參考 RSS 來源清單
+└── evals/
+    └── evals.json        # 評估測試集
+</code></pre>
+<h3>Step 3：檢視產出</h3>
+<pre><code class="language-bash">cat .kiro/skills/my-daily-news/SKILL.md
+</code></pre>
+<p>確認：
+- [ ] frontmatter 有 <code>name</code> 和 <code>description</code>
+- [ ] description 包含足夠的觸發關鍵字
+- [ ] body 有清楚的步驟指引
+- [ ] 有範例輸入/輸出</p>
+<hr />
+<h2>動手練習（30 分鐘）</h2>
+<h3>練習 A：產出你的第一個 Skill</h3>
+<ol>
+<li>在 Kiro 聊天框輸入：</li>
+</ol>
+<pre><code>建立新 Skill：每日科技新聞日報，抓取 Hacker News 和 TechCrunch RSS，
+產出一份精美 HTML 日報頁面（暗色主題），包含標題、摘要、連結，可直接用瀏覽器開啟。
+</code></pre>
+<ol>
+<li>等 AI 產出完成</li>
+<li>檢視 <code>.kiro/skills/</code> 下的產出結構</li>
+</ol>
+<h3>練習 B：觸發測試</h3>
+<ol>
+<li>開啟新對話（確保乾淨 context）</li>
+<li>測試觸發：</li>
+</ol>
+<pre><code>幫我產出今天的科技新聞日報
+</code></pre>
+<ol>
+<li>觀察：Skill 是否被觸發？AI 是否依照 SKILL.md 的指令執行？</li>
+</ol>
+<h3>練習 C：優化 description</h3>
+<p>如果觸發率不理想，修改 description：</p>
+<pre><code>幫我優化 my-daily-news Skill 的 description，增加觸發關鍵字
+</code></pre>
+<p>AI 會分析常見使用者措辭，擴充 description 中的觸發詞。</p>
+<hr />
+<h2>評估迴圈</h2>
+<pre><code>產出 Skill → 測試觸發 → 收集回饋 → 重寫 Skill → 再測試
+</code></pre>
+<h3>建立評估集</h3>
+<p><code>evals/evals.json</code> 範例：</p>
+<pre><code class="language-json">{
+  &quot;skill_name&quot;: &quot;my-daily-news&quot;,
+  &quot;evals&quot;: [
+    {
+      &quot;id&quot;: 1,
+      &quot;prompt&quot;: &quot;幫我產出今天的科技新聞日報&quot;,
+      &quot;expected_output&quot;: &quot;產出 HTML 日報檔案&quot;,
+      &quot;should_trigger&quot;: true
+    },
+    {
+      &quot;id&quot;: 2,
+      &quot;prompt&quot;: &quot;今天天氣如何&quot;,
+      &quot;expected_output&quot;: &quot;不應觸發此 Skill&quot;,
+      &quot;should_trigger&quot;: false
+    },
+    {
+      &quot;id&quot;: 3,
+      &quot;prompt&quot;: &quot;RSS news summary please&quot;,
+      &quot;expected_output&quot;: &quot;產出英文版日報&quot;,
+      &quot;should_trigger&quot;: true
+    }
+  ]
+}
+</code></pre>
+<h3>迭代改善</h3>
+<p>對 AI 說：</p>
+<pre><code>測試 my-daily-news Skill 的觸發準確度，用 evals.json 中的 3 個測試案例
+</code></pre>
+<hr />
+<h2>完成度分級</h2>
+<table>
+<thead>
+<tr>
+<th>等級</th>
+<th>達成條件</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>⭐ 基礎</td>
+<td>成功讓 AI 產出一個 Skill，結構正確</td>
+</tr>
+<tr>
+<td>⭐⭐ 進階</td>
+<td>觸發測試通過，Skill 可正常執行</td>
+</tr>
+<tr>
+<td>⭐⭐⭐ 精通</td>
+<td>建立評估集，完成一輪迭代改善</td>
+</tr>
+<tr>
+<td>🏆 卓越</td>
+<td>description 優化後觸發率 100%，無誤觸發</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>常見問題</h2>
+<h3>Q：Skill 沒有被觸發？</h3>
+<p><strong>A</strong>：檢查 <code>description</code> 是否包含使用者實際會說的關鍵字。description 要覆蓋：
+- 中文說法（「新聞日報」）
+- 英文說法（「news digest」）
+- 口語說法（「幫我看今天有什麼新聞」）</p>
+<h3>Q：Skill 被錯誤觸發？</h3>
+<p><strong>A</strong>：description 太廣泛。縮小觸發範圍，加入「使用此 Skill 當...」的明確條件，以及「不適用於...」的排除條件。</p>
+<h3>Q：SKILL.md 太長怎麼辦？</h3>
+<p><strong>A</strong>：超過 500 行時，將詳細內容移到 <code>references/</code> 目錄。SKILL.md 只保留核心流程，用明確指示指向參考檔案：</p>
+<pre><code class="language-markdown">詳細 RSS 來源清單見 `references/rss-sources.md`。
+</code></pre>
+<h3>Q：可以手寫 Skill 嗎？</h3>
+<p><strong>A</strong>：可以，但不建議。AI 產出的 Skill 結構更完整、description 覆蓋更廣。你的時間應花在「定義需求」和「驗收品質」上，而非手寫 Markdown。</p>
+<h3>Q：如何分享 Skill 給團隊？</h3>
+<p><strong>A</strong>：<code>.kiro/skills/</code> 目錄隨 Git 版控。<code>git push</code> 後團隊成員 <code>git pull</code> 即可使用。</p>
+<hr />
+<h2>下一步</h2>
+<ul>
+<li>Workshop 05：多 Skill 協作與 Workflow 串接</li>
+<li>嘗試產出不同類型的 Skill（code review、報表、翻譯）</li>
+<li>建立團隊共用 Skill Library</li>
+</ul>
+<hr />
+<h2>重點回顧</h2>
+<pre><code>1. Skill = AI 的記憶模組（description 觸發 → 載入指令）
+2. 三層架構 = metadata → body → references（漸進式載入）
+3. 你不寫 Skill，你用自然語言讓 AI 寫
+4. 評估迴圈 = 產出 → 測試 → 回饋 → 重寫（直到滿意）
+5. description 是觸發的關鍵 — 寧可多觸發，也不要漏觸發
+</code></pre>
+</body>
+</html>
