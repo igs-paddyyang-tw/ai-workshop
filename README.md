@@ -23,7 +23,7 @@
 
 ```bash
 # 取得 Skills
-git clone https://github.com/igs-paddyyang-tw/ark-kiro-skills .kiro/skills/
+git clone https://github.com/igs-paddyyang-tw/ark-agent-skills .kiro/skills/
 
 # 選一個 Workshop 開始
 cd 01-ai-bot-workshop && cat QUICKSTART.md

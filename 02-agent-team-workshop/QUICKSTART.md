@@ -68,7 +68,7 @@ git --version
 ### 取得 Skills
 
 ```bash
-git clone https://github.com/igs-paddyyang-tw/ark-kiro-skills .kiro/skills/
+git clone https://github.com/igs-paddyyang-tw/ark-agent-skills .kiro/skills/
 ```
 
 ### 確認環境（選用）

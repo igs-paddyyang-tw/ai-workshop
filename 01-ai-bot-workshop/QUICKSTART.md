@@ -47,7 +47,7 @@
 
 ```bash
 python3 --version    # 需要 3.12+
-git clone https://github.com/igs-paddyyang-tw/ark-kiro-skills .kiro/skills/
+git clone https://github.com/igs-paddyyang-tw/ark-agent-skills .kiro/skills/
 ```
 
 ---

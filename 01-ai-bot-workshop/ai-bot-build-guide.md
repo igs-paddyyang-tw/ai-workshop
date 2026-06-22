@@ -71,11 +71,11 @@ Step 6: ark-llm-cli + 實戰      → Gemini CLI 結構化 + 科技日報產出
 
 ### 取得 Skills
 
-從 GitHub 取得 ark-kiro-skills 開發用 Skill 集合：
+從 GitHub 取得 ark-agent-skills 開發用 Skill 集合：
 
 ```bash
 # Clone Skills repo 到 .kiro/skills/
-git clone https://github.com/igs-paddyyang-tw/ark-kiro-skills .kiro/skills/
+git clone https://github.com/igs-paddyyang-tw/ark-agent-skills .kiro/skills/
 ```
 
 **repo 內容：** 45 個 Ark Skills，涵蓋本教學所有步驟所需的 Skill。
@@ -169,7 +169,7 @@ kiro-cli login
 
 ### 更多 Skills 資源
 
-除了 ark-kiro-skills repo，以下平台可找到更多社群 Skills：
+除了 ark-agent-skills repo，以下平台可找到更多社群 Skills：
 
 | # | 平台 | 網址 | 說明 |
 |---|------|------|------|
@@ -788,7 +788,7 @@ beautifulsoup4>=4.12.0  # HTML 解析
 
 ```bash
 # 0. 取得 Skills + 環境檢查
-git clone https://github.com/igs-paddyyang-tw/ark-kiro-skills .kiro/skills/
+git clone https://github.com/igs-paddyyang-tw/ark-agent-skills .kiro/skills/
 觸發 ark-env-doctor → 確認環境就緒
 
 # 1. 產出骨架

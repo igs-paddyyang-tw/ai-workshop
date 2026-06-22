@@ -22,7 +22,7 @@
 
 ```bash
 # Step 0：取得 Skills
-git clone https://github.com/igs-paddyyang-tw/ark-kiro-skills .kiro/skills/
+git clone https://github.com/igs-paddyyang-tw/ark-agent-skills .kiro/skills/
 
 # Step 1：建立專案骨架
 python .kiro/skills/ark-agent-team-builder/scripts/build_team.py my-team

@@ -64,7 +64,7 @@ Step 5: 實戰派工                 → 科技日報自動化（Telegram 收到
 ### 取得 Skills
 
 ```bash
-git clone https://github.com/igs-paddyyang-tw/ark-kiro-skills .kiro/skills/
+git clone https://github.com/igs-paddyyang-tw/ark-agent-skills .kiro/skills/
 ```
 
 ### 確認工具
@@ -492,7 +492,7 @@ echo "" > restart.flag   # watchdog 3 秒後自動拉起
 ## 附錄：完整建置流程圖
 
 ```
-Step 0: git clone ark-kiro-skills .kiro/skills/
+Step 0: git clone ark-agent-skills .kiro/skills/
          │
          ▼
 Step 1: build_team.py my-team

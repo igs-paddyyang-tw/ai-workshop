@@ -59,10 +59,10 @@ kiro-cli login    # 瀏覽器授權
 
 ```bash
 # Kiro 使用者
-git clone https://github.com/igs-paddyyang-tw/ark-kiro-skills .kiro/skills/
+git clone https://github.com/igs-paddyyang-tw/ark-agent-skills .kiro/skills/
 
 # Antigravity 使用者
-git clone https://github.com/igs-paddyyang-tw/ark-kiro-skills .agents/skills/
+git clone https://github.com/igs-paddyyang-tw/ark-agent-skills .agents/skills/
 ```
 
 **repo 內容：** 47 個 Ark Skills，涵蓋本教學所有步驟。
