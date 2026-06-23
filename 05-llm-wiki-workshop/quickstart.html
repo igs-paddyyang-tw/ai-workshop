@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Workshop 05：LLM Wiki（50 min）</title>
+<style>
+:root { --bg: #0f172a; --card: #1e293b; --text: #e2e8f0; --muted: #94a3b8; --accent: #22d3ee; --border: #334155; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; padding: 2rem; max-width: 900px; margin: 0 auto; }
+h1 { color: var(--accent); font-size: 2rem; margin: 1.5rem 0 1rem; border-bottom: 2px solid var(--border); padding-bottom: 0.5rem; }
+h2 { color: var(--accent); font-size: 1.5rem; margin: 2rem 0 0.8rem; }
+h3 { color: #f1f5f9; font-size: 1.2rem; margin: 1.5rem 0 0.5rem; }
+p { margin: 0.5rem 0; }
+code { background: var(--card); padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.9em; color: var(--accent); }
+pre { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; overflow-x: auto; margin: 1rem 0; }
+pre code { background: none; padding: 0; color: var(--text); }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+th, td { border: 1px solid var(--border); padding: 0.5rem 0.8rem; text-align: left; }
+th { background: var(--card); color: var(--accent); }
+tr:nth-child(even) { background: rgba(30,41,59,0.5); }
+blockquote { border-left: 3px solid var(--accent); padding-left: 1rem; color: var(--muted); margin: 1rem 0; }
+ul, ol { padding-left: 1.5rem; margin: 0.5rem 0; }
+li { margin: 0.3rem 0; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
+.badge { display: inline-block; background: var(--accent); color: var(--bg); padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.8em; font-weight: bold; margin-right: 0.3rem; }
+.flow-box { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 1.2rem; margin: 1rem 0; font-family: monospace; white-space: pre-line; font-size: 0.9em; line-height: 1.8; }
+</style>
+</head>
+<body>
+
+<h1>📚 LLM Wiki Workshop — 快速上手指南</h1>
+<blockquote>
+<p>50 分鐘讓你的 AI 擁有長期記憶 — RAG 問答 + 知識圖譜 + 自動萃取。</p>
+</blockquote>
+<p><strong>作者：</strong> paddyyang｜<strong>更新：</strong> 2026-06-23｜<strong>使用 Skill：</strong> <code>ark-wiki-engine</code></p>
+
+<hr />
+
+<h2>🎯 上課目標（50 分鐘）</h2>
+<table>
+<thead><tr><th>時間</th><th>動作</th><th>你做什麼</th><th>AI 做什麼</th></tr></thead>
+<tbody>
+<tr><td>0-5 min</td><td>概念講解</td><td>理解 RAG = 搜尋 + 注入 + 生成</td><td>—</td></tr>
+<tr><td>5-15 min</td><td>觸發建構</td><td>在 Kiro 聊天框輸入觸發詞</td><td><code>ark-wiki-engine</code> 產出 8 Skill + API + UI</td></tr>
+<tr><td>15-20 min</td><td>環境設定</td><td>venv + pip + 填 .env</td><td>（唯一手動步驟）</td></tr>
+<tr><td>20-30 min</td><td>匯入知識</td><td>把 sample-docs/ 丟進 raw/</td><td>wiki_ingest 萃取 → 建立 wiki 頁面</td></tr>
+<tr><td>30-40 min</td><td>RAG 問答</td><td>Chat 問問題 → AI 引用 Wiki</td><td>wiki_rag_bridge 注入 context</td></tr>
+<tr><td>40-50 min</td><td>進階操作</td><td>lint + graph + search</td><td>品質報告 + 圖譜分析</td></tr>
+</tbody>
+</table>
+
+<h3>完成度分級</h3>
+<p><span class="badge">🏆 快速組</span> RAG 問答有來源標註 + Wiki lint 通過 + graph 分析</p>
+<p><span class="badge">✅ 標準組</span> ingest 成功 + Chat 能引用 Wiki 回答</p>
+<p><span class="badge">🎯 保底組</span> Wiki 目錄結構正確 + 至少 1 篇知識頁面產出</p>
+
+<hr />
+
+<h2>🧠 核心概念：RAG 架構</h2>
+<div class="flow-box">使用者：「什麼是 asyncio？」
+    │
+    ▼
+┌──────────────┐
+│ wiki_query   │ ← FTS5 全文搜尋知識庫
+└──────┬───────┘
+       │ 找到 python-async-guide.md
+       ▼
+┌──────────────────┐
+│ wiki_rag_bridge  │ ← 將相關片段注入 LLM context
+└──────┬───────────┘
+       ▼
+┌──────────────┐
+│ Gemini LLM   │ ← 根據 context 產出有依據的回答
+└──────┬───────┘
+       ▼
+Bot 回答 + 📚 參考頁面：[[python-async-guide]]</div>
+
+<hr />
+
+<h2>📋 你需要準備的東西</h2>
+<table>
+<thead><tr><th>項目</th><th>說明</th></tr></thead>
+<tbody>
+<tr><td>Python 3.12+</td><td><a href="https://python.org">python.org</a></td></tr>
+<tr><td>Kiro CLI 2.7+</td><td><code>kiro-cli --version</code></td></tr>
+<tr><td>Git</td><td><a href="https://git-scm.com">git-scm.com</a></td></tr>
+<tr><td>Gemini API Key</td><td><a href="https://aistudio.google.com/apikeys">aistudio.google.com</a>（免費）</td></tr>
+</tbody>
+</table>
+
+<hr />
+
+<h2>Step 1：建立 Web 專案基底</h2>
+<blockquote>已有 Workshop 01 的 my-bot？可跳過此步驟。</blockquote>
+<p>在 Kiro CLI 聊天框輸入：</p>
+<pre><code>建立 ai-bot Web 專案，專案名稱 my-wiki-bot</code></pre>
+
+<h2>Step 2：加入 Wiki 知識庫系統</h2>
+<p>在 Kiro CLI 聊天框輸入：</p>
+<pre><code>加入 Wiki 知識庫系統</code></pre>
+<p>AI 觸發 <code>ark-wiki-engine</code>，產出 8 個 Skill + API + Web UI。</p>
+
+<h3>產出的 8 個 Wiki Skill</h3>
+<table>
+<thead><tr><th>Skill</th><th>功能</th></tr></thead>
+<tbody>
+<tr><td><code>wiki_query</code></td><td>全文搜尋知識庫</td></tr>
+<tr><td><code>wiki_ingest</code></td><td>raw/ → wiki/ 自動萃取</td></tr>
+<tr><td><code>wiki_lint</code></td><td>檢查頁面品質（缺欄位、斷連結）</td></tr>
+<tr><td><code>wiki_schema</code></td><td>驗證 frontmatter 規範</td></tr>
+<tr><td><code>wiki_graph</code></td><td>知識圖譜分析（hub / orphan）</td></tr>
+<tr><td><code>wiki_hybrid_search</code></td><td>BM25 + 全文 + RRF 融合搜尋</td></tr>
+<tr><td><code>wiki_rag_bridge</code></td><td>自動注入 Wiki context 到 LLM</td></tr>
+<tr><td><code>wiki_template</code></td><td>產生標準化頁面模板</td></tr>
+</tbody>
+</table>
+
+<h2>Step 3：設定環境與啟動</h2>
+<pre><code>cd my-wiki-bot
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env        # 填入 GEMINI_API_KEY
+uvicorn src.server.main:app --reload --port 8000</code></pre>
+<p>瀏覽器開啟 <code>http://localhost:8000</code> → 看到 💬 Chat + 📚 Wiki 雙分頁。</p>
+
+<h2>Step 4：匯入知識（Ingest）</h2>
+<pre><code># 複製範例文件到 raw/
+cp ai-workshop/05-llm-wiki-workshop/sample-docs/*.md knowledge/my-wiki-bot/raw/</code></pre>
+<p>在 Chat 輸入：</p>
+<pre><code>匯入 raw 資料夾的文件到 Wiki</code></pre>
+<p>驗證：<code>wiki/</code> 下出現新頁面、<code>index.md</code> 已更新、<code>log.md</code> 有記錄。</p>
+
+<h2>Step 5：RAG 問答實測 🎯</h2>
+<table>
+<thead><tr><th>你問</th><th>期望回答</th></tr></thead>
+<tbody>
+<tr><td>什麼是 asyncio？</td><td>引用 python-async-guide 回答 ✅</td></tr>
+<tr><td>Agent 四層架構是什麼？</td><td>引用 agent-design-notes 回答 ✅</td></tr>
+<tr><td>Bot 沒回應怎麼辦？</td><td>引用 common-errors 排查表 ✅</td></tr>
+</tbody>
+</table>
+<blockquote>💡 <strong>這就是 RAG</strong> — AI 不再憑空回答，而是引用你的知識庫作為依據。</blockquote>
+
+<h2>Step 6：進階操作</h2>
+<h3>Wiki Lint — 健康檢查</h3>
+<pre><code>wiki 健康檢查</code></pre>
+<p>回報缺失 frontmatter、斷裂 wikilink、孤立頁面。</p>
+
+<h3>Wiki Graph — 知識圖譜</h3>
+<pre><code>分析知識圖譜</code></pre>
+<p>回報節點/邊數、Hub 頁面、Orphan 頁面。</p>
+
+<h3>Hybrid Search — 進階搜尋</h3>
+<pre><code>搜尋：asyncio 超時處理</code></pre>
+<p>BM25 + 全文 + RRF 融合，比單純關鍵字更精準。</p>
+
+<hr />
+
+<h2>🧠 Wiki 三層模式</h2>
+<div class="flow-box">knowledge/
+├── raw/          → 唯讀原始資料（人類丟進來，AI 只讀不改）
+├── wiki/         → 結構化知識（AI 維護，人類可審閱）
+└── schema.md     → 規則定義（控制 AI 行為邊界）</div>
+
+<table>
+<thead><tr><th>原則</th><th>說明</th></tr></thead>
+<tbody>
+<tr><td>來源與衍生分離</td><td>raw/ 保留原始，wiki/ 是 AI 萃取版本</td></tr>
+<tr><td>Schema 約束</td><td>AI 只能用 schema 定義的 type/status</td></tr>
+<tr><td>Append-only log</td><td>log.md 只追加不刪改（審計軌跡）</td></tr>
+<tr><td>雙向連結</td><td><code>[[page]]</code> 語法建構知識圖譜</td></tr>
+</tbody>
+</table>
+
+<hr />
+
+<h2>⚠️ 常見問題</h2>
+<table>
+<thead><tr><th>錯誤</th><th>原因</th><th>解法</th></tr></thead>
+<tbody>
+<tr><td>RAG 回答沒引用 Wiki</td><td>沒有 ingest</td><td>確認 wiki/ 下有頁面</td></tr>
+<tr><td>ingest 後 wiki/ 是空的</td><td>raw/ 沒檔案</td><td>複製 sample-docs/ 到 raw/</td></tr>
+<tr><td>搜不到頁面</td><td>index.md 沒更新</td><td>重新觸發 ingest</td></tr>
+<tr><td>No module named 'xxx'</td><td>沒在 venv 中</td><td><code>source .venv/bin/activate</code> + pip install</td></tr>
+<tr><td>Gemini 沒引用來源</td><td>API Key 未設定</td><td>確認 .env 有 GEMINI_API_KEY</td></tr>
+</tbody>
+</table>
+
+<hr />
+
+<h2>教材包檔案</h2>
+<table>
+<thead><tr><th>檔案</th><th>說明</th></tr></thead>
+<tbody>
+<tr><td>QUICKSTART.md</td><td>Markdown 版教材（完整版）</td></tr>
+<tr><td>quickstart.html</td><td>本頁面（HTML 版首頁）</td></tr>
+<tr><td>sample-docs/</td><td>3 篇範例知識文件（含 wikilink 互連）</td></tr>
+</tbody>
+</table>
+
+<p style="margin-top:2rem; color:var(--muted); font-size:0.9em;">作者：paddyyang ｜ 更新：2026-06-23</p>
+</body>
+</html>
