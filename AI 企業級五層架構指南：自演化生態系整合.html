@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 企業級五層架構：自演化生態系整合指南</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
+        
+        body {
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+            background-color: #030712;
+            color: #94a3b8;
+        }
+
+        h1, h2, h3, h4, h5 { font-family: 'Inter', 'Noto Sans TC', sans-serif; }
+        code, pre { font-family: 'Fira Code', monospace; }
+
+        script { display: none; }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        gateway: '#f59e0b',   /* Amber: OpenClaw */
+                        os: '#06b6d4',        /* Cyan: Multica */
+                        collab: '#3b82f6',    /* Blue: CrewAI */
+                        runtime: '#a855f7',   /* Purple: Hermes/Kiro */
+                        knowledge: '#10b981', /* Emerald: Skill Wiki / GitHub */
+                        surface: '#0f172a',
+                        bordercolor: '#1e293b'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .gradient-text {
+            background: linear-gradient(135deg, #00e5ff, #3b82f6, #10b981);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .layer-card {
+            background-color: #0f172a;
+            border: 1px solid #1e293b;
+            border-radius: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .layer-card:hover {
+            border-color: #10b981;
+            box-shadow: 0 0 25px rgba(16, 185, 129, 0.15);
+        }
+
+        /* 組織圖連線設定 */
+        .org-tree ul {
+            padding-top: 20px; position: relative;
+            transition: all 0.5s;
+        }
+
+        .org-tree li {
+            float: left; text-align: center;
+            list-style-type: none;
+            position: relative;
+            padding: 20px 5px 0 5px;
+            transition: all 0.5s;
+        }
+
+        .org-tree li::before, .org-tree li::after{
+            content: '';
+            position: absolute; top: 0; right: 50%;
+            border-top: 2px solid #334155;
+            width: 50%; height: 20px;
+        }
+        .org-tree li::after{
+            right: auto; left: 50%;
+            border-left: 2px solid #334155;
+        }
+
+        .org-tree li:only-child::after, .org-tree li:only-child::before {
+            display: none;
+        }
+
+        .org-tree li:only-child{ padding-top: 0;}
+
+        .org-tree li:first-child::before, .org-tree li:last-child::after{
+            border: 0 none;
+        }
+        .org-tree li:first-child::after{
+            border-radius: 5px 0 0 0;
+        }
+        .org-tree li:last-child::before{
+            border-right: 2px solid #334155;
+            border-radius: 0 5px 0 0;
+        }
+
+        .org-tree ul ul::before{
+            content: '';
+            position: absolute; top: 0; left: 50%;
+            border-left: 2px solid #334155;
+            width: 0; height: 20px;
+        }
+
+        .org-node {
+            display: inline-block;
+            padding: 10px 16px;
+            border-radius: 8px;
+            border: 1px solid #1e293b;
+            background: #0f172a;
+            color: #f8fafc;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        
+        .org-node.level-crew { border-color: #3b82f6; background: rgba(59, 130, 246, 0.1); color: #60a5fa;}
+        .org-node.level-leader { border-color: #a855f7; background: rgba(168, 85, 247, 0.1); color: #c084fc;}
+        .org-node.level-worker { border-color: #475569; font-size: 11px; color: #94a3b8;}
+    </style>
+</head>
+<body class="antialiased min-h-screen relative overflow-x-hidden pb-12">
+
+    <!-- 背景科技光暈 -->
+    <div class="fixed top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
+        <div class="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-cyan-950/10 blur-[150px]"></div>
+        <div class="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-emerald-950/10 blur-[150px]"></div>
+    </div>
+
+    <!-- Sticky Navigation -->
+    <nav class="fixed top-0 w-full bg-[#030712]/90 backdrop-blur-lg border-b border-slate-800 z-50">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <div class="font-bold text-xl flex items-center gap-3">
+                <i class="fa-solid fa-brain text-knowledge animate-pulse"></i>
+                <span class="text-white">AI Enterprise OS <span class="text-slate-500 font-normal text-xs ml-2">Architecture v5.0</span></span>
+            </div>
+            <div class="hidden lg:flex gap-6 text-sm font-medium">
+                <a href="#architecture-5l" class="text-slate-400 hover:text-white transition">五層架構定義</a>
+                <a href="#core-clash" class="text-slate-400 hover:text-white transition">元件核心對比</a>
+                <a href="#crew-breakdown" class="text-slate-400 hover:text-white transition">CrewAI 階層</a>
+                <a href="#knowledge-evolution" class="text-knowledge hover:text-emerald-300 transition">Layer 5 自演化</a>
+                <a href="#lifecycle" class="text-slate-400 hover:text-white transition">事件生命週期</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Header / Hero -->
+    <header class="pt-32 pb-12 px-6 max-w-5xl mx-auto text-center border-b border-bordercolor mb-16">
+        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-surface border border-bordercolor text-sm font-medium mb-6 text-slate-300">
+            <span class="w-2 h-2 rounded-full bg-knowledge"></span>
+            全域自進化（Self-Evolving）設計白皮書
+        </div>
+        <h1 class="text-4xl md:text-5xl font-bold text-white mb-6 leading-tight">
+            基於 Git 與 Wiki 演化的<br>
+            <span class="text-gradient-primary">企業級 AI 五層架構系統</span>
+        </h1>
+        <p class="text-lg text-slate-400 max-w-3xl mx-auto">
+            我們將 AI 團隊的管理職責徹底解耦。全新架構不僅涵蓋入口、系統調度與團隊協作，更將「知識與技能」獨立為底層 DNA。Agent 每次執行任務、反思，都將為整間公司累積可重用的程式化技能。
+        </p>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-6">
+
+        <!-- 1. The Five-Layer Architecture Overview -->
+        <section id="architecture-5l" class="mb-24 scroll-mt-24">
+            <h2 class="text-2xl font-bold text-white mb-8 flex items-center gap-3">
+                <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-slate-800 text-slate-300 font-bold border border-slate-700">1</span>
+                宏觀定義：企業級 AI 五層架構（The Five-Layer Stack）
+            </h2>
+
+            <div class="bg-surface border border-bordercolor rounded-2xl p-6 lg:p-10 relative overflow-hidden">
+                <p class="text-slate-400 mb-8 text-sm">
+                    此五層架構解決了過往 AI 系統「無狀態、無法累積經驗、各模組耦合過深」的痛點。以下為由上至下的執行與控制流向：
+                </p>
+
+                <!-- Layer 1: Entry Layer -->
+                <div class="mb-6 relative">
+                    <div class="bg-gateway/5 border border-gateway/30 rounded-xl p-4 text-center relative z-10">
+                        <div class="text-gateway text-xs font-bold uppercase tracking-wider mb-1">Layer 1: Entry & API Gateway (入口與傳輸層)</div>
+                        <div class="text-white font-bold text-base"><i class="fa-solid fa-door-open mr-2 text-gateway"></i>OpenClaw Gateway</div>
+                        <div class="text-xs text-slate-400 mt-1">負責協議轉譯：Telegram / Web / Plane Board / GitHub Webhooks / MCP 接口。不涉入任何專案邏輯。</div>
+                    </div>
+                    <div class="w-px h-6 bg-slate-700 mx-auto"></div>
+                </div>
+
+                <!-- Layer 2: OS Layer -->
+                <div class="mb-6 relative">
+                    <div class="bg-os/5 border-2 border-os/40 rounded-xl p-5 text-center relative z-10 shadow-[0_0_15px_rgba(6,182,212,0.1)]">
+                        <div class="text-os text-xs font-bold uppercase tracking-wider mb-1">Layer 2: AI Team OS (作業系統調度層)</div>
+                        <div class="text-white font-bold text-xl mb-3"><i class="fa-solid fa-server mr-2 text-os"></i>Multica Platform</div>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-[11px] text-slate-300 max-w-2xl mx-auto">
+                            <span class="bg-slate-800/80 border border-slate-700 py-1.5 px-2 rounded">Sprint & Board 同步</span>
+                            <span class="bg-slate-800/80 border border-slate-700 py-1.5 px-2 rounded">Runtime Registry</span>
+                            <span class="bg-slate-800/80 border border-slate-700 py-1.5 px-2 rounded">Event Bus 廣播</span>
+                            <span class="bg-slate-800/80 border border-slate-700 py-1.5 px-2 rounded">Runtime Manager</span>
+                        </div>
+                    </div>
+                    <div class="w-px h-6 bg-slate-700 mx-auto"></div>
+                </div>
+
+                <!-- Layer 3: Collaboration Layer -->
+                <div class="mb-6 relative">
+                    <div class="bg-collab/5 border-2 border-collab/40 rounded-xl p-5 text-center relative z-10 shadow-[0_0_15px_rgba(59,130,246,0.1)]">
+                        <div class="text-collab text-xs font-bold uppercase tracking-wider mb-1">Layer 3: Agent Group Collaboration (團隊協作與解耦層)</div>
+                        <div class="text-white font-bold text-lg mb-3"><i class="fa-solid fa-users-gear mr-2 text-collab"></i>CrewAI Engine</div>
+                        <div class="flex justify-center gap-6 text-xs text-slate-400">
+                            <span><i class="fa-solid fa-user-tie text-blue-400 mr-1"></i>Leader Agent (任務拆解/決策)</span>
+                            <span><i class="fa-solid fa-users text-purple-400 mr-1"></i>Worker Agent Group (協同產出)</span>
+                        </div>
+                    </div>
+                    <div class="w-px h-6 bg-slate-700 mx-auto"></div>
+                </div>
+
+                <!-- Layer 4: Execution Layer -->
+                <div class="mb-6 relative">
+                    <div class="bg-runtime/5 border-2 border-runtime/40 rounded-xl p-5 text-center relative z-10 shadow-[0_0_15px_rgba(168,85,247,0.1)]">
+                        <div class="text-runtime text-xs font-bold uppercase tracking-wider mb-1">Layer 4: Execution Runtime (認知與執行環境層)</div>
+                        <div class="text-white font-bold text-base mb-3"><i class="fa-solid fa-microchip mr-2 text-runtime"></i>Hermes Agent / Kiro CLI / Claude Code / Codex</div>
+                        <div class="text-xs text-slate-400">無狀態（Stateless）執行端，專注於當下任務。提供 Think → Code → Reflect 反思循環。</div>
+                    </div>
+                    <div class="w-px h-6 bg-slate-700 mx-auto"></div>
+                </div>
+
+                <!-- Layer 5: Knowledge Layer -->
+                <div>
+                    <div class="bg-knowledge/10 border-2 border-knowledge/50 rounded-xl p-5 text-center relative z-10 shadow-[0_0_20px_rgba(16,185,129,0.2)]">
+                        <div class="text-knowledge text-xs font-bold uppercase tracking-wider mb-1 animate-pulse">Layer 5: Knowledge & Skill Evolution (知識與技能演化層)</div>
+                        <div class="text-white font-bold text-lg mb-3"><i class="fa-solid fa-book-journal-whills mr-2 text-knowledge"></i>Skill LLM Wiki & GitHub Repositories</div>
+                        <div class="flex justify-center gap-4 text-xs font-mono">
+                            <span class="bg-[#030712] border border-slate-700 px-3 py-1 rounded text-emerald-400"><i class="fa-solid fa-file-code mr-1"></i>skill.md (宣告式提示技能)</span>
+                            <span class="bg-[#030712] border border-slate-700 px-3 py-1 rounded text-emerald-400"><i class="fa-brands fa-github mr-1"></i>GitHub Git-backed</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- 2. Core Comparison Matrix -->
+        <section id="core-clash" class="mb-24 scroll-mt-24">
+            <div class="flex items-center gap-3 mb-8">
+                <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-slate-800 text-slate-300 font-bold border border-slate-700">2</span>
+                <h2 class="text-2xl font-bold text-white">五核心定位對比表（The Matrix）</h2>
+            </div>
+
+            <div class="overflow-x-auto rounded-xl border border-bordercolor">
+                <table class="w-full text-left text-sm border-collapse">
+                    <thead>
+                        <tr class="bg-slate-800 text-slate-300">
+                            <th class="p-4 border-b border-slate-700">維度</th>
+                            <th class="p-4 border-b border-slate-700 text-gateway">OpenClaw (L1)</th>
+                            <th class="p-4 border-b border-slate-700 text-os">Multica (L2)</th>
+                            <th class="p-4 border-b border-slate-700 text-collab">CrewAI (L3)</th>
+                            <th class="p-4 border-b border-slate-700 text-runtime">Hermes / Kiro (L4)</th>
+                            <th class="p-4 border-b border-slate-700 text-knowledge">Skill Wiki (L5)</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800 bg-surface text-slate-300">
+                        <tr>
+                            <td class="p-4 font-bold bg-[#030712]">核心定位</td>
+                            <td class="p-4">多端 API 閘道器</td>
+                            <td class="p-4">AI 團隊作業系統</td>
+                            <td class="p-4">部門任務協作框架</td>
+                            <td class="p-4">執行期認知引擎</td>
+                            <td class="p-4">自演化宣告式知識庫</td>
+                        </tr>
+                        <tr>
+                            <td class="p-4 font-bold bg-[#030712]">管轄對象</td>
+                            <td class="p-4">Webhook, 外部通訊</td>
+                            <td class="p-4">團隊、看板、專案、Event Bus</td>
+                            <td class="p-4">Leader-Worker、任務拆解</td>
+                            <td class="p-4">單一程式碼、推理邏輯</td>
+                            <td class="p-4">Git 提交、skill.md 技能規格</td>
+                        </tr>
+                        <tr>
+                            <td class="p-4 font-bold bg-[#030712]">記憶模式</td>
+                            <td class="p-4">Session 傳輸狀態</td>
+                            <td class="p-4">全局狀態、Heartbeat</td>
+                            <td class="p-4">會話上下文與進度</td>
+                            <td class="p-4">短期 Context / Reflection</td>
+                            <td class="p-4">長期沉澱、Git Commit History</td>
+                        </tr>
+                        <tr>
+                            <td class="p-4 font-bold bg-[#030712]">如何擴充</td>
+                            <td class="p-4">增加渠道 (Channel)</td>
+                            <td class="p-4">註冊新 Team/Runtime</td>
+                            <td class="p-4">調整 Leader/Worker 拓樸</td>
+                            <td class="p-4">新增執行器 (Kiro CLI)</td>
+                            <td class="p-4">自動提報 Pull Request 審查</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 3. CrewAI Hierarchical Structure -->
+        <section id="crew-breakdown" class="mb-24 scroll-mt-24">
+            <div class="flex items-center gap-3 mb-8">
+                <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-collab/20 text-collab font-bold border border-collab">3</span>
+                <h2 class="text-2xl font-bold text-white">部門與群組：CrewAI 企業級階層模型</h2>
+            </div>
+            
+            <p class="text-slate-300 text-sm mb-8">
+                為了避免 Multica 單一節點承擔過多壓力，我們將 Leader 與 Worker 職責徹底劃歸為 **CrewAI (Layer 3)**。
+                Leader 本身即是 Agent，負責分析與任務指派；而 Worker 則是專業的執行單元。在遊戲研發情境下，我們切分為以下四大專業 Crew：
+            </p>
+
+            <!-- Org Tree Visualizer -->
+            <div class="bg-surface border border-bordercolor rounded-2xl p-6 overflow-x-auto">
+                <div class="org-tree w-max mx-auto min-w-full">
+                    <ul class="flex justify-center">
+                        <li>
+                            <div class="org-node" style="border-color: #06b6d4; background: rgba(6,182,212,0.1); color: #00e5ff;"><i class="fa-solid fa-building mr-2"></i>Multica OS</div>
+                            <ul>
+                                <!-- Game Dev Crew -->
+                                <li>
+                                    <div class="org-node level-crew"><i class="fa-solid fa-gamepad mr-1"></i>Game Dev Crew</div>
+                                    <ul>
+                                        <li>
+                                            <div class="org-node level-leader">Dev Leader Agent</div>
+                                            <ul>
+                                                <li><div class="org-node level-worker">Planner (Kiro)</div></li>
+                                                <li><div class="org-node level-worker">Frontend (Hermes)</div></li>
+                                                <li><div class="org-node level-worker">QA Agent (OpenClaw)</div></li>
+                                            </ul>
+                                        </li>
+                                    </ul>
+                                </li>
+                                <!-- AIBI Crew -->
+                                <li>
+                                    <div class="org-node level-crew"><i class="fa-solid fa-chart-line mr-1"></i>AIBI Crew</div>
+                                    <ul>
+                                        <li>
+                                            <div class="org-node level-leader">BI Director Agent</div>
+                                            <ul>
+                                                <li><div class="org-node level-worker">Revenue Leader</div></li>
+                                                <li><div class="org-node level-worker">Retention Worker</div></li>
+                                            </ul>
+                                        </li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. Deep Dive: Layer 5 - Self-Evolving Knowledge & Skill Wiki -->
+        <section id="knowledge-evolution" class="mb-24 scroll-mt-24">
+            <div class="flex items-center gap-3 mb-8">
+                <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-knowledge/20 text-knowledge font-bold border border-knowledge">4</span>
+                <h2 class="text-2xl font-bold text-white">Layer 5: 技能與知識庫的自演化機制（Self-Evolution）</h2>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="layer-card p-6 border-t-4 border-t-knowledge">
+                    <h3 class="text-lg font-bold text-white mb-3 flex items-center gap-2">
+                        <i class="fa-brands fa-github text-emerald-400"></i> 基於 Git 的 Skill Wiki 治理
+                    </h3>
+                    <p class="text-sm text-slate-300 mb-4 leading-relaxed">
+                        我們打破了過往「人工手寫單行提示詞」或「過度僵硬的 YAML 格式」舊思維。在五層架構中，採用 <strong>Markdown 宣告（Skill as Markdown）</strong>，並託管於 GitHub，其自演化治理邏輯如下：
+                    </p>
+                    <div class="bg-[#030712] p-4 rounded-lg font-mono text-xs text-slate-400 space-y-2">
+                        <div class="text-purple-400">1. Hermes A (Coding) 成功修復 Redis 斷線 Bug</div>
+                        <div class="text-slate-600 pl-4">↓ 自我提煉 (Reflection) 出排錯流程與執行語境</div>
+                        <div class="text-purple-400">2. Hermes 撰寫全新 skill.md 規格說明檔</div>
+                        <div class="text-slate-600 pl-4">↓ 透過 Git 送出新技能 PR 至 Skill Wiki 倉庫</div>
+                        <div class="text-cyan-400 font-bold">3. Multica OS 攔截 PR，進行系統相容性自動測試</div>
+                        <div class="text-slate-600 pl-4">↓ 自動 Merge 並 Push 到 GitHub Release 分支</div>
+                        <div class="text-emerald-400">4. 技能發布至全域 Skill LLM Wiki 供全體 Agent 隨插即用</div>
+                    </div>
+                </div>
+
+                <div class="layer-card p-6">
+                    <h3 class="text-lg font-bold text-white mb-3 flex items-center gap-2">
+                        <i class="fa-regular fa-file-code text-cyan-400"></i> skill.md 宣告式規格範例（符合 Claude 開發實踐）
+                    </h3>
+                    <p class="text-xs text-slate-400 mb-4">
+                        採用 Front-matter 結構結合結構化 Markdown，方便 LLM 做 Prompt-caching 與語意解析：
+                    </p>
+                    <pre class="bg-[#030712] p-4 rounded-lg text-[11px] text-emerald-400 overflow-x-auto font-mono leading-normal">
+---
+name: "redis_cluster_failover_patch"
+version: "1.2.0"
+author: "Hermes-Worker-A"
+dependencies:
+  - "kiro-cli >= 1.4.2"
+  - "python-redis-client"
+review_status: "approved_by_multica_os"
+tags: ["infrastructure", "database"]
+---
+
+# 技能：Redis 叢集故障轉移自動修復 (redis_cluster_failover_patch)
+
+## 1. 觸發情境與特徵 (Triggers & Signatures)
+* **日誌特徵**：出現 `redis-timeout` 關鍵字
+* **系統錯誤碼**：拋出 `ERR_CONN_LIMIT` 網路極限錯誤
+
+## 2. 核心診斷工具與執行步驟
+請在偵測到故障時，呼叫底層 Kiro CLI 並執行以下指令：
+
+```bash
+kiro-cli run check-nodes --auto-heal
+```
+
+## 3. 自我反思與評估機制 (Reflection Loop)
+* **反思信心分數門檻**：`0.85`
+* **驗證指標**：
+  1. 修復後，執行 `kiro-cli ping` 延遲需低於 `5ms`
+  2. 叢集主從狀態 (Master/Slave) 恢復正常拓樸
+  
+## 4. 人類反饋與邊界條件 (Few-shot Examples)
+如果遇到 `ReadOnlyError`，請在執行修復前主動重新配置 `sentinel` 的主節點，切勿直接進行強行 Heal 寫入。</pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- 5. The BUG-103 Lifecycle Sequence -->
+        <section id="lifecycle" class="mb-12 scroll-mt-24">
+            <div class="flex items-center gap-3 mb-8">
+                <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-slate-800 text-slate-300 font-bold border border-slate-700">5</span>
+                <h2 class="text-2xl font-bold text-white">五層事件驅動生命週期：修復魚群碰撞 Bug</h2>
+            </div>
+
+            <div class="bg-surface border border-bordercolor rounded-2xl p-6 lg:p-8 relative">
+                <!-- Timeline connection line -->
+                <div class="absolute left-[35px] top-12 bottom-12 w-0.5 bg-slate-700"></div>
+
+                <div class="space-y-8 relative z-10">
+                    <!-- Step 1 -->
+                    <div class="flex gap-6">
+                        <div class="w-10 h-10 rounded-full bg-gateway flex items-center justify-center text-white font-bold flex-shrink-0 z-10 border-4 border-surface"><i class="fa-solid fa-input">1</i></div>
+                        <div>
+                            <h4 class="text-base font-bold text-white mb-1"><span class="text-gateway">L1 入口層 (OpenClaw)</span> 監聽並標準化事件</h4>
+                            <p class="text-xs text-slate-400">
+                                專案看板 Plane 上建立一個 Issue <code>BUG-103 修正魚群碰撞邏輯</code>。OpenClaw 擷取此 Webhook 請求，並標準化為 Unified Event 格式轉發。
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Step 2 -->
+                    <div class="flex gap-6">
+                        <div class="w-10 h-10 rounded-full bg-os flex items-center justify-center text-slate-950 font-bold flex-shrink-0 z-10 border-4 border-surface"><i class="fa-solid fa-gears">2</i></div>
+                        <div>
+                            <h4 class="text-base font-bold text-white mb-1"><span class="text-os">L2 作業系統層 (Multica)</span> 資源分派與狀態管理</h4>
+                            <p class="text-xs text-slate-400">
+                                Multica 讀取事件，根據標籤匹配，透過 Event Bus 通知並分配該 Issue 給 <strong>Game Dev Crew (L3)</strong>，同時於控制面板將任務標記為 Busy。
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Step 3 -->
+                    <div class="flex gap-6">
+                        <div class="w-10 h-10 rounded-full bg-collab flex items-center justify-center text-white font-bold flex-shrink-0 z-10 border-4 border-surface"><i class="fa-solid fa-users-viewfinder">3</i></div>
+                        <div>
+                            <h4 class="text-base font-bold text-white mb-1"><span class="text-collab">L3 協作層 (CrewAI)</span> 任務細分與成果合併</h4>
+                            <p class="text-xs text-slate-400">
+                                Game Dev Crew 內部的 <strong>Dev Leader Agent</strong> 收到任務，利用 LLM 將魚群碰撞拆解為「前端物理引擎修正」與「後端碰撞判定驗證」。分別分派給各自對應的 Worker。
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Step 4 -->
+                    <div class="flex gap-6">
+                        <div class="w-10 h-10 rounded-full bg-runtime flex items-center justify-center text-white font-bold flex-shrink-0 z-10 border-4 border-surface"><i class="fa-solid fa-terminal">4</i></div>
+                        <div>
+                            <h4 class="text-base font-bold text-white mb-1"><span class="text-runtime">L4 執行層 (Hermes / Kiro CLI)</span> 執行思考、反思與編碼</h4>
+                            <p class="text-xs text-slate-400">
+                                Worker 綁定的 <strong>Hermes Engine</strong> 進入 Think-Code-Reflect 循環。利用 Kiro CLI 呼叫測試集確保修復正確。完成後，將修正後的程式碼與反思總結之新技能描述檔（skill.md）上報。
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Step 5 -->
+                    <div class="flex gap-6">
+                        <div class="w-10 h-10 rounded-full bg-knowledge flex items-center justify-center text-slate-950 font-bold flex-shrink-0 z-10 border-4 border-surface"><i class="fa-solid fa-dna">5</i></div>
+                        <div>
+                            <h4 class="text-base font-bold text-white mb-1"><span class="text-knowledge">L5 知識層 (Skill LLM Wiki & GitHub)</span> 技能審核與全域沈澱</h4>
+                            <p class="text-xs text-slate-400">
+                                Hermes 送出的 <code>New Skill PR (包含 skill.md)</code> 透過 Event Bus 到達 Multica。Multica 完成架構與語法驗證後，自動將新技能 Commit 並 Push 提交至 GitHub 背後的 Skill Wiki，從此，其他 Crew 的所有 Agent 均解鎖了該問題的自動化處理技能。
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="border-t border-bordercolor text-center py-8 text-slate-600 text-xs bg-black/40 mt-12">
+        <p>AI Enterprise OS Blueprint &copy; 2026. Self-Evolving Autonomous Organizations.</p>
+    </footer>
+
+</body>
+</html>
