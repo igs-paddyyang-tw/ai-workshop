@@ -127,12 +127,47 @@ my-team/
 # 批次產出所有 agent 的 .kiro/（一次完成）
 python3 .kiro/skills/ark-kiro-init/scripts/build_kiro.py my-team/team.yaml my-team
 
-# clone 共用 Skills
+# 依角色自動安裝對應 Skills（leader 裝規劃類、coder 裝開發類...）
 python3 .kiro/skills/ark-kiro-init/scripts/build_kiro.py --clone-skills my-team
 
 # 驗證
 python3 .kiro/skills/ark-kiro-init/scripts/build_kiro.py --validate my-team
 ```
+
+### 產出了什麼？
+
+每個 Agent 現在有完整的 `.kiro/` 配置：
+
+```
+agents/pm-agent/.kiro/
+├── steering/
+│   └── SOUL.md          ← 含 🎭人格 + 📚自我成長 + 📂知識庫層級
+├── skills/              ← 依角色自動安裝（pm 有 8 個 Skills）
+│   ├── ark-superpowers/
+│   ├── ark-grill-me/
+│   ├── ark-wiki-engine/
+│   └── ...
+└── settings/mcp.json
+```
+
+### 確認 Skills 安裝
+
+```bash
+ls my-team/agents/pm-agent/.kiro/skills/
+# → ark-superpowers ark-grill-me ark-wiki-engine ark-code-spec-validator ...
+```
+
+### 角色 → Skills 對照
+
+| 角色 | 自動安裝的 Skills |
+|------|-----------------|
+| admin | wiki-engine + env-doctor + security-audit + ... |
+| leader (pm) | superpowers + grill-me + project-planning + wiki-engine + ... |
+| ai-dev | skill-creator + grill-me + llm-tools + wiki-engine + ... |
+| coder | skill-creator + webapp-generator + code-review + wiki-engine + ... |
+| qa | test-runner + code-review + code-spec-validator + wiki-engine + ... |
+
+> 💡 **所有 Agent 都有 ark-wiki-engine** — 這是自我成長的核心。Agent 執行任務後會自動將學到的知識記錄到 `knowledge/raw/`，排程定期 ingest 成結構化知識。
 
 ---
 
