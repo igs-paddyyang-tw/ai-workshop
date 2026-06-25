@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Workshop — 教學導覽</title>
+<style>
+:root{--bg:#0f172a;--card:#1e293b;--text:#e2e8f0;--muted:#94a3b8;--accent:#22d3ee;--border:#334155;--green:#22c55e}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.7;padding:2rem;max-width:960px;margin:0 auto}
+h1{color:var(--accent);font-size:2rem;margin:1.5rem 0 .5rem;border-bottom:2px solid var(--border);padding-bottom:.5rem}
+h2{color:var(--accent);font-size:1.4rem;margin:2rem 0 .8rem}
+h3{color:#f1f5f9;font-size:1.1rem;margin:1.2rem 0 .5rem}
+p{margin:.5rem 0}
+code{background:var(--card);padding:.15rem .4rem;border-radius:4px;font-size:.9em;color:var(--accent)}
+pre{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:1rem;overflow-x:auto;margin:1rem 0}
+pre code{background:none;padding:0;color:var(--text)}
+table{width:100%;border-collapse:collapse;margin:1rem 0}
+th,td{border:1px solid var(--border);padding:.5rem .8rem;text-align:left}
+th{background:var(--card);color:var(--accent)}
+tr:nth-child(even){background:rgba(30,41,59,.5)}
+blockquote{border-left:3px solid var(--accent);padding-left:1rem;color:var(--muted);margin:1rem 0}
+.badge{display:inline-block;background:var(--accent);color:var(--bg);padding:.2rem .6rem;border-radius:12px;font-size:.8em;font-weight:bold;margin-right:.3rem}
+.formula{background:var(--card);border:2px solid var(--accent);border-radius:8px;padding:1.5rem;margin:1.5rem 0;text-align:center;font-size:1.1em}
+.flow{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:1.2rem;margin:1rem 0;font-family:monospace;white-space:pre-line;font-size:.85em;line-height:1.8}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin:1.5rem 0}
+.card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:1rem;text-align:center;transition:border-color .2s}
+.card:hover{border-color:var(--accent)}
+.card .num{font-size:2rem;color:var(--accent)}
+.card .label{font-size:.8rem;color:var(--muted);margin-top:.3rem}
+.card .title{font-size:.9rem;font-weight:600;margin-top:.4rem}
+hr{border:none;border-top:1px solid var(--border);margin:2rem 0}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+</style>
+</head>
+<body>
+
+<h1>🎓 AI Workshop — 教學導覽</h1>
+<blockquote>漸進式 AI Agent 開發教學：Bot → Team → Platform → Skills → Wiki<br>對應 AI 企業級五層架構，逐步建置自演化 AI 生態系。</blockquote>
+
+<hr>
+
+<h2>💡 教學理念</h2>
+
+<h3>兩條路到同一目的地</h3>
+<table>
+<thead><tr><th>路徑</th><th>方式</th><th>時間</th><th>適合</th></tr></thead>
+<tbody>
+<tr><td><strong>教學路徑</strong></td><td>Workshop 01→02→03→04→05</td><td>5×50 min</td><td>想理解每一層的人</td></tr>
+<tr><td><strong>快速路徑</strong></td><td>build_team.py + build_kiro.py</td><td>5 min</td><td>已懂架構，想直接跑</td></tr>
+</tbody>
+</table>
+
+<p>兩條路最終產出一模一樣的系統。Workshop 教你<strong>為什麼</strong>這樣設計，而非只教你<strong>怎麼用</strong>。</p>
+
+<div class="formula">
+<code>ark-agent-team-builder</code>（骨架 + Phase 1-4）<br>
++ <code>ark-kiro-init</code>（.kiro 配置 + Skills 預裝 + 知識庫）<br>
+<span style="font-size:1.5em">═══════════════════</span><br>
+= <strong>完整 AI Agent Team 平台</strong>（自演化、自我成長）
+</div>
+
+<hr>
+
+<h2>📚 每堂課讓你理解什麼</h2>
+
+<div class="card-grid">
+<div class="card"><div class="num">01</div><div class="title">AI Bot</div><div class="label">Agent 怎麼「思考」<br>L4 執行層</div></div>
+<div class="card"><div class="num">02</div><div class="title">Agent Team</div><div class="label">Agent 怎麼「協作」<br>L1-L5 全部</div></div>
+<div class="card"><div class="num">03</div><div class="title">Platform</div><div class="label">平台怎麼「運作」<br>L1+L2</div></div>
+<div class="card"><div class="num">04</div><div class="title">Skills</div><div class="label">能力怎麼「開發」<br>L4→L5</div></div>
+<div class="card"><div class="num">05</div><div class="title">LLM Wiki</div><div class="label">知識怎麼「成長」<br>L5</div></div>
+</div>
+
+<hr>
+
+<h2>🏗️ 五層架構學習路線</h2>
+
+<div class="flow">Workshop 01        Workshop 02        Workshop 03        Workshop 04        Workshop 05
+┌──────────┐      ┌──────────┐      ┌──────────┐      ┌──────────┐      ┌──────────┐
+│ L4 單兵  │  →   │ L1-L5    │  →   │ L1+L2    │  →   │ L4→L5    │  →   │ L5 知識  │
+│ 執行器   │      │ 全平台   │      │ 理解架構 │      │ 技能開發 │      │ 自演化   │
+└──────────┘      └──────────┘      └──────────┘      └──────────┘      └──────────┘
+  理解思考          建立團隊           理解運作           理解開發          理解成長</div>
+
+<hr>
+
+<h2>📋 Workshop 列表</h2>
+<table>
+<thead><tr><th>#</th><th>Workshop</th><th>時長</th><th>核心 Skill</th><th>學什麼</th></tr></thead>
+<tbody>
+<tr><td>01</td><td>AI Bot</td><td>50 min</td><td><code>ark-ai-bot-builder</code></td><td>單一 Agent 認知循環 + 意圖路由</td></tr>
+<tr><td>02</td><td>Agent Team</td><td>50 min</td><td><code>ark-agent-team-builder</code> + <code>ark-kiro-init</code></td><td>多 Agent 協作 + 完整平台產出</td></tr>
+<tr><td>03</td><td>Platform</td><td>50 min</td><td>（續用 02）</td><td>API + Web + A2A + 五層架構</td></tr>
+<tr><td>04</td><td>Skills</td><td>50 min</td><td><code>ark-grill-me</code> + <code>ark-superpowers</code> + <code>ark-code-spec-validator</code></td><td>Spec-Driven 開發完整迴圈</td></tr>
+<tr><td>05</td><td>LLM Wiki</td><td>50 min</td><td><code>ark-wiki-engine</code></td><td>RAG 問答 + 知識圖譜 + 自演化</td></tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2>🧠 知識庫核心規則</h2>
+
+<div class="flow">所有知識先進 raw/ → 排程 LLM ingest → wiki/（唯一產出方式）
+
+讀取優先：
+  1️⃣ 自己的 knowledge/wiki/（私有）
+  2️⃣ 根目錄 knowledge/wiki/（共用）
+
+寫入規則：
+  Agent → 自己的 knowledge/raw/
+  人類  → 根目錄 knowledge/raw/
+  wiki/ → 只能由 LLM ingest 產出 ❌ 不可手動寫</div>
+
+<hr>
+
+<h2>⚡ 快速開始</h2>
+
+<h3>教學路徑</h3>
+<pre><code># 取得 Skills
+git clone https://github.com/igs-paddyyang-tw/ark-agent-skills .kiro/skills/
+
+# 選一個 Workshop 開始
+cd 01-ai-bot-workshop && cat QUICKSTART.md</code></pre>
+
+<h3>快速路徑（一鍵產出完整平台）</h3>
+<pre><code>python3 .kiro/skills/ark-agent-team-builder/scripts/build_team.py my-team
+python3 .kiro/skills/ark-kiro-init/scripts/build_kiro.py my-team/team.yaml my-team
+python3 .kiro/skills/ark-kiro-init/scripts/build_kiro.py --clone-skills my-team</code></pre>
+
+<hr>
+
+<h2>📌 前置條件</h2>
+<table>
+<thead><tr><th>項目</th><th>版本</th><th>用於</th></tr></thead>
+<tbody>
+<tr><td>Python</td><td>3.12+</td><td>全部</td></tr>
+<tr><td>Git</td><td>任何</td><td>全部</td></tr>
+<tr><td>Kiro CLI</td><td>2.7+</td><td>Workshop 02+</td></tr>
+<tr><td>Telegram</td><td>Bot Token</td><td>01, 02</td></tr>
+<tr><td>Gemini API Key</td><td>免費</td><td>01, 05</td></tr>
+<tr><td>Node.js</td><td>20+</td><td>僅 03</td></tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2>🔖 版本對應</h2>
+<table>
+<thead><tr><th>ai-workshop</th><th>ark-agent-team-builder</th><th>ark-kiro-init</th><th>產出等同</th></tr></thead>
+<tbody>
+<tr><td>目前</td><td>v2.1</td><td>v2.1</td><td>ai-team-agent v1.0.0</td></tr>
+</tbody>
+</table>
+
+<p style="margin-top:2rem;color:var(--muted);font-size:.85em">作者：paddyyang ｜ 更新：2026-06-25</p>
+</body>
+</html>
