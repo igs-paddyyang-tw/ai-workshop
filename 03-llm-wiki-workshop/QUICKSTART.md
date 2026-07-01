@@ -190,7 +190,7 @@ uvicorn src.server.main:app --reload --port 8000
 ### 4.1 複製範例文件到 raw/
 
 ```bash
-cp ai-workshop/05-llm-wiki-workshop/sample-docs/*.md knowledge/my-wiki-bot/raw/
+cp ai-workshop/03-llm-wiki-workshop/sample-docs/*.md knowledge/my-wiki-bot/raw/
 ```
 
 ### 4.2 觸發 ingest
@@ -333,7 +333,7 @@ status: seedling | developing | mature
 ## 教材包檔案說明
 
 ```
-05-llm-wiki-workshop/
+03-llm-wiki-workshop/
 ├── QUICKSTART.md              ← 本文件（50 分鐘快速版）
 ├── quickstart.html            ← HTML 版首頁
 └── sample-docs/               ← 餵入用的範例知識文件

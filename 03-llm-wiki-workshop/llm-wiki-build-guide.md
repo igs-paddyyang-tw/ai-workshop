@@ -192,7 +192,7 @@ uvicorn src.server.main:app --reload --port 8000
 💻 複製範例到 raw/：
 
 ```bash
-cp ai-workshop/05-llm-wiki-workshop/sample-docs/*.md knowledge/my-wiki-bot/raw/
+cp ai-workshop/03-llm-wiki-workshop/sample-docs/*.md knowledge/my-wiki-bot/raw/
 ```
 
 範例文件包含：

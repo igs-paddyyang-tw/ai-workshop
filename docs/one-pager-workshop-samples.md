@@ -32,11 +32,11 @@ tags: [ai-workshop, sample, teaching, quick-start]
 
 ```
 github.com/igs-paddyyang-tw/ai-workshop-samples/
-├── 01-ai-bot/              ← Workshop 01 完整可跑的 Bot
-├── 02-agent-team/          ← Workshop 02 完整可跑的 Team
-├── 03-platform/            ← Workshop 03 完整可跑的 Platform（= 02 + Web）
-├── 04-skills-demo/         ← Workshop 04 Skills 開發範例
-├── 05-llm-wiki/            ← Workshop 05 Wiki + RAG 完整可跑
+├── 01-agent/              ← Workshop 01 完整可跑的 Bot
+├── 04-agent-team/          ← Workshop 02 完整可跑的 Team
+├── 05-platform/            ← Workshop 03 完整可跑的 Platform（= 02 + Web）
+├── 02-skills/         ← Workshop 04 Skills 開發範例
+├── 03-llm-wiki/            ← Workshop 05 Wiki + RAG 完整可跑
 └── README.md               ← 總導覽
 ```
 
@@ -58,7 +58,7 @@ github.com/igs-paddyyang-tw/ai-workshop-samples/
 
 ```bash
 git clone https://github.com/igs-paddyyang-tw/ai-workshop-samples.git
-cd ai-workshop-samples/02-agent-team
+cd ai-workshop-samples/04-agent-team
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env        # 填入 TELEGRAM_BOT_TOKEN
@@ -77,7 +77,7 @@ python start.py             # 啟動！
 
 ## 5 個 Sample 的產出規格
 
-### 01-ai-bot
+### 01-agent
 
 | 項目 | 內容 |
 |------|------|
@@ -86,7 +86,7 @@ python start.py             # 啟動！
 | 學員體驗 | `/start` → 問問題 → AI 回答 → 觸發新聞 |
 | 需要的 Key | `TELEGRAM_BOT_TOKEN` + `GEMINI_API_KEY`（可選） |
 
-### 02-agent-team
+### 04-agent-team
 
 | 項目 | 內容 |
 |------|------|
@@ -95,7 +95,7 @@ python start.py             # 啟動！
 | 學員體驗 | `/agents` → `/assign 寫 API` → 看派工 → `/board` |
 | 需要的 Key | `TELEGRAM_BOT_TOKEN` |
 
-### 03-platform
+### 05-platform
 
 | 項目 | 內容 |
 |------|------|
@@ -104,7 +104,7 @@ python start.py             # 啟動！
 | 學員體驗 | curl API → 開 /board 頁面 → Telegram 指令 |
 | 需要的 Key | `TELEGRAM_BOT_TOKEN` |
 
-### 04-skills-demo
+### 02-skills
 
 | 項目 | 內容 |
 |------|------|
@@ -113,7 +113,7 @@ python start.py             # 啟動！
 | 學員體驗 | 拷問設計 → 產出 Spec → 建 Skill → 驗證 Drift |
 | 需要的 Key | 無（純本地 Kiro CLI） |
 
-### 05-llm-wiki
+### 03-llm-wiki
 
 | 項目 | 內容 |
 |------|------|
@@ -128,10 +128,10 @@ python start.py             # 啟動！
 
 ```bash
 # 每個 sample 用對應的 builder 一鍵產出
-python3 .kiro/skills/ark-ai-bot-builder/scripts/build_bot.py samples/01-ai-bot
-python3 .kiro/skills/ark-agent-team-builder/scripts/build_team.py samples/02-agent-team
+python3 .kiro/skills/ark-ai-bot-builder/scripts/build_bot.py samples/01-agent
+python3 .kiro/skills/ark-agent-team-builder/scripts/build_team.py samples/04-agent-team
 # 03 = 複製 02
-cp -r samples/02-agent-team samples/03-platform
+cp -r samples/04-agent-team samples/05-platform
 # 04 = 最小版 + 範例 Skills
 # 05 = Web + Wiki + pre-ingest sample-docs
 ```
@@ -152,11 +152,11 @@ cp -r samples/02-agent-team samples/03-platform
 
 | 任務 | 時間 |
 |------|------|
-| 01-ai-bot sample 產出 + README | 30 min |
-| 02-agent-team sample 產出 + README | 30 min |
-| 03-platform（= 02 延伸） | 15 min |
-| 04-skills-demo 手動組裝 | 30 min |
-| 05-llm-wiki sample + pre-ingest | 30 min |
+| 01-agent sample 產出 + README | 30 min |
+| 04-agent-team sample 產出 + README | 30 min |
+| 05-platform（= 02 延伸） | 15 min |
+| 02-skills 手動組裝 | 30 min |
+| 03-llm-wiki sample + pre-ingest | 30 min |
 | 總導覽 README | 15 min |
 | **合計** | **~2.5 小時** |
 

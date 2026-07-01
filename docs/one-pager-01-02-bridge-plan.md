@@ -135,13 +135,13 @@ cp my-team/agents/market-agent/output/*.md knowledge/my-wiki-bot/raw/
 
 | # | 任務 | 影響範圍 | 工時 |
 |---|------|---------|------|
-| 1 | 01 build-guide 加 Step 7（瓶頸體驗） | `01-ai-bot-workshop/ai-bot-build-guide.md` | 20 min |
-| 2 | 01 QUICKSTART 結尾加「下堂預告」 | `01-ai-bot-workshop/QUICKSTART.md` | 10 min |
-| 3 | 02 build-guide 加「01 對照表」section | `02-agent-team-workshop/agent-team-build-guide.md` | 20 min |
-| 4 | 02 QUICKSTART 開頭加「01→02 升級說明」 | `02-agent-team-workshop/QUICKSTART.md` | 10 min |
-| 5 | 03 build-guide Step 3 加程式碼閱讀 | `03-platform-workshop/platform-build-guide.md` | 15 min |
-| 6 | 04 build-guide 前置改用 my-team | `04-skills-workshop/skills-build-guide.md` | 20 min |
-| 7 | 05 build-guide Step 4 加 04 產出匯入 | `05-llm-wiki-workshop/llm-wiki-build-guide.md` | 15 min |
+| 1 | 01 build-guide 加 Step 7（瓶頸體驗） | `01-agent-workshop/ai-bot-build-guide.md` | 20 min |
+| 2 | 01 QUICKSTART 結尾加「下堂預告」 | `01-agent-workshop/QUICKSTART.md` | 10 min |
+| 3 | 02 build-guide 加「01 對照表」section | `04-agent-team-workshop/agent-team-build-guide.md` | 20 min |
+| 4 | 02 QUICKSTART 開頭加「01→02 升級說明」 | `04-agent-team-workshop/QUICKSTART.md` | 10 min |
+| 5 | 03 build-guide Step 3 加程式碼閱讀 | `05-platform-workshop/platform-build-guide.md` | 15 min |
+| 6 | 04 build-guide 前置改用 my-team | `02-skills-workshop/skills-build-guide.md` | 20 min |
+| 7 | 05 build-guide Step 4 加 04 產出匯入 | `03-llm-wiki-workshop/llm-wiki-build-guide.md` | 15 min |
 | 8 | README.md 更新「科技日報」貫穿說明 | `README.md` | 15 min |
 | 9 | 新增 `shared/bridge-diagram.md` 視覺化 | `shared/bridge-diagram.md` | 20 min |
 | **合計** | | | **~2.5 hr** |
