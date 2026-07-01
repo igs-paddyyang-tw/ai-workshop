@@ -1,0 +1,26 @@
+# AI Workshop — 團隊配置（Workshop 04 Agent Team）
+agents:
+  - id: architect
+    name: Architect
+    role: 系統架構設計
+    skills: [system-design, api-design, database]
+
+  - id: backend
+    name: Backend Dev
+    role: 後端開發
+    skills: [python, fastapi, database, api-design]
+
+  - id: frontend
+    name: Frontend Dev
+    role: 前端開發
+    skills: [typescript, react, css, html]
+
+  - id: market
+    name: Market Researcher
+    role: 市場研究 + 新聞爬蟲
+    skills: [web-scraping, news, data-analysis]
+
+  - id: qa
+    name: QA Engineer
+    role: 測試與品質
+    skills: [pytest, e2e, security, code-review]
