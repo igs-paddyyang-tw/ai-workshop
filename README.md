@@ -67,6 +67,28 @@ Workshop 01        Workshop 02        Workshop 03        Workshop 04        Work
 | 04 | [Skills](04-skills-workshop/) | 50 min | `ark-grill-me` + `ark-superpowers` + `ark-code-spec-validator` | Spec-Driven 開發完整迴圈 |
 | 05 | [LLM Wiki](05-llm-wiki-workshop/) | 50 min | `ark-wiki-engine` | RAG 問答 + 知識圖譜 + 自演化 |
 
+### 🗞️ 貫穿案例：科技日報的五次升級
+
+「科技日報」是貫穿五堂課的持續案例，同一個需求（每日產出科技新聞摘要），技術逐步升級：
+
+| Workshop | 日報怎麼做 | 升級了什麼 | 瓶頸在哪 |
+|----------|-----------|-----------|----------|
+| 01 | 手寫爬蟲 + Gemini CLI → HTML | 從零到有 | 一人全做，序列阻塞 |
+| 02 | market 爬 + report 渲染 → TG 推送 | 分工並行 | 爬蟲品質靠經驗 |
+| 03 | `POST /api/v1/workflows/run` 觸發 | API 化，可整合外部系統 | 缺標準化規格 |
+| 04 | Spec-Driven 重構 news_scraper Skill | 有 Spec、有驗證、可信任 | 學到的知識沒沉澱 |
+| 05 | 日報結果 ingest → Wiki 趨勢知識庫 | 一次學會，永久可查 | — |
+
+```
+01 手動做        02 團隊分工       03 API 觸發       04 品質把關       05 知識沉澱
+┌─────────┐    ┌─────────┐    ┌─────────┐    ┌─────────┐    ┌─────────┐
+│ 一人全做 │ →  │ 分工並行 │ →  │ 標準 API │ →  │ Spec 驗證│ →  │ Wiki 累積│
+│ 序列阻塞 │    │ 故障隔離 │    │ 可整合   │    │ Score≥90 │    │ 全域可查 │
+└─────────┘    └─────────┘    └─────────┘    └─────────┘    └─────────┘
+```
+
+> 💡 每堂課都能獨立運行（可跳堂），但連續上完會看到「同一個需求被逐步升級」的完整旅程。
+
 ## 前置條件
 
 - Python 3.12+

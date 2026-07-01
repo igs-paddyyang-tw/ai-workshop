@@ -209,6 +209,50 @@ pending → assigned → running → completed
 - `analyze` 等 `fetch` 完成後才開始
 - `render` 等 `analyze` 完成後才開始
 
+### 3.6 打開程式碼看 A2A 背後邏輯（選讀）
+
+> 💡 不只 curl API — 打開程式碼看「02 派工時 leader 背後在做的事」。
+
+💻 打開 TaskGraph（任務依賴解析）：
+
+```bash
+# 找到核心檔案
+cat src/coordinator/task_graph.py | head -60
+```
+
+**重點看：**
+- `resolve_dependencies()` — 怎麼判斷哪些任務可以並行、哪些要等
+- `topological_sort()` — 任務排序演算法（DAG）
+- 這就是 02 Step 5 你派工時，leader 背後「拆解任務順序」的邏輯
+
+💻 打開 Agent Discovery（自動配對）：
+
+```bash
+cat src/coordinator/discovery.py | head -60
+```
+
+**重點看：**
+- `match_agent(task)` — 根據 capabilities 標籤匹配最適 Agent
+- `score_match()` — 匹配分數計算
+- 這就是「leader 怎麼決定派給 market-agent 而不是 coder-agent」
+
+💻 看一個真實的派工流程：
+
+```bash
+# 查看審計日誌，找最近一次任務派工
+curl -s http://localhost:8000/api/admin/audit | python3 -m json.tool | head -30
+```
+
+對照程式碼，你可以追蹤：
+1. 需求進入 → `src/gateway/` 接收
+2. 意圖分析 → `src/coordinator/` 拆解
+3. Agent 匹配 → `discovery.py` 配對
+4. 任務執行 → `src/runtime/` 啟動 kiro-cli
+5. 結果回報 → event → 通知
+
+> 📌 **01 的 planner.py 只做第 2 步（意圖路由）；02 的 coordinator/ 做了 2-4 步。**
+> 這就是「單兵升級為團隊」在程式碼層面的體現。
+
 ---
 
 ## Step 4：四層架構理解

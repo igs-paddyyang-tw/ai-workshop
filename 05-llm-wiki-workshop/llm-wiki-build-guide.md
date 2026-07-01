@@ -200,6 +200,35 @@ cp ai-workshop/05-llm-wiki-workshop/sample-docs/*.md knowledge/my-wiki-bot/raw/
 - `agent-design-notes.md` — 系統類（五層架構，含 `[[wikilink]]`）
 - `common-errors.md` — 實用類（錯誤排查）
 
+### 4.1b 匯入你的真實知識（選配，做過 04 的人）
+
+> 💡 如果你在 Workshop 04 完成了 Spec-Driven 開發，把你的產出也匯入 Wiki。
+> 這就是「04 產出 → 05 沉澱」的自演化循環。
+
+💻 匯入 04 產出的 Spec：
+
+```bash
+# 如果你在 my-team 做了 04 的拷問 + Spec
+cp my-team/docs/specs/news-scraper-spec.md knowledge/my-wiki-bot/raw/
+
+# 匯入你寫的 SKILL.md
+cp my-team/.kiro/skills/my-daily-news/SKILL.md knowledge/my-wiki-bot/raw/daily-news-skill.md
+```
+
+💻 匯入歷史日報（讓 Wiki 累積產業知識）：
+
+```bash
+# 如果 market-agent 有產出過日報
+cp my-team/agents/market-agent/output/*.md knowledge/my-wiki-bot/raw/
+```
+
+**匯入後的效果：**
+- 你可以問 Wiki「news_scraper 的失敗重試策略是什麼？」→ 引用你自己的 Spec 回答
+- 你可以問「上週 AI 產業有什麼重大事件？」→ 引用歷史日報回答
+- 這就是 L5 的核心價值：**一次學會，永久可查**
+
+> ⚠️ 沒做過 04？沒關係，用 4.1 的 sample-docs 即可完成本堂所有操作。
+
 ### 4.2 觸發 ingest
 
 📝 在 Chat 輸入：

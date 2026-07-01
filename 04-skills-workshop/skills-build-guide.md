@@ -38,6 +38,28 @@ language: zh-TW
 - Python 3.12+
 - `.kiro/skills/` 已 clone（含 ark-grill-me、ark-superpowers、ark-skill-creator、ark-code-spec-validator）
 
+### 建議：用你的 my-team 專案來練習
+
+> 如果你做過 Workshop 02，建議在 `my-team` 專案中進行本堂的 Spec-Driven 開發。
+> 這樣 04 的產出直接落在你的團隊專案裡，market-agent 立刻可用。
+>
+> 沒做過 02？沒關係，本堂可完全獨立運行，用任何目錄都行。
+
+**用 my-team 的好處：**
+
+```
+my-team/
+├── agents/market-agent/        ← 你的拷問對象：重構他的爬蟲 Skill
+├── docs/specs/                 ← Spec 產出位置（團隊共用）
+└── .kiro/skills/my-daily-news/ ← 新 Skill 產出位置
+```
+
+**本堂的貫穿範例：** 重構 market-agent 的 `news_scraper` Skill
+- 01 你手寫了一個簡單爬蟲
+- 02 它被 market-agent 使用
+- **04（本堂）用 Spec-Driven 方式重構它**：加入多來源併發、失敗重試、結構化輸出
+- 05 重構後的 Spec + Skill 會被 ingest 到 Wiki，成為組織知識
+
 ---
 
 ## 建置步驟總覽
@@ -107,6 +129,13 @@ Grill Me 的解法：AI 提問、人回答 → 人保有設計控制權。
 ```
 拷問我的設計：每日科技新聞日報 Skill，抓取 RSS 產出 HTML 日報頁面
 ```
+
+> 💡 **如果在 my-team 中操作**，更推薦這個版本：
+> ```
+> 拷問我的設計：重構 market-agent 的 news_scraper Skill，
+> 改善 01 的簡單爬蟲，加入多來源併發 + 失敗重試 + 結構化 JSON 輸出
+> ```
+> 這會讓 AI 針對「從既有實作升級」提出更精準的設計問題。
 
 ### AI 行為
 

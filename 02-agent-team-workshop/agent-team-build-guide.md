@@ -94,6 +94,57 @@ git --version
 
 ---
 
+## 從 01 到 02：你的 my-bot 在團隊裡變成了什麼？
+
+> 📌 如果你做過 Workshop 01，這張對照表幫你快速理解「升級了什麼」。
+> 沒做過 01？直接跳到 Step 1，不影響學習。
+
+### 對照表
+
+| 01 你手動做的 | 02 在哪裡 | 進化了什麼 |
+|--------------|----------|-----------|
+| `src/skills/` BaseSkill + Registry | `src/runtime/` 每個 Agent 獨立 Skills | 5 人各有專屬技能，互不干擾 |
+| `src/bot/planner.py` 意圖路由 | `src/coordinator/` TaskGraph | 不只路由，還能拆子任務 + 並行派工 |
+| `src/bot/handlers.py` 指令處理 | `src/gateway/telegram.py` 多 Agent 路由 | @mention 指定人、Topic 分區 |
+| `src/llm/gemini_chat.py` 單一 LLM | 每個 agent 的 kiro-cli 後端 | 每人獨立 session + 記憶 |
+| `src/workflow/engine.py` 排程 | `scheduler.yaml` + 排程引擎 | 可排程派工到「不同 Agent」 |
+| `src/skills/internal/news_scraper.py` | market-agent 專責 | 爬蟲出錯不影響其他人 |
+| Step 6 科技日報（一人全做） | market 爬 + report 渲染 | 分工並行，3 分鐘 → 30 秒 |
+
+### 升級示意圖
+
+```
+Workshop 01（單兵）              Workshop 02（團隊）
+┌──────────────┐               ┌─────────────────────────────┐
+│   my-bot     │               │         my-team             │
+│              │               │                             │
+│ planner ─┐  │               │  ┌────────┐  ┌────────┐    │
+│ gemini   ─┤  │    ────→     │  │ market │  │ report │    │
+│ scraper  ─┤  │               │  │(爬蟲) │  │(渲染) │    │
+│ renderer ─┘  │               │  └───┬────┘  └───┬────┘    │
+│              │               │      │           │          │
+│  序列阻塞    │               │  ┌───┴───────────┴───┐      │
+│  一掛全掛    │               │  │     leader        │      │
+└──────────────┘               │  │  (拆任務+派工)    │      │
+                               │  └───────────────────┘      │
+                               └─────────────────────────────┘
+```
+
+### 01 的能力去了哪？
+
+| 01 的能力 | 02 由誰負責 | 為什麼拆開 |
+|-----------|------------|-----------|
+| 新聞爬蟲 | market-agent | 爬蟲 timeout 不阻塞其他人 |
+| HTML 渲染 | report-agent | 渲染邏輯獨立，可換模板不影響爬蟲 |
+| Gemini 對話 | 每個 agent 各有 | 專責回答自己領域問題 |
+| 意圖路由 | leader-agent + TaskGraph | leader 理解需求 → 派給對的人 |
+| 排程執行 | scheduler.yaml + admin | 排程對象可以是「人」而非「函式」 |
+
+> 💡 **核心思維轉換**：01 是「一個超人什麼都會」，02 是「一個團隊各有所長」。
+> 跟真實開發團隊一樣——你不會讓一個人同時寫前端、後端、測試、部署。
+
+---
+
 ## Step 1：建立完整專案骨架
 
 ### 方式 A：Script 直接產出（推薦）
