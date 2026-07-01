@@ -94,22 +94,19 @@ git --version
 
 ---
 
-## 從 01 到 02：你的 my-bot 在團隊裡變成了什麼？
+## 從個體到團隊：01-03 的能力在團隊裡變成了什麼？
 
-> 📌 如果你做過 Workshop 01，這張對照表幫你快速理解「升級了什麼」。
-> 沒做過 01？直接跳到 Step 1，不影響學習。
+> 📌 如果你做過 Workshop 01-03，這張對照表幫你快速理解「升級了什麼」。
+> 沒做過？直接跳到 Step 1，不影響學習。
 
 ### 對照表
 
-| 01 你手動做的 | 02 在哪裡 | 進化了什麼 |
-|--------------|----------|-----------|
-| `src/skills/` BaseSkill + Registry | `src/runtime/` 每個 Agent 獨立 Skills | 5 人各有專屬技能，互不干擾 |
-| `src/bot/planner.py` 意圖路由 | `src/coordinator/` TaskGraph | 不只路由，還能拆子任務 + 並行派工 |
-| `src/bot/handlers.py` 指令處理 | `src/gateway/telegram.py` 多 Agent 路由 | @mention 指定人、Topic 分區 |
-| `src/llm/gemini_chat.py` 單一 LLM | 每個 agent 的 kiro-cli 後端 | 每人獨立 session + 記憶 |
-| `src/workflow/engine.py` 排程 | `scheduler.yaml` + 排程引擎 | 可排程派工到「不同 Agent」 |
-| `src/skills/internal/news_scraper.py` | market-agent 專責 | 爬蟲出錯不影響其他人 |
-| Step 6 科技日報（一人全做） | market 爬 + report 渲染 | 分工並行，3 分鐘 → 30 秒 |
+| 01-03 你做的 | 04 在哪裡 | 進化了什麼 |
+|---|---|---|
+| 01 的意圖路由 | coordinator/TaskGraph | 不只路由，還能拆子任務+並行 |
+| 01 的 Skills | 每個 Agent 獨立 Skills | 5 人各有專屬技能 |
+| 02 的 Spec-Driven | 每個 Agent 的 Skill 品質 | 團隊 Skill Library |
+| 03 的 Wiki | 共用知識庫 knowledge/ | 一人學會全體受益 |
 
 ### 升級示意圖
 
@@ -581,6 +578,12 @@ Step 5 科技日報流程：
          → push_to_topic("news_daily", 摘要)
          → Telegram 收到日報 📰
 ```
+
+---
+
+## 下一步
+
+完成本課後，前往 Workshop 05 — 平台管理
 
 ---
 

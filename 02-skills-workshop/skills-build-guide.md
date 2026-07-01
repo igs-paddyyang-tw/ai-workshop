@@ -38,27 +38,25 @@ language: zh-TW
 - Python 3.12+
 - `.kiro/skills/` 已 clone（含 ark-grill-me、ark-superpowers、ark-skill-creator、ark-code-spec-validator）
 
-### 建議：用你的 my-team 專案來練習
+### 建議：用你的 01 Bot 專案來練習
 
-> 如果你做過 Workshop 02，建議在 `my-team` 專案中進行本堂的 Spec-Driven 開發。
-> 這樣 04 的產出直接落在你的團隊專案裡，market-agent 立刻可用。
+> 如果你做過 Workshop 01，在 `my-bot` 專案中開發新 Skill，這樣 01 的 Bot 立刻獲得新能力。
 >
-> 沒做過 02？沒關係，本堂可完全獨立運行，用任何目錄都行。
+> 沒做過 01？沒關係，本堂可完全獨立運行，用任何目錄都行。
 
-**用 my-team 的好處：**
+**用 my-bot 的好處：**
 
 ```
-my-team/
-├── agents/market-agent/        ← 你的拷問對象：重構他的爬蟲 Skill
-├── docs/specs/                 ← Spec 產出位置（團隊共用）
+my-bot/
+├── src/skills/internal/        ← 你的拷問對象：重構或新增 Skill
+├── docs/specs/                 ← Spec 產出位置
 └── .kiro/skills/my-daily-news/ ← 新 Skill 產出位置
 ```
 
-**本堂的貫穿範例：** 重構 market-agent 的 `news_scraper` Skill
+**本堂的貫穿範例：** 重構 01 的 `news_scraper` Skill
 - 01 你手寫了一個簡單爬蟲
-- 02 它被 market-agent 使用
-- **04（本堂）用 Spec-Driven 方式重構它**：加入多來源併發、失敗重試、結構化輸出
-- 05 重構後的 Spec + Skill 會被 ingest 到 Wiki，成為組織知識
+- **02（本堂）用 Spec-Driven 方式重構它**：加入多來源併發、失敗重試、結構化輸出
+- 03 重構後的 Spec + Skill 會被 ingest 到 Wiki，成為組織知識
 
 ---
 
@@ -431,7 +429,7 @@ git push  # 團隊 pull 即可使用
 
 ## 下一步
 
-- **Workshop 05**：把驗證通過的 Skill 沉澱到 Wiki 知識庫（自演化循環）
+- **Workshop 03**：把驗證通過的 Skill 沉澱到 Wiki 知識庫（自演化循環）
 - 對不同設計主題拷問（API、架構、重構）
 - 用 ADR 記錄每次重要的架構決策
 - 建立團隊 Skill Library + Spec 資產庫

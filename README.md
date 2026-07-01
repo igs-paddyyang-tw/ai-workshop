@@ -1,9 +1,19 @@
 # AI Workshop
 
-> 漸進式 AI Agent 開發教學：Bot → Team → Platform → Skills → Wiki
+> 漸進式 AI Agent 開發教學：說話 → 做事 → 記住 → 合作 → 管理
 > 對應 [AI 企業級五層架構](../docs/designs/five-layer-architecture-design.md)，逐步建置自演化 AI 生態系。
 
 ## 教學理念
+
+### 能力遞增路線
+
+```
+01 它能「說話」    （有人格的對話）
+02 它能「做事」    （有技能的執行）
+03 它能「記住」    （有記憶的學習）
+04 它們能「合作」  （有團隊的分工）
+05 你能「管理」    （有平台的掌控）
+```
 
 ### 兩條路到同一目的地
 
@@ -26,64 +36,56 @@ ark-agent-team-builder（骨架 + Phase 1-4）
   = 完整 AI Agent Team 平台（自演化、自我成長）
 ```
 
-### 每堂課讓你理解什麼
+### 每堂課讓你學會什麼
 
-| Workshop | 你理解了... | 對應五層 |
+| Workshop | 你學會了... | 對應五層 |
 |----------|-----------|---------|
-| 01 | 一個 Agent 怎麼「思考」（意圖路由） | L4 |
-| 02 | 多個 Agent 怎麼「協作」（一鍵產出完整平台） | L1-L5 全部 |
-| 03 | 平台怎麼「運作」（API + 調度 + 四層架構） | L1+L2 |
-| 04 | 能力怎麼「開發」（Spec-Driven + 拷問 + 驗證） | L4→L5 |
-| 05 | 知識怎麼「成長」（RAG + ingest + 自演化） | L5 |
-
-### 知識庫規則（所有 Workshop 共用）
-
-```
-所有知識先進 raw/ → 排程 LLM ingest → wiki/（唯一產出方式）
-Agent 只寫自己的 knowledge/raw/
-根目錄 knowledge/ 是共用知識庫
-```
+| 01 Agent 初始 | 一個 Agent 怎麼「思考」和「說話」（系統提詞 + 意圖路由） | L4 |
+| 02 Skills | 能力怎麼「開發」（Spec-Driven + 拷問 + 驗證） | L4→L5 |
+| 03 Wiki | 知識怎麼「成長」（RAG + ingest + 自演化） | L5 |
+| 04 Agent Team | 多個 Agent 怎麼「協作」（團隊派工 + 並行 + 隔離） | L1-L5 全部 |
+| 05 平台管理 | 平台怎麼「運作」（API + Dashboard + 費用 + 監控） | L1+L2 |
 
 ---
 
-## 學習路線：五層架構逐步建置
+## 學習路線：個體到群體
 
 ```
 Workshop 01        Workshop 02        Workshop 03        Workshop 04        Workshop 05
 ┌──────────┐      ┌──────────┐      ┌──────────┐      ┌──────────┐      ┌──────────┐
-│ L4 單兵  │  →   │ L1-L5    │  →   │ L1+L2    │  →   │ L4→L5    │  →   │ L5 知識  │
-│ 執行器   │      │ 全平台   │      │ 理解架構 │      │ 技能開發 │      │ 自演化   │
+│ 🤖 說話  │  →   │ 🛠️ 做事  │  →   │ 📚 記住  │  →   │ 👥 合作  │  →   │ ⚙️ 管理  │
+│ 系統提詞 │      │ Skill 開發│      │ RAG 知識庫│      │ Agent Team│      │ Dashboard│
 └──────────┘      └──────────┘      └──────────┘      └──────────┘      └──────────┘
-  理解思考          建立團隊           理解運作           理解開發          理解成長
+  一個 Agent        教它新能力         給它長期記憶       變成一個團隊        管理 AI 艦隊
 ```
 
 ## Workshop 列表
 
 | # | Workshop | 時長 | 核心 Skill | 學什麼 |
 |---|----------|------|-----------|--------|
-| 01 | [AI Bot](01-ai-bot-workshop/) | 50 min | `ark-ai-bot-builder` | 單一 Agent 認知循環 + 意圖路由 |
-| 02 | [Agent Team](02-agent-team-workshop/) | 50 min | `ark-agent-team-builder` + `ark-kiro-init` | 多 Agent 協作 + 完整平台產出 |
-| 03 | [Platform](03-platform-workshop/) | 50 min | （續用 02） | API + Web + A2A + 五層架構 |
-| 04 | [Skills](04-skills-workshop/) | 50 min | `ark-grill-me` + `ark-superpowers` + `ark-code-spec-validator` | Spec-Driven 開發完整迴圈 |
-| 05 | [LLM Wiki](05-llm-wiki-workshop/) | 50 min | `ark-wiki-engine` | RAG 問答 + 知識圖譜 + 自演化 |
+| 01 | [Agent 初始](01-agent-workshop/) | 50 min | `ark-ai-bot-builder` | 系統提詞 + 意圖路由 + Bot 啟動 |
+| 02 | [Skills 開發](02-skills-workshop/) | 50 min | `ark-grill-me` + `ark-superpowers` + `ark-code-spec-validator` | Spec-Driven 完整迴圈 |
+| 03 | [LLM Wiki](03-llm-wiki-workshop/) | 50 min | `ark-wiki-engine` | RAG 問答 + 知識圖譜 + 自演化 |
+| 04 | [Agent Team](04-agent-team-workshop/) | 50 min | `ark-agent-team-builder` + `ark-kiro-init` | 多 Agent 協作 + 完整平台產出 |
+| 05 | [平台管理](05-platform-workshop/) | 50 min | （續用 04） | API + Dashboard + 費用 + 監控 |
 
 ### 🗞️ 貫穿案例：科技日報的五次升級
 
-「科技日報」是貫穿五堂課的持續案例，同一個需求（每日產出科技新聞摘要），技術逐步升級：
+「科技日報」是貫穿五堂課的持續案例，同一個需求技術逐步升級：
 
 | Workshop | 日報怎麼做 | 升級了什麼 | 瓶頸在哪 |
 |----------|-----------|-----------|----------|
-| 01 | 手寫爬蟲 + Gemini CLI → HTML | 從零到有 | 一人全做，序列阻塞 |
-| 02 | market 爬 + report 渲染 → TG 推送 | 分工並行 | 爬蟲品質靠經驗 |
-| 03 | `POST /api/v1/workflows/run` 觸發 | API 化，可整合外部系統 | 缺標準化規格 |
-| 04 | Spec-Driven 重構 news_scraper Skill | 有 Spec、有驗證、可信任 | 學到的知識沒沉澱 |
-| 05 | 日報結果 ingest → Wiki 趨勢知識庫 | 一次學會，永久可查 | — |
+| 01 | Bot 觸發 NewsSkill → 抓 HN 首頁 | 從零到有，Bot 能回答新聞 | 只有一個技能，沒有規格 |
+| 02 | Spec-Driven 重構 NewsSkill（多來源+重試） | 有品質驗證，Score ≥ 90 可信任 | 知識沒沉澱 |
+| 03 | 日報結果 ingest → Wiki，可問趨勢 | 一次學會永久可查 | 一人做到死 |
+| 04 | market 爬 + report 渲染 → TG 推送 | 分工並行，故障隔離 | 缺乏監控 |
+| 05 | Dashboard 看成功率 + 費用 + 排程管理 | 全盤掌控 | — |
 
 ```
-01 手動做        02 團隊分工       03 API 觸發       04 品質把關       05 知識沉澱
+01 觸發新聞      02 品質重構       03 知識沉澱       04 團隊分工       05 全盤管理
 ┌─────────┐    ┌─────────┐    ┌─────────┐    ┌─────────┐    ┌─────────┐
-│ 一人全做 │ →  │ 分工並行 │ →  │ 標準 API │ →  │ Spec 驗證│ →  │ Wiki 累積│
-│ 序列阻塞 │    │ 故障隔離 │    │ 可整合   │    │ Score≥90 │    │ 全域可查 │
+│ 一個Bot │ →  │ Spec 驗證│ →  │ Wiki 累積│ →  │ 5人並行 │ →  │ Dashboard│
+│ 能抓新聞│    │ Score≥90 │    │ 永久可查 │    │ 故障隔離 │    │ 費用監控 │
 └─────────┘    └─────────┘    └─────────┘    └─────────┘    └─────────┘
 ```
 
@@ -93,10 +95,10 @@ Workshop 01        Workshop 02        Workshop 03        Workshop 04        Work
 
 - Python 3.12+
 - Git
-- Kiro CLI 2.7+（Workshop 02+）
 - Telegram 帳號 + Bot Token
-- Gemini API Key（Workshop 01, 05）
-- Node.js 20+（僅 Workshop 03）
+- Gemini API Key（Workshop 01, 03）
+- Kiro CLI 2.7+（Workshop 04+）
+- Node.js 20+（僅 Workshop 05）
 
 ## 快速開始
 
@@ -105,7 +107,7 @@ Workshop 01        Workshop 02        Workshop 03        Workshop 04        Work
 git clone https://github.com/igs-paddyyang-tw/ark-agent-skills .kiro/skills/
 
 # 教學路徑：選一個 Workshop 開始
-cd 01-ai-bot-workshop && cat QUICKSTART.md
+cd 01-agent-workshop && cat QUICKSTART.md
 
 # 快速路徑：一鍵產出完整平台
 python3 .kiro/skills/ark-agent-team-builder/scripts/build_team.py my-team
@@ -113,8 +115,16 @@ python3 .kiro/skills/ark-kiro-init/scripts/build_kiro.py my-team/team.yaml my-te
 python3 .kiro/skills/ark-kiro-init/scripts/build_kiro.py --clone-skills my-team
 ```
 
+## 知識庫規則（所有 Workshop 共用）
+
+```
+所有知識先進 raw/ → 排程 LLM ingest → wiki/（唯一產出方式）
+Agent 只寫自己的 knowledge/raw/
+根目錄 knowledge/ 是共用知識庫
+```
+
 ## 版本對應
 
 | ai-workshop | ark-agent-team-builder | ark-kiro-init | 產出等同 |
 |-------------|----------------------|---------------|---------|
-| 目前 | v2.1 | v2.1 | ai-team-agent v1.0.0 |
+| v2.0（新順序） | v2.1 | v2.1 | ai-team-agent v1.0.0 |

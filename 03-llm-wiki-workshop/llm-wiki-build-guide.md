@@ -409,14 +409,14 @@ Agent 完成任務
 
 這對應五層架構中 Layer 5 的核心創新：**一個 Agent 學會的，全體受益**。
 
-### 與 Workshop 04 的串接
+### 與 Workshop 02 的串接
 
-Workshop 04 驗證通過的 Skill（Score ≥ 90）→ ingest 到 Wiki → 成為可搜尋的組織資產。
+Workshop 02 驗證通過的 Skill（Score ≥ 90）→ ingest 到 Wiki → 成為可搜尋的組織資產。
 
 ```
-04: grill → spec → skill → validate(≥90)
+02: grill → spec → skill → validate(≥90)
                                  ↓
-05: wiki ingest → 全域可搜尋 → 其他 Agent 可引用
+03: wiki ingest → 全域可搜尋
 ```
 
 ### 多專案知識庫
@@ -459,10 +459,12 @@ knowledge/
 
 ## 下一步
 
+完成本課後，你的 Agent 具備了完整個體能力（說話+做事+記住）。下一堂（04）將從一個人變成一個團隊。
+
 - 把自己的技術筆記丟進 `raw/`，建立個人知識庫
 - 修改 `schema.md` 加入自訂 type
 - 搭配 Telegram Bot 在手機上查 Wiki
-- 設定排程自動 lint（搭配 Workshop 03 的 ScheduleEngine）
+- 設定排程自動 lint（搭配 Workshop 04/05 的排程引擎）
 - 探索 hybrid_search 的 RRF 權重調整
 
 ---

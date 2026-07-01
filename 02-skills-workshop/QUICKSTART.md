@@ -301,7 +301,7 @@ AI 觸發 `ark-code-spec-validator`，產出 Drift Report：
 
 ## 下一步
 
-- **Workshop 05**：把驗證通過的 Skill 沉澱到知識庫（Wiki + RAG）
+- **Workshop 03**：把驗證通過的 Skill 沉澱到知識庫（Wiki + RAG）
 - 嘗試對不同設計主題拷問（API 設計、架構重構、新功能）
 - 建立團隊共用 Skill Library + Spec 資產
 

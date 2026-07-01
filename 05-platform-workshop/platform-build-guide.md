@@ -23,7 +23,7 @@ language: zh-TW
 
 ## 前置條件
 
-- [x] 已完成 Workshop 02（有 `my-team` 專案）
+- [x] 已完成 Workshop 04（有 `my-team` 專案）
 - [x] Python 3.12+ 已安裝
 - [x] Node.js 20+ 已安裝
 - [x] `my-team` 專案可正常啟動
@@ -361,15 +361,10 @@ pip install -r requirements.txt
 | Web Dashboard | 前後端分離，Next.js + FastAPI |
 | A2A 協作 | TaskGraph 依賴圖 + Agent Discovery 自動派工 |
 | 四層架構 | 入口 → 協調 → 執行 → 知識，職責分明 |
+| 運維管理 | 費用追蹤、排程管理、Agent 狀態監控 |
 
 ---
 
 ## 下一步
 
-完成本課後，前往 **Workshop 04 — Skills 開發**：
-
-```
-ai-workshop/04-skills-workshop/
-```
-
-學習如何建立自己的 Skill，讓 Agent 獲得新能力。
+恭喜完成全部五堂課！你已擁有完整 AI Agent 生態系的建構和管理能力。
