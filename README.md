@@ -63,7 +63,7 @@ Workshop 01        Workshop 02        Workshop 03        Workshop 04        Work
 
 | # | Workshop | 時長 | 核心 Skill | 學什麼 |
 |---|----------|------|-----------|--------|
-| 01 | [Agent 初始](01-agent-workshop/) | 50 min | `ark-ai-bot-builder` | 系統提詞 + 意圖路由 + Bot 啟動 |
+| 01 | [Agent 初始](01-agent-workshop/) | 50 min | `ark-agent-builder` | 系統提詞 + 意圖路由 + Bot 啟動 |
 | 02 | [Skills 開發](02-skills-workshop/) | 50 min | `ark-grill-me` + `ark-superpowers` + `ark-code-spec-validator` | Spec-Driven 完整迴圈 |
 | 03 | [LLM Wiki](03-llm-wiki-workshop/) | 50 min | `ark-wiki-engine` | RAG 問答 + 知識圖譜 + 自演化 |
 | 04 | [Agent Team](04-agent-team-workshop/) | 50 min | `ark-agent-team-builder` + `ark-kiro-init` | 多 Agent 協作 + 完整平台產出 |

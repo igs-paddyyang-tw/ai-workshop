@@ -81,7 +81,7 @@ python start.py             # 啟動！
 
 | 項目 | 內容 |
 |------|------|
-| 產出來源 | `build_bot.py` 產出 |
+| 產出來源 | `build_agent.py` 產出 |
 | 預置功能 | Telegram Bot + Gemini Chat + News Skill + Planner |
 | 學員體驗 | `/start` → 問問題 → AI 回答 → 觸發新聞 |
 | 需要的 Key | `TELEGRAM_BOT_TOKEN` + `GEMINI_API_KEY`（可選） |
@@ -128,7 +128,7 @@ python start.py             # 啟動！
 
 ```bash
 # 每個 sample 用對應的 builder 一鍵產出
-python3 .kiro/skills/ark-ai-bot-builder/scripts/build_bot.py samples/01-agent
+python3 .kiro/skills/ark-agent-builder/scripts/build_agent.py samples/01-agent
 python3 .kiro/skills/ark-agent-team-builder/scripts/build_team.py samples/04-agent-team
 # 03 = 複製 02
 cp -r samples/04-agent-team samples/05-platform

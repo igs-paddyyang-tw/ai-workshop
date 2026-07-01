@@ -12,7 +12,7 @@
 | 時間 | 動作 | 你做什麼 | Script 做什麼 |
 |------|------|---------|-------------|
 | 0-5 min | 環境確認 | clone skills + 確認 Python | ark-env-doctor 檢查 |
-| 5-15 min | 一鍵建構 | 執行 `build_bot.py my-bot` | 產出完整 Bot 專案 |
+| 5-15 min | 一鍵建構 | 執行 `build_agent.py my-bot` | 產出完整 Bot 專案 |
 | 15-25 min | 設定啟動 | venv + pip + 填 .env | （唯一手動步驟） |
 | 25-35 min | TG 實測 | `/start`、問問題、「今天新聞」 | Planner 路由 → 各 Skill |
 | 35-50 min | 理解架構 | 看意圖路由流程圖 | — |
@@ -27,7 +27,7 @@
    → Bot 啟動 + /start 有回應 + Gemini 能對話
 
 🎯 保底組（至少完成這個）
-   → build_bot.py 執行成功 + Bot 回覆 /start
+   → build_agent.py 執行成功 + Bot 回覆 /start
 ```
 
 ---
@@ -55,7 +55,7 @@ git clone https://github.com/igs-paddyyang-tw/ark-agent-skills .kiro/skills/
 ## Step 1：一鍵建構 Bot 專案
 
 ```bash
-python3 .kiro/skills/ark-ai-bot-builder/scripts/build_bot.py my-bot
+python3 .kiro/skills/ark-agent-builder/scripts/build_agent.py my-bot
 ```
 
 ### 產出內容
