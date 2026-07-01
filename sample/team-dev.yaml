@@ -1,0 +1,61 @@
+# ═══════════════════════════════════════════════════════
+# 研發團隊（Development Team）
+# 用途：AI 開發 + 全端實作 + 品質保證
+# 啟用：cp team-dev.yaml team.yaml && python start.py
+# ═══════════════════════════════════════════════════════
+
+channel:
+  bot_token_env: TELEGRAM_BOT_TOKEN
+  # group_id: -100xxxxxxxxxx
+  # general_topic_id: 4
+
+access:
+  mode: locked
+  allowed_users: []
+
+defaults:
+  backend: kiro-cli
+  model: auto
+
+cost_guard:
+  daily_limit_usd: 15.0
+  warn_at_percentage: 80
+  timezone: Asia/Taipei
+
+hang_detector:
+  enabled: true
+  timeout_minutes: 60
+  escalation_minutes: 180
+
+instances:
+  admin-agent:
+    working_directory: "."
+    description: "⚙️ 管理者 — 服務監控、重啟、成本控制"
+    role: admin
+    skip_resume: true
+
+  pm-agent:
+    working_directory: agents/pm-agent
+    description: "🧠 專案經理 — 需求分析、任務拆解、派工驗收"
+    role: leader
+    skip_resume: true
+
+  ai-dev-agent:
+    working_directory: agents/ai-dev-agent
+    description: "🤖 AI 工程師 — AI 架構設計、Prompt 工程、LLM 整合"
+    role: worker
+    skip_resume: true
+
+  coder-agent:
+    working_directory: agents/coder-agent
+    description: "💻 全端工程師 — FastAPI / React / DB 實作"
+    role: worker
+    skip_resume: true
+
+  qa-agent:
+    working_directory: agents/qa-agent
+    description: "🧪 QA 工程師 — 測試策略、自動化測試、程式碼審查"
+    role: worker
+    skip_resume: true
+
+health_port: 13030
