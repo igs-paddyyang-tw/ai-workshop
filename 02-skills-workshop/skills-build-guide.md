@@ -19,6 +19,24 @@ language: zh-TW
 
 ---
 
+## ✅ 先體驗成品？看 sample/
+
+> 本堂教 Spec-Driven 開發流程。sample 中已有完成的 Skill + Spec 供參照。
+
+| 本堂教的 | sample 中對應 | 檔案 |
+|---------|------------|------|
+| BaseSkill 架構 | 完整實作 | `sample/src/skills/base.py` |
+| SkillRegistry | auto_discover | `sample/src/skills/registry.py` |
+| Spec 範例 | NewsSkill Spec | `sample/docs/specs/news-skill-spec.md` |
+| Skill 實作 | 4 個範例 Skill | `sample/src/skills/internal/` |
+
+```bash
+# 看完成品的 Spec
+cat ../sample/docs/specs/news-skill-spec.md
+```
+
+---
+
 ## 專案定位
 
 **Spec-Driven Skill 開發 — 讓 AI 寫 Skill，但品質由 Spec 把關**

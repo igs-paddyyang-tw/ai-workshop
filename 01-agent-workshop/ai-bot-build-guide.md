@@ -17,6 +17,24 @@ language: zh-TW
 
 ---
 
+## ✅ 先體驗成品？看 sample/
+
+> 本堂教你從零建構。如果想先看成品怎麼運作，可以先跑 sample。
+
+| 本堂教的 | sample 中對應 | 檔案 |
+|---------|------------|------|
+| 系統提詞設計 | SOUL.md 人格定義 | `sample/src/gateway/soul.md` |
+| 意圖路由 | Planner 邏輯 | `sample/src/gateway/handlers.py` |
+| Gemini 對話 | LLM 封裝 | `sample/src/llm/gemini_chat.py` |
+| Bot 啟動 | 一鍵啟動 | `sample/start.py` |
+
+```bash
+# 先體驗
+cd ../sample && pip install -r requirements.txt && python start.py
+```
+
+---
+
 ## 專案定位
 
 **Gemini CLI 驅動的自進化 Telegram Bot + FastAPI 服務**

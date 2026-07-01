@@ -13,6 +13,28 @@ language: zh-TW
 
 ---
 
+## ✅ 先體驗成品？看 sample/
+
+> 本堂教完整 Agent Team 建置。sample 中有精簡版的核心概念展示。
+
+| 本堂教的 | sample 中對應 | 檔案 |
+|---------|------------|------|
+| TaskGraph DAG | 拓撲排序 + 並行解析 | `sample/src/coordinator/task_graph.py` |
+| Agent Discovery | 能力匹配 + 分數 | `sample/src/coordinator/discovery.py` |
+| team.yaml | 5 Agent 配置 | `sample/team.yaml` |
+| 排程引擎 | cron 觸發 | `sample/src/coordinator/scheduler.py` |
+| Bot 派工 | /assign /board | `sample/src/gateway/handlers.py` |
+
+```bash
+# 先體驗派工
+cd ../sample && python start.py
+# Telegram: /agents → /assign 抽取新聞 market → /board
+```
+
+> ℹ️ sample 是精簡版（展示核心概念）。完整版用 `build_team.py` 產出 110+ 項檔案。
+
+---
+
 ## 專案定位
 
 **多 Agent 協作開發平台 — AI 團隊自動派工、開發、驗證**

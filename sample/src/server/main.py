@@ -189,3 +189,42 @@ async def wiki_lint():
 @app.get("/board", response_class=HTMLResponse)
 async def board(request: Request):
     return templates.TemplateResponse(request, "board.html")
+
+
+# ── Costs 端點（05 平台管理）──
+
+@app.get("/api/admin/costs")
+async def get_costs():
+    """費用追蹤（模擬數據）。"""
+    return {
+        "today_usd": 0.42,
+        "this_week_usd": 2.85,
+        "this_month_usd": 12.30,
+        "breakdown": [
+            {"agent": "market", "calls": 15, "cost_usd": 0.18},
+            {"agent": "backend", "calls": 8, "cost_usd": 0.12},
+            {"agent": "qa", "calls": 5, "cost_usd": 0.08},
+            {"agent": "frontend", "calls": 3, "cost_usd": 0.04},
+        ],
+        "daily_limit_usd": 15.0,
+        "usage_percent": 2.8,
+    }
+
+
+# ── Schedules 端點 ──
+
+@app.get("/api/admin/schedules")
+async def list_schedules_admin():
+    """列出排程任務。"""
+    from src.coordinator.scheduler import scheduler
+    return {"jobs": scheduler.list_jobs()}
+
+
+@app.post("/api/admin/schedules/{job_id}/trigger")
+async def trigger_schedule(job_id: str):
+    """手動觸發排程。"""
+    from src.coordinator.scheduler import scheduler
+    result = scheduler.trigger(job_id)
+    if not result:
+        return {"error": f"Job not found: {job_id}"}
+    return result

@@ -1,15 +1,20 @@
 """Bot 指令處理 + 意圖路由。
 
 Workshop 對照：
-  01 Agent: cmd_start, cmd_help, handle_message（Planner 路由）
+  01 Agent: cmd_start, cmd_help, handle_message（Planner 路由）+ SOUL.md 人格
   04 Team:  cmd_agents, cmd_assign, cmd_board
 """
 from __future__ import annotations
 
 import os
+from pathlib import Path
 
 from telegram import Update
 from telegram.ext import ContextTypes
+
+# ── 載入 SOUL.md 作為系統提詞 ─────────────────────────────
+_SOUL_PATH = Path(__file__).parent / "soul.md"
+SYSTEM_PROMPT = _SOUL_PATH.read_text(encoding="utf-8") if _SOUL_PATH.exists() else ""
 
 
 # ─── 01 基礎指令 ─────────────────────────────────────────
@@ -136,12 +141,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             await update.message.reply_text("📚 Wiki 中沒有找到相關內容")
         return
 
-    # Gemini 對話 fallback
+    # Gemini 對話 fallback（使用 SOUL.md 作為 system prompt）
     gemini_key = os.getenv("GEMINI_API_KEY", "")
     if gemini_key:
         try:
             from src.llm.gemini_chat import ask_gemini
-            reply = await ask_gemini(text)
+            reply = await ask_gemini(text, system_prompt=SYSTEM_PROMPT)
             await update.message.reply_text(reply)
         except Exception as e:
             await update.message.reply_text(f"⚠️ Gemini 錯誤: {e}")

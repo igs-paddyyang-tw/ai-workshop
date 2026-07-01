@@ -102,18 +102,37 @@ Workshop 01        Workshop 02        Workshop 03        Workshop 04        Work
 
 ## 快速開始
 
+### 路徑 A：直接體驗成品（5 分鐘）
+
+```bash
+cd sample
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env   # 填入 Token（選填）
+python start.py        # 一鍵啟動全平台
+```
+
+啟動後可體驗：API（http://localhost:8000）+ Dashboard（/board）+ Bot
+
+### 路徑 B：從零建構（教學路徑）
+
 ```bash
 # 取得 Skills
 git clone https://github.com/igs-paddyyang-tw/ark-agent-skills .kiro/skills/
 
-# 教學路徑：選一個 Workshop 開始
+# 選一個 Workshop 開始
 cd 01-agent-workshop && cat QUICKSTART.md
+```
 
-# 快速路徑：一鍵產出完整平台
+### 路徑 C：一鍵產出完整平台（快速路徑）
+
+```bash
 python3 .kiro/skills/ark-agent-team-builder/scripts/build_team.py my-team
 python3 .kiro/skills/ark-kiro-init/scripts/build_kiro.py my-team/team.yaml my-team
 python3 .kiro/skills/ark-kiro-init/scripts/build_kiro.py --clone-skills my-team
 ```
+
+> 三條路最終產出一模一樣的系統。A 讓你體驗，B 讓你理解，C 讓你直接用。
 
 ## 知識庫規則（所有 Workshop 共用）
 

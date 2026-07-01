@@ -21,6 +21,28 @@ language: zh-TW
 
 ---
 
+## ✅ 先體驗成品？看 sample/
+
+> 本堂探索平台 API + Dashboard。sample 中已有完整端點可直接 curl。
+
+| 本堂教的 | sample 中對應 | 檔案 |
+|---------|------------|------|
+| 21+ API 端點 | CRUD + Admin + Wiki | `sample/src/server/main.py` |
+| Dashboard | Kanban Board | `sample/src/server/templates/board.html` |
+| 費用追蹤 | /api/admin/costs | `sample/src/server/main.py` |
+| 排程管理 | /api/admin/schedules | `sample/src/coordinator/scheduler.py` |
+
+```bash
+# 先體驗 API
+cd ../sample && python start.py
+curl http://localhost:8000/api/v1/health
+curl http://localhost:8000/api/admin/costs
+curl http://localhost:8000/api/admin/schedules
+# 瀏覽器開 http://localhost:8000/board
+```
+
+---
+
 ## 前置條件
 
 - [x] 已完成 Workshop 04（有 `my-team` 專案）

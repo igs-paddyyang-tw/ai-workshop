@@ -19,6 +19,26 @@ language: zh-TW
 
 ---
 
+## ✅ 先體驗成品？看 sample/
+
+> 本堂教 Wiki 引擎建置。sample 中已有可運作的 Wiki + 預建知識頁。
+
+| 本堂教的 | sample 中對應 | 檔案 |
+|---------|------------|------|
+| WikiEngine | query/ingest/lint | `sample/src/wiki/engine.py` |
+| knowledge 結構 | raw + wiki + schema | `sample/knowledge/` |
+| 預建知識頁| 2 篇含 wikilink | `sample/knowledge/wiki/` |
+| RAG 問答 | Gemini 合成 | `sample/src/llm/gemini_chat.py` |
+
+```bash
+# 先體驗 Wiki API
+cd ../sample && python start.py
+curl -X POST http://localhost:8000/api/v1/wiki/ingest
+curl -X POST http://localhost:8000/api/v1/wiki/query -H 'Content-Type: application/json' -d '{"q":"asyncio"}'
+```
+
+---
+
 ## 專案定位
 
 **LLM Wiki — 讓 AI 擁有長期記憶的知識引擎**
