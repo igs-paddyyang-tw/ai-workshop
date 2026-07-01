@@ -235,9 +235,9 @@ async def route(message: str):
 | 檔案 | 說明 |
 |------|------|
 | `QUICKSTART.md` | 本文件（50 分鐘快速版） |
-| `ai-bot-build-guide.md` | 完整教學（進階 7 步驟） |
+| `agent-build-guide.md` | 完整教學（5 步驟） |
 | `bot-responses.md` | Bot 回應範本 |
-| `structured-example.json` | Mock 資料 |
+| `soul-example.md` | Soul 設定範例 |
 | `quickstart.html` | HTML 版首頁 |
 
 ---
