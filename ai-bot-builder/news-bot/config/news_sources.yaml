@@ -11,12 +11,44 @@ sources:
     type: rss
     category: dev_tools
 
+  # ─── 台灣遊戲市場 ──────────────────────────
+  - name: "巴哈姆特 GNN"
+    url: "https://gnn.gamer.com.tw/rss.xml"
+    type: rss
+    category: tw_game
+
+  - name: "4Gamers 新聞"
+    url: "https://www.4gamers.com.tw/rss/latest-news"
+    type: rss
+    category: tw_game
+
   # ─── HTML 來源 ─────────────────────────────
   - name: "Hacker News"
     url: "https://news.ycombinator.com/"
     type: html
     selector: ".titleline a"
     category: tech_general
+
+# ─── 台灣博弈手遊品牌關注清單 ─────────────────
+# 日報 LLM 會優先篩選含這些關鍵字的新聞
+tw_game_keywords:
+  - "金好運"
+  - "包你發"
+  - "老子有錢"
+  - "星城"
+  - "豪神"
+  - "明星三缺一"
+  - "明星3缺1"
+  - "鉅網"
+  - "IGS"
+  - "鉅城"
+  - "滿貫大亨"
+  - "大福"
+  - "博弈"
+  - "老虎機"
+  - "捕魚"
+  - "麻將"
+  - "柏青哥"
 
 schedule:
   cron: "0 9 * * *"
@@ -25,4 +57,4 @@ schedule:
 
 output:
   dir: "output/news"
-  max_items_per_source: 5
+  max_items_per_source: 10

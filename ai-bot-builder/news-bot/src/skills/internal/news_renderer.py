@@ -17,10 +17,11 @@ class NewsRendererSkill(BaseSkill):
     OUTPUT_DIR = Path("output/tech-daily-news")
 
     async def execute(self, params: dict) -> SkillResult:
-        """params: data_path / data / articles。"""
+        """params: data_path / data / articles, report_title（選填）。"""
         articles = params.get("articles")
         data = params.get("data")
         data_path = params.get("data_path")
+        report_title = params.get("report_title", "科技日報")
 
         # 載入資料
         if data_path:
@@ -38,11 +39,17 @@ class NewsRendererSkill(BaseSkill):
 
         # 產出 HTML
         today = date.today()
-        html = self._render(articles, today.strftime("%Y.%m.%d"))
+        html = self._render(articles, today.strftime("%Y.%m.%d"), report_title)
 
-        # 存檔
+        # 存檔（依 report_title 區分檔名）
         self.OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-        filename = f"tech-daily-{today.isoformat()}.html"
+        # 將中文標題轉為安全檔名
+        safe_name = report_title.replace(" ", "-").lower()
+        if safe_name == "科技日報":
+            safe_name = "tech-daily"
+        elif "遊戲" in safe_name:
+            safe_name = "tw-game-daily"
+        filename = f"{safe_name}-{today.isoformat()}.html"
         filepath = self.OUTPUT_DIR / filename
         filepath.write_text(html, encoding="utf-8")
 
@@ -51,7 +58,7 @@ class NewsRendererSkill(BaseSkill):
             data={"path": str(filepath), "count": len(articles), "filename": filename},
         )
 
-    def _render(self, articles: list[dict], date_str: str) -> str:
+    def _render(self, articles: list[dict], date_str: str, report_title: str = "科技日報") -> str:
         """渲染多張卡片 HTML。"""
         total = len(articles)
         cards_html = []
@@ -65,7 +72,7 @@ class NewsRendererSkill(BaseSkill):
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>科技日報 — {date_str}</title>
+<title>{report_title} — {date_str}</title>
 <style>
 body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f4ff; padding: 20px; }}
 .card {{ max-width: 860px; margin: 20px auto; background: #fff; border-radius: 16px; padding: 32px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }}
@@ -96,12 +103,19 @@ h2 {{ margin: 0 0 16px; font-size: 22px; color: #1a1a2e; }}
         summary = article.get("summary", title[:30])
         tags = article.get("tags", [])
         source = article.get("source", "")
+        url = article.get("url", "")
 
         tags_html = ""
         for t in tags[:3]:
             icon = t.get("icon", "💡")
             text = t.get("text", "")
             tags_html += f'<span class="tag">{icon} {text}</span>'
+
+        # 來源連結
+        if url:
+            source_html = f'<a href="{url}" target="_blank" style="color:#1a73e8;text-decoration:none;">{source} 🔗</a>'
+        else:
+            source_html = source
 
         return f"""
 <div class="card">
@@ -120,5 +134,5 @@ h2 {{ margin: 0 0 16px; font-size: 22px; color: #1a1a2e; }}
     <div class="section-content"><strong>{summary}</strong></div>
   </div>
   {"<div class='tags'>" + tags_html + "</div>" if tags_html else ""}
-  <div class="page">{source} · {idx} / {total}</div>
+  <div class="page">{source_html} · {idx} / {total}</div>
 </div>"""

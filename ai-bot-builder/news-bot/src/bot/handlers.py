@@ -48,7 +48,12 @@ def init_components(registry: SkillRegistry) -> None:
 
 
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """歡迎訊息。"""
+    """歡迎訊息 + 自動訂閱每日日報。"""
+    from src.bot.scheduler import register_chat
+    chat_id = update.effective_chat.id
+    register_chat(chat_id)
+    logger.info("已註冊 chat_id=%s 接收每日日報", chat_id)
+
     await update.message.reply_text(
         "🤖 AI Agent Bot 就緒！\n\n"
         "直接打字跟我說話，我會用 Agent CLI 幫你做事。\n\n"
@@ -58,7 +63,8 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "• 任何問題 → Agent CLI 深度回答\n\n"
         "📋 指令：\n"
         "  /daily — 手動觸發日報\n"
-        "  /skills — 列出已載入 Skills"
+        "  /skills — 列出已載入 Skills\n\n"
+        "⏰ 已訂閱每日 09:00 科技日報自動推送！"
     )
 
 
@@ -72,60 +78,94 @@ async def cmd_skills(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
 
 
 async def cmd_daily(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """手動觸發科技日報：scrape → LLM 結構化 → render → 發送 HTML。"""
+    """手動觸發日報：產出科技日報 + 台灣遊戲情報日報（兩份獨立檔案）。"""
     if not _registry:
         await update.message.reply_text("❌ Skill 系統未就緒")
         return
 
     await update.message.reply_text("📡 抓取新聞中...")
 
-    # Step 1: 抓取
+    # Step 1: 抓取所有來源
     result = await _registry.invoke("news_scraper", {"config_path": "config/news_sources.yaml"})
     if not result.success:
         await update.message.reply_text(f"❌ 抓取失敗：{result.error[:200]}")
         return
 
-    # Step 2: 收集原始素材（帶描述）
-    raw_items = []
+    # Step 2: 按分類拆分素材
+    tech_items = []  # 科技類
+    game_items = []  # 台灣遊戲類
+
     for cat, items in result.data.get("categories", {}).items():
-        for item in items[:5]:
+        for item in items[:10]:
             desc = item.get("description", "")
-            # 如果 description 只是重複標題，標記為空
             if desc == item["title"]:
                 desc = ""
-            raw_items.append({
+            entry = {
                 "category": cat,
                 "title": item["title"],
                 "description": desc,
                 "url": item.get("url", ""),
                 "source": item.get("source", ""),
-            })
+            }
+            if cat == "tw_game":
+                game_items.append(entry)
+            else:
+                tech_items.append(entry)
 
-    if not raw_items:
-        await update.message.reply_text("📭 今日無新聞")
-        return
+    # Step 3: 分別用 LLM 結構化兩份日報
+    await update.message.reply_text("🎨 AI 編輯整理中...")
 
-    # Step 3: 用 Gemini API 結構化為日報卡片（優先使用有描述的素材）
-    # 排序：有 description 的放前面
-    raw_items.sort(key=lambda x: (0 if x.get("description") else 1))
-    articles = await _structure_news_with_llm(raw_items[:10])
+    # 科技日報
+    tech_articles = await _structure_tech_report(tech_items[:12])
+    if not tech_articles:
+        tech_articles = _fallback_structure(tech_items[:5])
 
-    # 如果 LLM 失敗，fallback 到基本格式
-    if not articles:
-        articles = _fallback_structure(raw_items[:5])
+    # 台灣遊戲情報日報
+    tw_keywords = _load_tw_game_keywords()
+    game_items.sort(key=lambda x: _item_priority(x, tw_keywords))
+    game_articles = await _structure_game_report(game_items[:12])
+    if not game_articles:
+        game_articles = _fallback_structure(game_items[:5])
 
-    # Step 4: 渲染 HTML
-    await update.message.reply_text("🎨 渲染日報中...")
-    render_result = await _registry.invoke("news_renderer", {"articles": articles[:5]})
-    if render_result.success:
-        path = render_result.data["path"]
-        await update.message.reply_document(
-            document=open(path, "rb"),
-            filename=Path(path).name,
-            caption=f"📰 科技日報（{render_result.data.get('count', 0)} 則）",
-        )
-    else:
-        await update.message.reply_text(f"❌ 渲染失敗：{render_result.error[:200]}")
+    # 回填 URL
+    if tech_articles:
+        _backfill_urls(tech_articles, tech_items)
+    if game_articles:
+        _backfill_urls(game_articles, game_items)
+
+    # Step 4: 分別渲染兩份 HTML
+    sent_count = 0
+
+    # 科技日報
+    if tech_articles:
+        r1 = await _registry.invoke("news_renderer", {
+            "articles": tech_articles[:6],
+            "report_title": "科技日報",
+        })
+        if r1.success:
+            await update.message.reply_document(
+                document=open(r1.data["path"], "rb"),
+                filename=r1.data["filename"],
+                caption=f"🔬 科技日報（{r1.data.get('count', 0)} 則）",
+            )
+            sent_count += 1
+
+    # 台灣遊戲情報日報
+    if game_articles:
+        r2 = await _registry.invoke("news_renderer", {
+            "articles": game_articles[:6],
+            "report_title": "台灣遊戲情報",
+        })
+        if r2.success:
+            await update.message.reply_document(
+                document=open(r2.data["path"], "rb"),
+                filename=r2.data["filename"],
+                caption=f"🎮 台灣遊戲情報（{r2.data.get('count', 0)} 則）",
+            )
+            sent_count += 1
+
+    if sent_count == 0:
+        await update.message.reply_text("📭 今日無新聞可產出")
 
 
 # ── 日報 LLM 結構化 ──────────────────────────────────────────
@@ -136,48 +176,127 @@ _CATEGORY_MAP = {
     "dev_tools": "開發工具",
     "hardware": "硬體趨勢",
     "general": "科技綜合",
+    "tw_game": "台灣遊戲",
 }
 
-_STRUCTURE_PROMPT = """你是科技日報編輯。請根據以下新聞素材，撰寫結構化日報卡片。
+
+def _load_tw_game_keywords() -> list[str]:
+    """從 config 載入台灣博弈遊戲關鍵字。"""
+    config_path = Path("config/news_sources.yaml")
+    if not config_path.exists():
+        return []
+    try:
+        data = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+        return data.get("tw_game_keywords", [])
+    except Exception:
+        return []
+
+
+def _item_priority(item: dict, tw_keywords: list[str]) -> int:
+    """排序優先度：0=台灣遊戲品牌相關, 1=有描述, 2=其他。"""
+    title_lower = item.get("title", "").lower()
+    desc_lower = item.get("description", "").lower()
+    text = title_lower + " " + desc_lower
+
+    # 台灣博弈品牌關鍵字命中 → 最高優先
+    for kw in tw_keywords:
+        if kw.lower() in text:
+            return 0
+
+    # 台灣遊戲分類 → 次高
+    if item.get("category") == "tw_game":
+        return 1
+
+    # 有描述 → 中等
+    if item.get("description"):
+        return 2
+
+    return 3
+
+_TECH_PROMPT = """你是科技日報編輯。請根據以下國際科技新聞素材，撰寫結構化日報卡片。
 
 重要規則：
 1. 只使用素材中提供的真實資訊，禁止編造不存在的數據或細節
 2. 如果素材只有標題沒有描述，就根據標題如實概述，不要臆測具體數字或細節
-3. 從提供的新聞中挑選最有價值的 5 則
+3. 挑選最有價值的 5 則新聞
 4. 用繁體中文撰寫
 5. "what" 欄位要基於素材中的 description 來寫，如果沒有 description 就簡述標題含義
 6. "why" 欄位簡述該新聞的潛在影響
+7. "url" 欄位必須保留素材中提供的原始網址，不可省略或修改
 
 回傳純 JSON（不要 markdown code block），格式：
 {
   "cards": [
     {
-      "topic": "分類名稱（如：AI 焦點、開發工具、科技綜合、硬體趨勢、資安）",
+      "topic": "分類名稱（AI 焦點 / 資安 / 開發工具 / 科技綜合）",
       "title": "新聞標題（精煉中文，15 字內）",
-      "what": "發生了什麼（2-3 句，基於素材的 description，可用 <span class=\\"hl\\">重點</span> 標記關鍵字）",
+      "what": "發生了什麼（2-3 句，可用 <span class=\\"hl\\">重點</span> 標記關鍵字）",
       "why": "為什麼重要（1-2 句話說明影響）",
       "summary": "一句話總結（10 字內）",
       "source": "來源名稱",
-      "tags": [
-        {"icon": "emoji", "text": "標籤文字（4字內）"}
-      ]
+      "url": "原始新聞網址",
+      "tags": [{"icon": "emoji", "text": "標籤文字（4字內）"}]
     }
   ]
 }
 
-以下是今日新聞素材：
+以下是今日科技新聞素材：
+"""
+
+_GAME_PROMPT = """你是台灣遊戲市場情報編輯。請根據以下台灣遊戲新聞素材，撰寫結構化日報卡片。
+
+特別關注品牌：金好運、包你發、老子有錢、星城Online、豪神、明星三缺一（明星3缺1）、鉅網、IGS、滿貫大亨、大福，以及其他博弈/手遊相關新聞。
+如果素材中有上述品牌，必須優先收錄。
+
+重要規則：
+1. 只使用素材中提供的真實資訊，禁止編造不存在的數據或細節
+2. 挑選最有價值的 5 則遊戲新聞
+3. 用繁體中文撰寫
+4. "what" 欄位要基於素材中的 description 來寫，如果沒有 description 就簡述標題含義
+5. "why" 欄位從市場競爭、玩家影響或產業趨勢角度分析
+6. "url" 欄位必須保留素材中提供的原始網址，不可省略或修改
+
+回傳純 JSON（不要 markdown code block），格式：
+{
+  "cards": [
+    {
+      "topic": "分類名稱（手遊動態 / 博弈遊戲 / 遊戲產業 / 活動情報）",
+      "title": "新聞標題（精煉中文，15 字內）",
+      "what": "發生了什麼（2-3 句，可用 <span class=\\"hl\\">重點</span> 標記關鍵字）",
+      "why": "為什麼重要（1-2 句話，市場/競品/玩家角度）",
+      "summary": "一句話總結（10 字內）",
+      "source": "來源名稱",
+      "url": "原始新聞網址",
+      "tags": [{"icon": "emoji", "text": "標籤文字（4字內）"}]
+    }
+  ]
+}
+
+以下是今日台灣遊戲新聞素材：
 """
 
 
-async def _structure_news_with_llm(raw_items: list[dict]) -> list[dict]:
-    """用 Gemini API 將原始新聞結構化為日報卡片。"""
-    if not gemini_chat.is_available():
+async def _structure_tech_report(raw_items: list[dict]) -> list[dict]:
+    """科技日報 LLM 結構化。"""
+    return await _call_llm_structure(_TECH_PROMPT, raw_items)
+
+
+async def _structure_game_report(raw_items: list[dict]) -> list[dict]:
+    """台灣遊戲情報 LLM 結構化。"""
+    return await _call_llm_structure(_GAME_PROMPT, raw_items)
+
+
+async def _call_llm_structure(prompt_template: str, raw_items: list[dict]) -> list[dict]:
+    """通用 LLM 結構化呼叫。"""
+    if not gemini_chat.is_available() or not raw_items:
         return []
 
-    # 組裝素材 — 包含 description
+    # 組裝素材 — 包含 description 和 URL
     lines = []
     for item in raw_items:
         line = f"- [{item['category']}] {item['title']} (來源: {item['source']})"
+        if item.get("url"):
+            line += f"\n  網址: {item['url']}"
         if item.get("description"):
             line += f"\n  描述: {item['description']}"
         lines.append(line)
@@ -185,19 +304,18 @@ async def _structure_news_with_llm(raw_items: list[dict]) -> list[dict]:
 
     try:
         response = await gemini_chat.chat(
-            message=_STRUCTURE_PROMPT + material,
-            system_prompt="你是專業的科技日報編輯，擅長將新聞素材轉化為精煉的中文日報卡片。只回傳 JSON。",
+            message=prompt_template + material,
+            system_prompt="你是專業的新聞編輯，只回傳 JSON。",
         )
         if not response:
             logger.warning("LLM 結構化：Gemini 回傳空字串")
             return []
 
-        # 清理回應（移除可能的 markdown code block 標記）
+        # 清理回應
         text = response.strip()
         if text.startswith("```"):
-            # 移除第一行 (```json 或 ```)
-            lines = text.split("\n")
-            text = "\n".join(lines[1:])
+            resp_lines = text.split("\n")
+            text = "\n".join(resp_lines[1:])
         if text.endswith("```"):
             text = text[:-3]
         text = text.strip()
@@ -227,8 +345,45 @@ def _fallback_structure(raw_items: list[dict]) -> list[dict]:
             "summary": item["title"][:15],
             "tags": [{"icon": "📰", "text": cat_name}],
             "source": item.get("source", ""),
+            "url": item.get("url", ""),
         })
     return articles
+
+
+def _backfill_urls(articles: list[dict], raw_items: list[dict]) -> None:
+    """將原始 URL 回填到 LLM 產出的卡片（LLM 不一定會保留 URL）。"""
+    # 建立標題→URL 的對照表
+    title_url_map = {}
+    for item in raw_items:
+        if item.get("url"):
+            # 用原始標題的前 20 字當 key（因為 LLM 可能翻譯或精簡標題）
+            title_url_map[item["title"].lower()[:30]] = item["url"]
+            # 也用來源名做 fallback matching
+            key = f"{item['source']}_{item['title'][:15]}".lower()
+            title_url_map[key] = item["url"]
+
+    for article in articles:
+        if article.get("url"):
+            continue  # 已經有 URL 了
+
+        # 嘗試用 source 名稱匹配
+        source = article.get("source", "")
+        matched = False
+        for item in raw_items:
+            if item.get("url") and item["source"] == source:
+                # 檢查標題是否相關（簡單比對）
+                if (item["title"][:10].lower() in article.get("title", "").lower() or
+                    article.get("title", "")[:5] in item["title"]):
+                    article["url"] = item["url"]
+                    matched = True
+                    break
+
+        # 如果沒匹配到，按順序分配
+        if not matched:
+            for item in raw_items:
+                if item.get("url") and item["url"] not in [a.get("url") for a in articles]:
+                    article["url"] = item["url"]
+                    break
 
 
 # ── 自然語言主流程 ────────────────────────────────────────────
