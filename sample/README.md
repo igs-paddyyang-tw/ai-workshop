@@ -9,6 +9,23 @@
 | **營運團隊** | `cp team-ops.yaml team.yaml` | admin + pm + market + data + report | 市場監控、數據分析、報告產出 |
 | **研發團隊** | `cp team-dev.yaml team.yaml` | admin + pm + ai-dev + coder + qa | AI 開發、全端實作、品質保證 |
 
+## 兩個課程的獨立範例
+
+```
+sample/
+├── examples/
+│   ├── a-agent/            ← 課程 A 產出（個體 Agent：SOUL + Skills + Wiki）
+│   └── b-agent-team/       ← 課程 B 產出（= 本目錄根，5 Agent 團隊平台）
+└── ...（本目錄 = 課程 B 完整平台）
+```
+
+| 範例 | 啟動方式 | 產出來自 |
+|------|---------|---------|
+| **a-agent** | `cd examples/a-agent && python start.py` | 課程 A（01-03） |
+| **b-agent-team** | `python start.py`（本目錄） | 課程 B（04-05） |
+
+> 課程 A 學員帶走 `examples/a-agent/`，課程 B 學員帶走整個 `sample/`。
+
 ## 快速啟動
 
 ```bash
