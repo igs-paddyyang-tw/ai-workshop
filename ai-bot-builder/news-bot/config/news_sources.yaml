@@ -73,6 +73,12 @@ game_sources:
     selector: "a"
     category: tw_game
 
+  - name: "滿貫大亨 官網公告"
+    url: "https://www.gametower.com.tw/games/tmd/news/index.aspx"
+    type: html
+    selector: "a[href*=news]"
+    category: tw_game
+
 # ─── 台灣博弈手遊品牌關注清單 ─────────────────
 # 日報 LLM 會優先篩選含這些關鍵字的新聞
 tw_game_keywords:
