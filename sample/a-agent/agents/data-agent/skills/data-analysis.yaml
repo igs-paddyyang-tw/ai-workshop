@@ -1,0 +1,7 @@
+id: data-analysis
+trigger: "分析|數據|KPI|趨勢|report"
+steps:
+  - action: query_data
+  - action: calculate_metrics
+  - action: detect_trends
+  - action: generate_insights

@@ -1,0 +1,6 @@
+id: system-monitor
+trigger: "狀態|status|健康|health"
+steps:
+  - action: check_services
+  - action: check_costs
+  - action: format_status_report

@@ -1,7 +1,0 @@
-id: code-review
-trigger: "review|審查|看一下這段"
-steps:
-  - action: read_file
-  - action: llm_analyze
-    params: { focus: "bugs, performance, style" }
-  - action: format_report

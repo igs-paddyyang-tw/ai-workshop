@@ -1,0 +1,7 @@
+id: task-planning
+trigger: "規劃|plan|拆解|assign"
+steps:
+  - action: analyze_requirement
+  - action: break_down_tasks
+  - action: assign_agents
+  - action: track_progress

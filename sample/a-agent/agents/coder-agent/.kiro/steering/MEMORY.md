@@ -3,7 +3,7 @@
 ## 寫入
 - 新知識寫入 knowledge/raw/
 - 每次任務完成後記錄結果
-- 分流決策記錄到 knowledge/raw/routing-history.md
+- 技術決策記錄到 knowledge/raw/adr.md
 
 ## 不可
 - 不可修改 knowledge/wiki/

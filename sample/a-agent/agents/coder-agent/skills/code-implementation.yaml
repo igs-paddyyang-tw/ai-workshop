@@ -1,0 +1,7 @@
+id: code-implementation
+trigger: "寫|實作|implement|code"
+steps:
+  - action: read_spec
+  - action: write_code
+  - action: run_tests
+  - action: format_output
