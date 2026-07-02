@@ -103,7 +103,7 @@ python start.py
 ```
 在 team.yaml 加入一個新 Agent：
 - id: designer-agent
-- description: "🎨 UI 設計師 — 介面設計、Wireframe、使用者體驗"
+- description: "🎮 遊戲設計師 — 遊戲 UI、視覺風格、玩法體驗分析"
 - role: worker
 - working_directory: agents/designer-agent
 ```
@@ -113,10 +113,10 @@ python start.py
 📝 Kiro IDE 輸入：
 ```
 用 ark-kiro-init 幫 designer-agent 初始化完整 .kiro/ 配置：
-- SOUL：UI 設計師，遵循設計 10 原則，注重可用性和一致性
-- MEMORY：記住使用者偏好的設計風格
-- 專屬能力方向：Wireframe、配色、RWD 佈局
-- knowledge/raw/ 放一份「UI 設計基本原則」作為種子知識
+- SOUL：遊戲設計師，熟悉手遊 UI 設計、玩法機制、視覺風格分析
+- MEMORY：記住使用者關注的遊戲類型和設計偏好
+- 專屬能力方向：競品 UI 分析、玩法拆解、設計建議
+- knowledge/raw/ 放一份「手遊設計原則」作為種子知識
 ```
 
 ✅ 預期結果（對照 ark-kiro-init 產出結構）：
@@ -195,28 +195,28 @@ SOUL.md 有內容、MEMORY.md 有策略、knowledge/raw/ 有種子文件
 
 📱 Telegram 輸入：
 ```
-/assign 捕魚機遊戲競品分析與設計報告：market 蒐集市面捕魚機遊戲資料、designer 分析 UI 設計風格、report 產出完整分析報告
+/assign 捕魚機遊戲競品分析與設計報告：market 蒐集市面捕魚機遊戲資料、designer 分析遊戲 UI 風格和玩法設計、report 產出競品分析報告
 ```
 
 📱 觀察 `/board`：
 1. pm-agent 拆為 3 個子任務
 2. market → 蒐集競品資料（先跑）
-3. designer → 分析 UI 設計（可與 market 並行或等 market）
-4. report → 彙整產出報告（等前兩個完成）
+3. designer → 分析遊戲 UI 和玩法（可與 market 並行或等 market）
+4. report → 彙整產出分析報告（等前兩個完成）
 
 ✅ 預期結果：
 - `/board` 出現 3 個任務，各自分配正確
-- designer-agent 確實接到設計分析任務
-- 最終收到一份包含「市場資料 + UI 分析 + 彙整報告」的結果
+- designer-agent 確實接到遊戲設計分析任務
+- 最終收到一份包含「市場資料 + UI/玩法分析 + 彙整報告」的結果
 
 💡 **帶走的感覺：你剛才加的 Agent，已經能跟團隊合作了。加人 = 改 yaml + 初始化 .kiro/ → 馬上能派工。**
 
 📱 加碼（如果有時間）：
 ```
-@pm 同一份報告，再加上 data 做數據分析（下載量、評分比較）
+@pm 根據剛才的競品分析報告，產出一份新捕魚機遊戲的專案提案書
 ```
 
-→ 觀察 4 Agent 協作
+→ pm 基於已產出的報告撰寫提案，有具體依據
 
 ---
 
