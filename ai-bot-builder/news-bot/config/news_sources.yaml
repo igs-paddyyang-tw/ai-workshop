@@ -61,6 +61,12 @@ game_sources:
     selector: "a"
     category: tw_game
 
+  - name: "天狐宴 官網活動"
+    url: "https://skyfoxonline.com/activities"
+    type: html
+    selector: "a"
+    category: tw_game
+
 # ─── 台灣博弈手遊品牌關注清單 ─────────────────
 # 日報 LLM 會優先篩選含這些關鍵字的新聞
 tw_game_keywords:
