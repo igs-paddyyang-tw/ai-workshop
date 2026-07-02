@@ -123,17 +123,17 @@ my-bot/               my-bot/                 my-wiki-bot/          my-team/    
 
 | 銜接內容 | 檔案位置 | 類型 |
 |---------|---------|------|
-| 01 結尾瓶頸+02 預告 | `01-agent-workshop/ai-bot-build-guide.md` Step 7 | 動機建立 |
-| 01 QUICKSTART 預告 Skills | `01-agent-workshop/QUICKSTART.md` | 預告 |
-| 02 前置用 01 Bot | `02-skills-workshop/skills-build-guide.md` 前置條件 | 串接 |
-| 02 下一步指向 03 Wiki | `02-skills-workshop/skills-build-guide.md` 結尾 | 指引 |
-| 03 串接 02 Skill 產出 | `03-llm-wiki-workshop/llm-wiki-build-guide.md` Step 4.1b | 閉環 |
-| 03 下一步引出團隊 | `03-llm-wiki-workshop/llm-wiki-build-guide.md` 結尾 | 動機 |
-| 04 開頭 01-03 對照表 | `04-agent-team-workshop/agent-team-build-guide.md` | 對照 |
-| 04 下一步指向 05 管理 | `04-agent-team-workshop/agent-team-build-guide.md` 結尾 | 指引 |
-| 05 全系列完結語 | `05-platform-workshop/platform-build-guide.md` 結尾 | 收尾 |
-| 科技日報貫穿說明 | `README.md` | 全局 |
+| 課程 A 完整規格 | `course-a/build-guide.md` | Phase 1-3, Step 0-10 |
+| 課程 B 完整規格 | `course-b/build-guide.md` | Phase 1-2, Step 0-8 |
+| 第一堂節奏 | `course-a/QUICKSTART-01-agent.md` | 50 min |
+| 第二堂節奏 | `course-a/QUICKSTART-02-skills.md` | 50 min |
+| 第三堂節奏 | `course-a/QUICKSTART-03-wiki.md` | 50 min |
+| 第四堂節奏 | `course-b/QUICKSTART-04-team.md` | 50 min |
+| 第五堂節奏 | `course-b/QUICKSTART-05-platform.md` | 50 min |
+| 課程 A 成品 | `sample/a-agent/` | 可跑 |
+| 課程 B 成品 | `sample/b-agent-team/` | 可跑 |
+| 講師指南 | `instructor/teaching-guide.md` | 教學 |
 
 ---
 
-*更新日期：2026-07-01 — 新順序 v2.0*
+*更新日期：2026-07-02 — 課程 A/B 合併版*
