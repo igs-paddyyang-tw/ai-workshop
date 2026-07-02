@@ -24,8 +24,8 @@
 ### A. 直接體驗（5 分鐘）
 
 ```bash
-cd sample/a-agent && pip install -r requirements.txt && python start.py
-cd sample/b-agent-team && pip install -r requirements.txt && python start.py
+cd sample/ai-bot && pip install -r requirements.txt && python start.py
+cd sample/ai-team-agent && pip install -r requirements.txt && python start.py
 ```
 
 ### B. 從零建構（教學路徑）
@@ -57,8 +57,8 @@ ai-workshop/
 │   ├── QUICKSTART-04/05        ← 分堂 50 min 節奏
 │   └── 素材（team.example.yaml 等）
 ├── sample/                      ← 完整可跑範例
-│   ├── a-agent/                ← 課程 A 成品（8 Agent + Inline Button）
-│   └── b-agent-team/           ← 課程 B 成品（5 Agent 並行平台）
+│   ├── ai-bot/                ← 課程 A 成品（8 Agent + Inline Button）
+│   └── ai-team-agent/           ← 課程 B 成品（5 Agent 並行平台）
 ├── shared/                      ← 共用資源
 │   ├── bridge-diagram.md       ← 銜接全覽
 │   ├── env-check.md            ← 環境檢查

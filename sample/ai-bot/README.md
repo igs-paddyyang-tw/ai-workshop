@@ -1,4 +1,4 @@
-# a-agent — 課程 A 產出（個體 Agent）
+# ai-bot — 課程 A 產出（個體 Agent）
 
 > 8 個 Agent 可切換，Inline Button 選擇，每次對話自動記憶。
 
@@ -82,7 +82,7 @@ Tier 2 — Gemini Key：AI 對話 + RAG
 ## 專案結構
 
 ```
-a-agent/
+ai-bot/
 ├── start.py                    ← 一鍵啟動
 ├── .kiro/                      ← 根配置（預設 admin）
 ├── agents/                     ← 8 個 Agent（各有完整 .kiro/）

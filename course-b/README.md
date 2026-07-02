@@ -21,7 +21,7 @@
 
 ```bash
 # 直接體驗成品
-cd ../sample/b-agent-team && pip install -r requirements.txt
+cd ../sample/ai-team-agent && pip install -r requirements.txt
 cp .env.example .env && cp team-ops.yaml team.yaml
 python start.py
 

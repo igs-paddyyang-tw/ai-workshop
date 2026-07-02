@@ -6,8 +6,8 @@
 
 ```
 sample/
-├── a-agent/          ← 課程 A 產出（個體 Agent）
-└── b-agent-team/     ← 課程 B 產出（Agent 團隊平台）
+├── ai-bot/          ← 課程 A 產出（個體 Agent）
+└── ai-team-agent/     ← 課程 B 產出（Agent 團隊平台）
 ```
 
 ## 課程 A：個體 Agent
@@ -15,7 +15,7 @@ sample/
 一個有靈魂的 AI Bot：SOUL + Skills + Wiki + Gemini 對話。
 
 ```bash
-cd a-agent
+cd ai-bot
 pip install -r requirements.txt
 cp .env.example .env
 python start.py
@@ -32,7 +32,7 @@ python start.py
 5 Agent 並行的完整平台：CoreDaemon + A2A + Dashboard。
 
 ```bash
-cd b-agent-team
+cd ai-team-agent
 pip install -r requirements.txt
 cp .env.example .env
 cp team-ops.yaml team.yaml    # 或 team-dev.yaml
@@ -46,7 +46,7 @@ python start.py
 
 ## 差異對比
 
-| | a-agent | b-agent-team |
+| | ai-bot | ai-team-agent |
 |---|---|---|
 | Agent 數量 | 1 | 5 並行 |
 | 執行方式 | 單進程 | CoreDaemon 多進程 |

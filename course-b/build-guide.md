@@ -20,7 +20,7 @@ language: zh-TW
 ## ✅ 先體驗成品？
 
 ```bash
-cd ai-workshop/sample/b-agent-team
+cd ai-workshop/sample/ai-team-agent
 pip install -r requirements.txt && cp .env.example .env
 cp team-ops.yaml team.yaml   # 營運團隊
 python start.py
