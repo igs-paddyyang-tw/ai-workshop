@@ -188,45 +188,35 @@ SOUL.md 有內容、MEMORY.md 有策略、knowledge/raw/ 有種子文件
 
 ---
 
-## Step 5：進階操作 + 理解（40-50 min）
+## Step 5：驗證新 Agent — 複合任務（40-50 min）
 
-**做什麼**：切換團隊配置 + 理解擴展機制  
-**為什麼**：帶走「我能自己建任何團隊」的能力
+**做什麼**：派一個需要 designer 參與的複合任務，驗證新 Agent 能協作  
+**為什麼**：加了 Agent 就要驗證它能被派工、能跟團隊合作
 
-### 5.1 切換配置
-
-📝 Kiro IDE 輸入：
+📱 Telegram 輸入：
 ```
-把 team.yaml 切換成 team-dev.yaml 的內容（研發團隊配置）
+/assign 捕魚機遊戲競品分析與設計報告：market 蒐集市面捕魚機遊戲資料、designer 分析 UI 設計風格、report 產出完整分析報告
 ```
 
-💻 重啟 → 📱 `/agents`
+📱 觀察 `/board`：
+1. pm-agent 拆為 3 個子任務
+2. market → 蒐集競品資料（先跑）
+3. designer → 分析 UI 設計（可與 market 並行或等 market）
+4. report → 彙整產出報告（等前兩個完成）
 
-✅ 預期：看到 ai-dev / coder / qa 這些研發角色
+✅ 預期結果：
+- `/board` 出現 3 個任務，各自分配正確
+- designer-agent 確實接到設計分析任務
+- 最終收到一份包含「市場資料 + UI 分析 + 彙整報告」的結果
 
-### 5.2 理解自動派工原理
+💡 **帶走的感覺：你剛才加的 Agent，已經能跟團隊合作了。加人 = 改 yaml + 初始化 .kiro/ → 馬上能派工。**
 
-📝 Kiro IDE 輸入：
+📱 加碼（如果有時間）：
 ```
-解釋當我說「寫一個 REST API」時，
-leader 是怎麼決定分配給 coder-agent 而不是 market-agent？
-匹配邏輯在哪裡？
-```
-
-✅ 理解：
-- leader 根據 Agent 的 description + skills 做語意匹配
-- 分數最高的 Agent 接任務
-- 改 description 就能改匹配結果
-
-### 5.3 排程預覽
-
-📝 Kiro IDE 輸入：
-```
-打開 scheduler.yaml，列出目前有哪些自動排程。
-如果我想加一個每天 09:00 觸發的科技日報排程，要怎麼寫？
+@pm 同一份報告，再加上 data 做數據分析（下載量、評分比較）
 ```
 
-✅ 預期：Kiro 給出 cron 格式 + 範例
+→ 觀察 4 Agent 協作
 
 ---
 
