@@ -1,8 +1,0 @@
-id: quality-check
-trigger: "測試|test|review|品質"
-steps:
-  - action: run_linter
-  - action: run_tests
-  - action: check_coverage
-  - action: security_scan
-  - action: generate_report

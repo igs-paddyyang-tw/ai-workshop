@@ -1,8 +1,0 @@
-id: report-generation
-trigger: "報告|日報|weekly|月報|HTML"
-steps:
-  - action: collect_data
-  - action: apply_template
-  - action: render_charts
-  - action: quality_check
-  - action: output_file

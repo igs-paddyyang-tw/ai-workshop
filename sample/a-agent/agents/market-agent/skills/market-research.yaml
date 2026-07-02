@@ -1,7 +1,0 @@
-id: market-research
-trigger: "市場|競品|新聞|輿情|trend"
-steps:
-  - action: search_sources
-  - action: filter_noise
-  - action: cross_validate
-  - action: produce_insights

@@ -1,7 +1,0 @@
-id: prompt-engineering
-trigger: "prompt|提詞|SOUL|系統提詞"
-steps:
-  - action: analyze_requirement
-  - action: design_prompt
-  - action: test_prompt
-  - action: iterate
