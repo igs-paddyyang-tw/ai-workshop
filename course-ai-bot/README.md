@@ -51,7 +51,7 @@ cat build-guide.md    # 跟著 Step 0-10 做
 
 ## 想繼續？
 
-→ **[課程 B — AI Agent Team 實戰](../course-b/)**
+→ **[課程 B — AI Agent Team 實戰](../course-ai-team-agent/)**
 
 ---
 

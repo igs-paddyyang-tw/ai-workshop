@@ -6,8 +6,8 @@
 
 | 課程 | 名稱 | 堂數 | 產出 |
 |------|------|------|------|
-| **[A](course-a/)** | AI Agent 開發入門 | 3 堂（2.5 hr） | 有靈魂的個體 Agent |
-| **[B](course-b/)** | AI Agent Team 實戰 | 2 堂（1.5 hr） | 可運作的團隊平台 |
+| **[A](course-ai-bot/)** | AI Agent 開發入門 | 3 堂（2.5 hr） | 有靈魂的個體 Agent |
+| **[B](course-ai-team-agent/)** | AI Agent Team 實戰 | 2 堂（1.5 hr） | 可運作的團隊平台 |
 
 ```
 課程 A（個體）                    課程 B（團隊）
@@ -31,8 +31,8 @@ cd samples/ai-team-agent && pip install -r requirements.txt && python start.py
 ### B. 從零建構（教學路徑）
 
 ```bash
-cat course-a/build-guide.md   # Step 0-10
-cat course-b/build-guide.md   # Step 0-8
+cat course-ai-bot/build-guide.md   # Step 0-10
+cat course-ai-team-agent/build-guide.md   # Step 0-8
 ```
 
 ### C. 一鍵產出
@@ -48,11 +48,11 @@ python3 .kiro/skills/ark-agent-team-builder/scripts/build_team.py my-team
 ```
 ai-workshop/
 ├── README.md                    ← 本文件
-├── course-a/                    ← 課程 A（3 堂）
+├── course-ai-bot/                    ← 課程 A（3 堂）
 │   ├── build-guide.md          ← 統一規格（Phase 1-3, Step 0-10）
 │   ├── QUICKSTART-01/02/03     ← 分堂 50 min 節奏
 │   └── 素材（soul-example, sample-docs 等）
-├── course-b/                    ← 課程 B（2 堂）
+├── course-ai-team-agent/                    ← 課程 B（2 堂）
 │   ├── build-guide.md          ← 統一規格（Phase 1-2, Step 0-8）
 │   ├── QUICKSTART-04/05        ← 分堂 50 min 節奏
 │   └── 素材（team.example.yaml 等）

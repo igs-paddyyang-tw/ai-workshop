@@ -138,7 +138,7 @@
 
 | 文件 | 位置 |
 |------|------|
-| 課程 A 規格 | `course-a/build-guide.md` |
-| 課程 B 規格 | `course-b/build-guide.md` |
+| 課程 A 規格 | `course-ai-bot/build-guide.md` |
+| 課程 B 規格 | `course-ai-team-agent/build-guide.md` |
 | 體驗成品 | `samples/ai-bot/` + `samples/ai-team-agent/` |
 | 銜接全覽 | `shared/bridge-diagram.md` |

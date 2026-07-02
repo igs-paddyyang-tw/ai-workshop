@@ -299,7 +299,7 @@ Agent 完成任務 → memory.py 寫入 knowledge/raw/
 
 ## 下一步：課程 B
 
-想從一個人變一個團隊？→ `course-b/`
+想從一個人變一個團隊？→ `course-ai-team-agent/`
 
 ```
 課程 B 解決：

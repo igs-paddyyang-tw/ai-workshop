@@ -123,13 +123,13 @@ my-bot/               my-bot/                 my-wiki-bot/          my-team/    
 
 | 銜接內容 | 檔案位置 | 類型 |
 |---------|---------|------|
-| 課程 A 完整規格 | `course-a/build-guide.md` | Phase 1-3, Step 0-10 |
-| 課程 B 完整規格 | `course-b/build-guide.md` | Phase 1-2, Step 0-8 |
-| 第一堂節奏 | `course-a/QUICKSTART-01-agent.md` | 50 min |
-| 第二堂節奏 | `course-a/QUICKSTART-02-skills.md` | 50 min |
-| 第三堂節奏 | `course-a/QUICKSTART-03-wiki.md` | 50 min |
-| 第四堂節奏 | `course-b/QUICKSTART-04-team.md` | 50 min |
-| 第五堂節奏 | `course-b/QUICKSTART-05-platform.md` | 50 min |
+| 課程 A 完整規格 | `course-ai-bot/build-guide.md` | Phase 1-3, Step 0-10 |
+| 課程 B 完整規格 | `course-ai-team-agent/build-guide.md` | Phase 1-2, Step 0-8 |
+| 第一堂節奏 | `course-ai-bot/QUICKSTART-01-agent.md` | 50 min |
+| 第二堂節奏 | `course-ai-bot/QUICKSTART-02-skills.md` | 50 min |
+| 第三堂節奏 | `course-ai-bot/QUICKSTART-03-wiki.md` | 50 min |
+| 第四堂節奏 | `course-ai-team-agent/QUICKSTART-04-team.md` | 50 min |
+| 第五堂節奏 | `course-ai-team-agent/QUICKSTART-05-platform.md` | 50 min |
 | 課程 A 成品 | `samples/ai-bot/` | 可跑 |
 | 課程 B 成品 | `samples/ai-team-agent/` | 可跑 |
 | 講師指南 | `instructor/teaching-guide.md` | 教學 |
