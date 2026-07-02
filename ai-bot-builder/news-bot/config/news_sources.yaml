@@ -36,10 +36,22 @@ game_sources:
     type: rss
     category: tw_game
 
+  # ─── 博弈手遊官網（HTML 爬取）────────────────
+  - name: "星城Online 官網公告"
+    url: "https://www.xin-stars.com/"
+    type: html
+    selector: ".newsList a"
+    category: tw_game
+
+  - name: "豪神娛樂城 官網"
+    url: "https://hs-casino.com/"
+    type: html
+    selector: "a"
+    category: tw_game
+
 # ─── 台灣博弈手遊品牌關注清單 ─────────────────
 # 日報 LLM 會優先篩選含這些關鍵字的新聞
 tw_game_keywords:
-  - "金好運"
   - "包你發"
   - "老子有錢"
   - "星城"
