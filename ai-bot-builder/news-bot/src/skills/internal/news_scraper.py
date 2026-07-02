@@ -29,6 +29,7 @@ class NewsScraperSkill(BaseSkill):
         """params: config_path 或 url（擇一）。"""
         url = params.get("url")
         config_path = params.get("config_path", "config/news_sources.yaml")
+        source_key = params.get("source_key", "sources")
 
         if url:
             articles = await self._scrape_single(url)
@@ -38,7 +39,7 @@ class NewsScraperSkill(BaseSkill):
             )
 
         # 多來源模式
-        sources = self._load_sources(config_path)
+        sources = self._load_sources(config_path, source_key)
         if not sources:
             return SkillResult(success=False, error="無法載入 news_sources.yaml")
 
@@ -180,14 +181,14 @@ class NewsScraperSkill(BaseSkill):
                 })
         return articles[:10]
 
-    def _load_sources(self, config_path: str) -> list[dict]:
+    def _load_sources(self, config_path: str, source_key: str = "sources") -> list[dict]:
         """載入 YAML 設定。"""
         p = Path(config_path)
         if not p.exists():
             return []
         try:
             data = yaml.safe_load(p.read_text(encoding="utf-8"))
-            return data.get("sources", [])
+            return data.get(source_key, [])
         except Exception:
             return []
 

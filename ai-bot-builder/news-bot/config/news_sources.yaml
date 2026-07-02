@@ -11,9 +11,23 @@ sources:
     type: rss
     category: dev_tools
 
-  # ─── 台灣遊戲市場 ──────────────────────────
+  # ─── HTML 來源 ─────────────────────────────
+  - name: "Hacker News"
+    url: "https://news.ycombinator.com/"
+    type: html
+    selector: ".titleline a"
+    category: tech_general
+
+# ─── 台灣遊戲情報來源（獨立區塊）─────────────────
+game_sources:
+  # ─── RSS 來源 ───────────────────────────────
   - name: "巴哈姆特 GNN"
     url: "https://gnn.gamer.com.tw/rss.xml"
+    type: rss
+    category: tw_game
+
+  - name: "巴哈姆特 GNN 手機遊戲"
+    url: "https://gnn.gamer.com.tw/rss.xml?k=4"
     type: rss
     category: tw_game
 
@@ -21,13 +35,6 @@ sources:
     url: "https://www.4gamers.com.tw/rss/latest-news"
     type: rss
     category: tw_game
-
-  # ─── HTML 來源 ─────────────────────────────
-  - name: "Hacker News"
-    url: "https://news.ycombinator.com/"
-    type: html
-    selector: ".titleline a"
-    category: tech_general
 
 # ─── 台灣博弈手遊品牌關注清單 ─────────────────
 # 日報 LLM 會優先篩選含這些關鍵字的新聞

@@ -85,32 +85,50 @@ async def cmd_daily(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     await update.message.reply_text("📡 抓取新聞中...")
 
-    # Step 1: 抓取所有來源
-    result = await _registry.invoke("news_scraper", {"config_path": "config/news_sources.yaml"})
-    if not result.success:
-        await update.message.reply_text(f"❌ 抓取失敗：{result.error[:200]}")
+    # Step 1: 分別抓取科技來源和遊戲來源
+    tech_result = await _registry.invoke("news_scraper", {
+        "config_path": "config/news_sources.yaml",
+        "source_key": "sources",
+    })
+    game_result = await _registry.invoke("news_scraper", {
+        "config_path": "config/news_sources.yaml",
+        "source_key": "game_sources",
+    })
+
+    # Step 2: 收集素材
+    tech_items = []
+    game_items = []
+
+    if tech_result.success:
+        for cat, items in tech_result.data.get("categories", {}).items():
+            for item in items[:10]:
+                desc = item.get("description", "")
+                if desc == item["title"]:
+                    desc = ""
+                tech_items.append({
+                    "category": cat,
+                    "title": item["title"],
+                    "description": desc,
+                    "url": item.get("url", ""),
+                    "source": item.get("source", ""),
+                })
+
+    if game_result.success:
+        for cat, items in game_result.data.get("categories", {}).items():
+            for item in items[:10]:
+                desc = item.get("description", "")
+                if desc == item["title"]:
+                    desc = ""
+                game_items.append({
+                    "category": cat,
+                    "title": item["title"],
+                    "description": desc,
+                    "url": item.get("url", ""),
+                    "source": item.get("source", ""),
+                })
+    if not tech_items and not game_items:
+        await update.message.reply_text("📭 今日無新聞")
         return
-
-    # Step 2: 按分類拆分素材
-    tech_items = []  # 科技類
-    game_items = []  # 台灣遊戲類
-
-    for cat, items in result.data.get("categories", {}).items():
-        for item in items[:10]:
-            desc = item.get("description", "")
-            if desc == item["title"]:
-                desc = ""
-            entry = {
-                "category": cat,
-                "title": item["title"],
-                "description": desc,
-                "url": item.get("url", ""),
-                "source": item.get("source", ""),
-            }
-            if cat == "tw_game":
-                game_items.append(entry)
-            else:
-                tech_items.append(entry)
 
     # Step 3: 分別用 LLM 結構化兩份日報
     await update.message.reply_text("🎨 AI 編輯整理中...")

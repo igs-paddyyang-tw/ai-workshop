@@ -1,13 +1,17 @@
-"""排程模組 — 每日自動發送科技日報。"""
+"""排程模組 — 每日自動發送科技日報 + 台灣遊戲情報日報。"""
 import json
 import logging
 from pathlib import Path
 
+import yaml
 from telegram.ext import ContextTypes
 
 from src.skills.registry import SkillRegistry
 from src.llm import gemini_chat
-from src.bot.handlers import _backfill_urls
+from src.bot.handlers import (
+    _backfill_urls, _item_priority, _load_tw_game_keywords,
+    _TECH_PROMPT, _GAME_PROMPT, _CATEGORY_MAP,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -30,124 +34,121 @@ def get_subscribed_chats() -> set[int]:
 
 
 async def scheduled_daily(context: ContextTypes.DEFAULT_TYPE) -> None:
-    """每日排程：抓新聞 → LLM 結構化 → 渲染 → 推送到所有訂閱者。"""
+    """每日排程：抓新聞 → 分類 → LLM 結構化 → 渲染兩份日報 → 推送。"""
     if not _subscribed_chats:
         logger.warning("排程觸發但無訂閱者，跳過")
         return
 
     logger.info("⏰ 每日排程觸發，推送給 %d 位訂閱者", len(_subscribed_chats))
 
-    # 取得 handlers 裡的 registry
     from src.bot.handlers import _registry
     if not _registry:
         logger.error("排程：Skill 系統未就緒")
         return
 
-    # Step 1: 抓取新聞
-    result = await _registry.invoke("news_scraper", {"config_path": "config/news_sources.yaml"})
-    if not result.success:
-        logger.error("排程：抓取失敗 %s", result.error)
-        return
+    # Step 1: 分別抓取科技來源和遊戲來源
+    tech_result = await _registry.invoke("news_scraper", {
+        "config_path": "config/news_sources.yaml",
+        "source_key": "sources",
+    })
+    game_result = await _registry.invoke("news_scraper", {
+        "config_path": "config/news_sources.yaml",
+        "source_key": "game_sources",
+    })
 
     # Step 2: 收集素材
-    raw_items = []
-    for cat, items in result.data.get("categories", {}).items():
-        for item in items[:5]:
-            desc = item.get("description", "")
-            if desc == item["title"]:
-                desc = ""
-            raw_items.append({
-                "category": cat,
-                "title": item["title"],
-                "description": desc,
-                "url": item.get("url", ""),
-                "source": item.get("source", ""),
-            })
+    tech_items = []
+    game_items = []
 
-    if not raw_items:
+    if tech_result.success:
+        for cat, items in tech_result.data.get("categories", {}).items():
+            for item in items[:10]:
+                desc = item.get("description", "")
+                if desc == item["title"]:
+                    desc = ""
+                tech_items.append({
+                    "category": cat,
+                    "title": item["title"],
+                    "description": desc,
+                    "url": item.get("url", ""),
+                    "source": item.get("source", ""),
+                })
+
+    if game_result.success:
+        for cat, items in game_result.data.get("categories", {}).items():
+            for item in items[:10]:
+                desc = item.get("description", "")
+                if desc == item["title"]:
+                    desc = ""
+                game_items.append({
+                    "category": cat,
+                    "title": item["title"],
+                    "description": desc,
+                    "url": item.get("url", ""),
+                    "source": item.get("source", ""),
+                })
+
+    if not tech_items and not game_items:
         logger.warning("排程：今日無新聞")
         return
 
-    # Step 3: LLM 結構化
-    raw_items.sort(key=lambda x: (0 if x.get("description") else 1))
-    articles = await _structure_for_schedule(raw_items[:10])
+    # Step 3: 分別 LLM 結構化
+    # 科技日報
+    tech_articles = await _call_llm(_TECH_PROMPT, tech_items[:12])
+    if not tech_articles:
+        tech_articles = _fallback(tech_items[:5])
+    if tech_articles:
+        _backfill_urls(tech_articles, tech_items)
 
-    # 回填 URL
-    if articles:
-        _backfill_urls(articles, raw_items)
+    # 台灣遊戲情報
+    tw_keywords = _load_tw_game_keywords()
+    game_items.sort(key=lambda x: _item_priority(x, tw_keywords))
+    game_articles = await _call_llm(_GAME_PROMPT, game_items[:12])
+    if not game_articles:
+        game_articles = _fallback(game_items[:5])
+    if game_articles:
+        _backfill_urls(game_articles, game_items)
 
-    if not articles:
-        articles = _fallback_for_schedule(raw_items[:5])
+    # Step 4: 渲染兩份 HTML + 推送
+    reports = []
 
-    # Step 4: 渲染 HTML
-    render_result = await _registry.invoke("news_renderer", {"articles": articles[:5]})
-    if not render_result.success:
-        logger.error("排程：渲染失敗 %s", render_result.error)
-        return
+    if tech_articles:
+        r = await _registry.invoke("news_renderer", {
+            "articles": tech_articles[:6],
+            "report_title": "科技日報",
+        })
+        if r.success:
+            reports.append(("🔬 每日科技日報", r.data["path"], r.data["filename"], r.data.get("count", 0)))
+
+    if game_articles:
+        r = await _registry.invoke("news_renderer", {
+            "articles": game_articles[:6],
+            "report_title": "台灣遊戲情報",
+        })
+        if r.success:
+            reports.append(("🎮 台灣遊戲情報", r.data["path"], r.data["filename"], r.data.get("count", 0)))
 
     # Step 5: 推送給所有訂閱者
-    path = render_result.data["path"]
-    count = render_result.data.get("count", 0)
-
     for chat_id in _subscribed_chats:
-        try:
-            await context.bot.send_document(
-                chat_id=chat_id,
-                document=open(path, "rb"),
-                filename=Path(path).name,
-                caption=f"📰 每日科技日報（{count} 則）— 自動排程推送",
-            )
-            logger.info("排程：已推送到 chat_id=%s", chat_id)
-        except Exception as e:
-            logger.error("排程：推送失敗 chat_id=%s: %s", chat_id, e)
+        for caption_prefix, path, filename, count in reports:
+            try:
+                await context.bot.send_document(
+                    chat_id=chat_id,
+                    document=open(path, "rb"),
+                    filename=filename,
+                    caption=f"{caption_prefix}（{count} 則）— 自動排程推送",
+                )
+            except Exception as e:
+                logger.error("排程推送失敗 chat_id=%s, file=%s: %s", chat_id, filename, e)
+        logger.info("排程：已推送 %d 份日報到 chat_id=%s", len(reports), chat_id)
 
 
-# ── LLM 結構化（排程用，同 handlers 邏輯）────────────────────
-
-_CATEGORY_MAP = {
-    "tech_general": "科技綜合",
-    "ai_focus": "AI 焦點",
-    "dev_tools": "開發工具",
-    "hardware": "硬體趨勢",
-    "general": "科技綜合",
-}
-
-_STRUCTURE_PROMPT = """你是科技日報編輯。請根據以下新聞素材，撰寫結構化日報卡片。
-
-重要規則：
-1. 只使用素材中提供的真實資訊，禁止編造不存在的數據或細節
-2. 如果素材只有標題沒有描述，就根據標題如實概述，不要臆測具體數字或細節
-3. 從提供的新聞中挑選最有價值的 5 則
-4. 用繁體中文撰寫
-5. "what" 欄位要基於素材中的 description 來寫，如果沒有 description 就簡述標題含義
-6. "why" 欄位簡述該新聞的潛在影響
-7. "url" 欄位必須保留素材中提供的原始網址，不可省略或修改
-
-回傳純 JSON（不要 markdown code block），格式：
-{
-  "cards": [
-    {
-      "topic": "分類名稱（如：AI 焦點、開發工具、科技綜合、硬體趨勢、資安）",
-      "title": "新聞標題（精煉中文，15 字內）",
-      "what": "發生了什麼（2-3 句，基於素材的 description，可用 <span class=\\"hl\\">重點</span> 標記關鍵字）",
-      "why": "為什麼重要（1-2 句話說明影響）",
-      "summary": "一句話總結（10 字內）",
-      "source": "來源名稱",
-      "url": "原始新聞網址（直接複製素材中的網址）",
-      "tags": [
-        {"icon": "emoji", "text": "標籤文字（4字內）"}
-      ]
-    }
-  ]
-}
-
-以下是今日新聞素材：
-"""
+# ── LLM 結構化 ───────────────────────────────────────────────
 
 
-async def _structure_for_schedule(raw_items: list[dict]) -> list[dict]:
-    """LLM 結構化（排程版）。"""
-    if not gemini_chat.is_available():
+async def _call_llm(prompt_template: str, raw_items: list[dict]) -> list[dict]:
+    """通用 LLM 結構化。"""
+    if not gemini_chat.is_available() or not raw_items:
         return []
 
     lines = []
@@ -162,16 +163,16 @@ async def _structure_for_schedule(raw_items: list[dict]) -> list[dict]:
 
     try:
         response = await gemini_chat.chat(
-            message=_STRUCTURE_PROMPT + material,
-            system_prompt="你是專業的科技日報編輯，擅長將新聞素材轉化為精煉的中文日報卡片。只回傳 JSON。",
+            message=prompt_template + material,
+            system_prompt="你是專業的新聞編輯，只回傳 JSON。",
         )
         if not response:
             return []
 
         text = response.strip()
         if text.startswith("```"):
-            lines_resp = text.split("\n")
-            text = "\n".join(lines_resp[1:])
+            resp_lines = text.split("\n")
+            text = "\n".join(resp_lines[1:])
         if text.endswith("```"):
             text = text[:-3]
         text = text.strip()
@@ -183,7 +184,7 @@ async def _structure_for_schedule(raw_items: list[dict]) -> list[dict]:
         return []
 
 
-def _fallback_for_schedule(raw_items: list[dict]) -> list[dict]:
+def _fallback(raw_items: list[dict]) -> list[dict]:
     """Fallback 格式化。"""
     articles = []
     for item in raw_items:
@@ -192,7 +193,7 @@ def _fallback_for_schedule(raw_items: list[dict]) -> list[dict]:
             "topic": cat_name,
             "title": item["title"],
             "what": f"「{item['title']}」— 來自 {item['source']} 的最新報導。",
-            "why": "值得關注的科技動態。",
+            "why": "值得關注的動態。",
             "summary": item["title"][:15],
             "tags": [{"icon": "📰", "text": cat_name}],
             "source": item.get("source", ""),
