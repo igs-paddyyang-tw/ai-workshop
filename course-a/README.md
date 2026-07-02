@@ -1,71 +1,57 @@
 # 課程 A — AI Agent 開發入門
 
-> 打造你的第一個智能助手：說話 → 做事 → 記住（3 堂，共 2.5 小時）
+> 一個專案，三堂課：說話 → 做事 → 記住（共 2.5 小時）
 
-## 你會學到
+## 文件結構
 
-```
-01 它能「說話」    系統提詞 + 意圖路由 + Bot 啟動
-02 它能「做事」    Spec-Driven Skill 開發迴圈
-03 它能「記住」    RAG 問答 + 知識庫 + 自演化
-```
+| 文件 | 用途 |
+|------|------|
+| **[build-guide.md](build-guide.md)** | 完整規格（Phase 1-3，Step 0-10） |
+| [QUICKSTART-01-agent.md](QUICKSTART-01-agent.md) | 第一堂 50 min（Bot + SOUL） |
+| [QUICKSTART-02-skills.md](QUICKSTART-02-skills.md) | 第二堂 50 min（Spec-Driven） |
+| [QUICKSTART-03-wiki.md](QUICKSTART-03-wiki.md) | 第三堂 50 min（Wiki RAG） |
 
-## 課程總覽
+## 三堂課一覽
 
-| # | Workshop | 時長 | 核心 Skill | 產出 |
-|---|----------|------|-----------|------|
-| 01 | [Agent 初始](01-agent-workshop/) | 50 min | `ark-agent-builder` | 有人格的 Telegram Bot |
-| 02 | [Skills 開發](02-skills-workshop/) | 50 min | `ark-grill-me` + `ark-superpowers` + `ark-code-spec-validator` | 可驗證的 Skill |
-| 03 | [LLM Wiki](03-llm-wiki-workshop/) | 50 min | `ark-wiki-engine` | RAG 知識庫系統 |
-
-## 使用的 Skills（7 個）
-
-| Skill | 用途 | 堂次 |
-|-------|------|------|
-| `ark-agent-builder` | 一鍵建構 Bot 專案 | 01 |
-| `ark-env-doctor` | 環境檢查 | 01 |
-| `ark-grill-me` | 拷問設計（釐清需求） | 02 |
-| `ark-superpowers` | 產出 Spec 文件 | 02 |
-| `ark-skill-creator` | 建立新 Skill | 02 |
-| `ark-code-spec-validator` | 驗證 Code ↔ Spec | 02 |
-| `ark-wiki-engine` | Wiki 知識庫系統 | 03 |
-
-## 前置條件
-
-- Python 3.12+
-- Git
-- Telegram 帳號 + Bot Token
-- Gemini API Key（免費）
+| Phase | 主題 | 核心 Skill | 產出 |
+|-------|------|-----------|------|
+| 1 | Agent 初始 | `ark-agent-builder` + `ark-kiro-init` | Bot 有靈魂 |
+| 2 | Skills 開發 | `ark-grill-me` + `ark-superpowers` + `ark-code-spec-validator` | Skill 有品質 |
+| 3 | LLM Wiki | `ark-wiki-engine` | 知識會成長 |
 
 ## 快速開始
 
 ```bash
-# 取得 Skills
-git clone https://github.com/igs-paddyyang-tw/ark-agent-skills .kiro/skills/
+# 直接體驗成品
+cd ../sample/a-agent && pip install -r requirements.txt && python start.py
 
-# 從第一堂開始
-cd 01-agent-workshop && cat QUICKSTART.md
+# 從零建構
+cd ../sample/a-agent  # 參考結構
+cat build-guide.md    # 跟著 Step 0-10 做
 ```
 
-## 完成後你有什麼
+## 素材
 
-一個完整的個體 Agent：
-- ✅ 有人格（SOUL.md 系統提詞）
-- ✅ 有能力（Spec-Driven 開發的 Skills）
-- ✅ 有記憶（Wiki 知識庫 + RAG 問答）
+| 檔案 | 用途 |
+|------|------|
+| `soul-example.md` | SOUL 八段式範例（Phase 1） |
+| `bot-responses.md` | Bot 回應範本（Phase 1） |
+| `news-skill-guide.md` | 科技日報 Skill 實戰（Phase 2） |
+| `structured-example.json` | Mock 資料（Phase 2） |
+| `sample-docs/` | Wiki 範例文件 3 篇（Phase 3） |
+
+## 完成後你有
+
+```
+說話（SOUL + Planner + Gemini）
+  + 做事（Spec-Driven Skills）
+  + 記住（Wiki RAG + Memory）
+  = 完整的個體 Agent
+```
 
 ## 想繼續？
 
-完成課程 A 後，進入 **[課程 B — AI Agent Team 實戰](../course-b/)**，
-讓你的 Agent 從「一個人」變成「一個團隊」。
-
-## 科技日報貫穿案例
-
-| 堂次 | 日報怎麼做 |
-|------|-----------|
-| 01 | Bot 觸發 NewsSkill → 抓 HN 新聞 |
-| 02 | Spec-Driven 重構 NewsSkill（多來源+重試） |
-| 03 | 日報結果 ingest → Wiki，可問「上週趨勢」 |
+→ **[課程 B — AI Agent Team 實戰](../course-b/)**
 
 ---
 
