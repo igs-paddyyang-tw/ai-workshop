@@ -29,7 +29,7 @@
 
 📝 Kiro IDE 輸入：
 ```
-用 wiki_query 查詢「asyncio Semaphore 怎麼用來限流」，
+用 wiki_query 查詢「Ocean King 系列捕魚機跟競品的差異」，
 目前 Wiki 有什麼相關內容？
 ```
 
@@ -52,41 +52,41 @@
 → 觸發 ark-wiki-engine ingest
 
 ✅ 預期結果：
-- 「已匯入 3 篇：agent-design-notes.md, common-errors.md, python-async-guide.md」
+- 「已匯入 3 篇：ocean-king-analysis.md, super-ace-analysis.md, fishing-vs-slot-comparison.md」
 
 📝 在 Kiro 內驗證（不需要開 Telegram）：
 ```
-再查一次「asyncio Semaphore 怎麼用來限流」
+再查一次「Ocean King 系列跟競品的差異」
 ```
 
 ✅ 預期結果：
-- 找到 python-async-guide 的相關片段
-- 有具體的程式碼範例和說明
+- 找到 ocean-king-analysis.md 的相關片段
+- 列出 Ocean King 2/3/4 各版本的特色差異
 - **跟 Step 1 明顯不同 — 這就是 RAG 的效果**
 
 📝 追加驗證：
 ```
-查詢「常見的 Bot 錯誤怎麼排查」
+查詢「Super Ace 的 Golden Card 機制怎麼運作」
 ```
 
-✅ 預期：匹配到 common-errors.md 的內容
+✅ 預期：匹配到 super-ace-analysis.md 中 Golden Card → Wild 轉換的說明
 
 ---
 
 ## Step 3：建自己的知識 + Kiro 內驗證（20-35 min）
 
-**做什麼**：建一份自己的文件，匯入後在 Kiro 確認能查到  
-**為什麼**：確認「教它新東西」的流程可行
+**做什麼**：用 Kiro 建一份新的競品分析文件，匯入後確認能查到  
+**為什麼**：確認「教它新東西」的流程可行 — 你加什麼資料，它就能回答什麼
 
 📝 Kiro IDE 輸入：
 ```
-在 knowledge/raw/ 建立 docker-notes.md：
-Docker Compose 常用指令筆記，包含：
-- 啟動：docker compose up -d
-- 停止：docker compose down
-- 看 log：docker compose logs -f
-- 進容器：docker exec -it <name> bash
-- 清理：docker system prune
+在 knowledge/raw/ 建立 slot-market-trends.md：
+2024-2025 老虎機市場趨勢分析，包含：
+- 東南亞市場成長數據（菲律賓為主力市場）
+- 玩法趨勢：Cascading Reels + Megaways 成主流
+- 美術風格：從寫實轉向卡通/Q版
+- 營收模式：Free-to-Play + IAP vs 幣商模式
+- 競爭格局：JILI、PG Soft、Pragmatic Play 三強鼎立
 要有 frontmatter（title, type, tags, created）
 ```
 
@@ -97,19 +97,19 @@ Docker Compose 常用指令筆記，包含：
 
 📝 在 Kiro 內驗證：
 ```
-查詢「Docker 怎麼看即時 log」
+查詢「東南亞老虎機市場誰是主要玩家」
 ```
 
 ✅ 預期結果：
-- 回傳「docker compose logs -f」相關內容
-- 來源標記 docker-notes
+- 回傳 JILI、PG Soft、Pragmatic Play 的相關資訊
+- 來源標記 slot-market-trends
 
 📝 再試一個：
 ```
-查詢「Docker 怎麼清理空間」
+查詢「Cascading Reels 是什麼玩法」
 ```
 
-✅ 預期：匹配到 docker system prune
+✅ 預期：匹配到趨勢分析中的玩法說明
 
 💡 **到這裡，開發者端確認完成 — 知識庫有效、查詢正確。**
 
@@ -124,16 +124,16 @@ Docker Compose 常用指令筆記，包含：
 
 📱 Telegram：
 1. `/agents` → Admin
-2. 問「什麼是 asyncio 的 Semaphore？」
-3. 問「Docker 怎麼看 log？」
+2. 問「Ocean King 3 跟 Ocean King 2 有什麼差別？」
+3. 問「Super Ace 的 Golden Card 怎麼觸發？」
 
 ✅ 預期結果：
-- 回答詳細 + 底部有「📚 參考：python-async-guide」
-- Docker 問題也能回答 + 引用「docker-notes」
+- 回答詳細 + 底部有「📚 參考：ocean-king-analysis」
+- Super Ace 問題引用「super-ace-analysis」
 - **使用者體驗 = 有依據、不幻覺、可信任**
 
 📱 對比測試：問一個 Wiki 沒有的問題
-- 「Kubernetes 怎麼設定 HPA？」
+- 「PG Soft 的 Mahjong Ways 怎麼玩？」
 - 觀察：回答沒有「📚 參考」→ Agent 誠實表示沒有相關知識
 
 💡 **能回答的有引用，不能的坦白說 — 這就是可信任的 AI。**
@@ -183,9 +183,9 @@ Agent 會越來越了解使用者常問什麼、偏好什麼。
 
 ## 🏠 回家練習
 
-1. 📝 Kiro：「把我的 5 份技術筆記整理成 knowledge/raw/ 格式並匯入」
+1. 📝 Kiro：「建立一份我們公司其他產品線的競品分析，匯入 Wiki」
 2. 📝 Kiro：「檢查 Wiki 健康度，修復所有問題」
-3. 思考：公司哪些文件丟進去後，新人就能自己問 Agent 找答案？
+3. 思考：哪些公司文件丟進去後，新人就能自己問 Agent 找答案？（產品 spec？設計規範？營運 SOP？）
 
 ---
 
