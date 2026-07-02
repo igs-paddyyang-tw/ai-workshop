@@ -14,26 +14,50 @@ AVAILABLE_AGENTS = {
     "admin": {
         "dir": "agents/admin-agent",
         "name": "Admin Agent",
-        "emoji": "🤖",
-        "desc": "通用 AI 助手（預設）",
+        "emoji": "👑",
+        "desc": "管家 + 智能分流（預設）",
     },
-    "news": {
-        "dir": "agents/news-agent",
-        "name": "News Agent",
-        "emoji": "📰",
-        "desc": "科技新聞專家",
+    "pm": {
+        "dir": "agents/pm-agent",
+        "name": "PM Agent",
+        "emoji": "📋",
+        "desc": "專案經理 + 派工",
     },
-    "code": {
-        "dir": "agents/code-agent",
-        "name": "Code Agent",
+    "ai-dev": {
+        "dir": "agents/ai-dev-agent",
+        "name": "AI Dev Agent",
+        "emoji": "🧠",
+        "desc": "AI 工程師 + Prompt 設計",
+    },
+    "coder": {
+        "dir": "agents/coder-agent",
+        "name": "Coder Agent",
         "emoji": "💻",
-        "desc": "程式碼助手",
+        "desc": "全端開發 + 程式碼實作",
     },
-    "wiki": {
-        "dir": "agents/wiki-agent",
-        "name": "Wiki Agent",
-        "emoji": "📚",
-        "desc": "知識庫問答",
+    "qa": {
+        "dir": "agents/qa-agent",
+        "name": "QA Agent",
+        "emoji": "🧪",
+        "desc": "品質保證 + 測試",
+    },
+    "data": {
+        "dir": "agents/data-agent",
+        "name": "Data Agent",
+        "emoji": "📊",
+        "desc": "數據分析（內部）",
+    },
+    "market": {
+        "dir": "agents/market-agent",
+        "name": "Market Agent",
+        "emoji": "🗺️",
+        "desc": "市場研究（外部）",
+    },
+    "report": {
+        "dir": "agents/report-agent",
+        "name": "Report Agent",
+        "emoji": "📝",
+        "desc": "報告產出（彙整）",
     },
 }
 

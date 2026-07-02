@@ -63,33 +63,26 @@ async def cmd_agents(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     """顯示 Inline Keyboard 選擇 Agent。"""
     user_id = update.effective_user.id
     session = session_manager.get_or_create(user_id)
+    current = session.current_agent
+
+    def btn(agent_id):
+        info = AVAILABLE_AGENTS[agent_id]
+        prefix = "→ " if current == agent_id else ""
+        return InlineKeyboardButton(
+            f"{prefix}{info['emoji']} {agent_id.capitalize()}",
+            callback_data=f"switch_agent:{agent_id}",
+        )
 
     keyboard = [
-        [
-            InlineKeyboardButton(
-                f"{'→ ' if session.current_agent == 'admin' else ''}🤖 Admin",
-                callback_data="switch_agent:admin",
-            ),
-            InlineKeyboardButton(
-                f"{'→ ' if session.current_agent == 'news' else ''}📰 News",
-                callback_data="switch_agent:news",
-            ),
-        ],
-        [
-            InlineKeyboardButton(
-                f"{'→ ' if session.current_agent == 'code' else ''}💻 Code",
-                callback_data="switch_agent:code",
-            ),
-            InlineKeyboardButton(
-                f"{'→ ' if session.current_agent == 'wiki' else ''}📚 Wiki",
-                callback_data="switch_agent:wiki",
-            ),
-        ],
+        [btn("admin"), btn("pm")],
+        [btn("ai-dev"), btn("coder")],
+        [btn("qa"), btn("data")],
+        [btn("market"), btn("report")],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    current = AVAILABLE_AGENTS[session.current_agent]
+    agent = AVAILABLE_AGENTS[current]
     await update.message.reply_text(
-        f"當前：{current['emoji']} {current['name']}\n\n選擇要對話的 Agent：",
+        f"當前：{agent['emoji']} {agent['name']}\n\n選擇要對話的 Agent：",
         reply_markup=reply_markup,
     )
 
