@@ -1,0 +1,15 @@
+sources:
+  - name: "Hacker News"
+    url: "https://hacker-news.firebaseio.com/v0/topstories.json"
+    type: api
+    category: general
+  - name: "TechCrunch AI"
+    url: "https://techcrunch.com/category/artificial-intelligence/"
+    selector: "h3 a"
+    type: scrape
+    category: ai
+  - name: "Skills-Hub.ai"
+    url: "https://skills-hub.ai/"
+    selector: "h3, .card-title"
+    type: scrape
+    category: ai_skills

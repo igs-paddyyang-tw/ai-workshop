@@ -1,0 +1,8 @@
+id: wiki-ingest
+trigger: "ingest|匯入|更新知識"
+steps:
+  - action: scan_raw
+    params: { dir: "knowledge/raw/" }
+  - action: add_frontmatter
+  - action: write_wiki
+  - action: update_index

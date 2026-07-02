@@ -1,0 +1,8 @@
+# 科技日報工作流
+id: daily-news
+trigger: "新聞|news|日報|today"
+steps:
+  - skill: news
+    params: { max_items: 5 }
+  - skill: news_renderer
+    params: { template: "templates/tech-daily.html" }
