@@ -1,159 +1,195 @@
-# 🚀 第五堂：平台管理 — 你能「管理」
+# 🚀 第五堂：營運落地 — 它能「自己跑」
 
 ## 🎯 課堂目標
 
 完成後你能：
-1. 用 curl 探索 21+ API 端點
-2. 開啟 Web Dashboard 查看 KPI
-3. 理解費用控管和審計日誌
-4. 動手改 scheduler.yaml 觀察排程觸發
+1. 設定排程讓科技日報每天自動產出（不用手動 /assign）
+2. 設定費用上限避免 AI 燒錢（cost_guard）
+3. 用 Dashboard 後台看任務執行狀況
+4. 理解「Demo → 正式上線」需要什麼
 
 ## 📋 前置條件
 
-- 已完成第四堂（samples/ai-team-agent 能跑）
-- Node.js 20+（Web Dashboard）
+- 已完成第四堂（samples/ai-team-agent 能跑 + 派工成功）
 
 ---
 
-## Step 1：API 探索（0-10 min）
+# 前半段：Kiro IDE 設定排程 + 費控（開發者視角）
 
-**做什麼**：curl 各端點，理解平台 API 結構  
-**為什麼**：API 化 = 可整合到任何系統
+## Step 1：設定排程 — 自動派工（0-10 min）⭐ 核心
 
-💻 終端逐一執行：
-```bash
-curl http://localhost:33333/api/health
-curl http://localhost:33333/api/agents
-curl http://localhost:33333/api/admin/dashboard/stats
-curl http://localhost:33333/api/admin/costs
-curl http://localhost:33333/api/admin/audit
-```
-
-✅ 預期結果：
-- health：`{"status": "ok"}`
-- agents：列出 5 個 Agent 的 id + role
-- stats：`agents_online: 5, success_rate: 0.95`
-- costs：`today_usd` + breakdown by agent
-- audit：操作日誌陣列（時間戳 + 事件）
-
-📝 Kiro IDE 問：
-```
-列出 src/gateway/api/ 下所有端點，分類給我看
-```
-
----
-
-## Step 2：Web Dashboard（10-20 min）⭐ 核心
-
-**做什麼**：啟動 Next.js Dashboard，視覺化看全盤  
-**為什麼**：Dashboard = 看得到才管得到
-
-💻 終端（開新視窗）：
-```bash
-cd apps/web
-npm install
-npm run dev
-```
-
-🌐 瀏覽器開 http://localhost:3000
-
-✅ 預期結果：
-- Dashboard 首頁：KPI 卡片（Agent 數、任務數、成功率）
-- Agents 頁：Agent 列表 + 狀態燈
-- Costs 頁：費用圖表
-- Audit 頁：操作日誌時間軸
-
-⚠️ npm install 失敗：
-- `rm -rf node_modules && npm cache clean --force && npm install`
-- node 版本不對 → `node --version` 確認 20+
-
----
-
-## Step 3：費用 + 審計（20-30 min）
-
-**做什麼**：理解費用控管和審計機制  
-**為什麼**：AI 不是免費的 — 要管成本和追溯操作
+**做什麼**：用 Kiro 設定排程，讓科技日報每天自動產出  
+**為什麼**：04 是手動 /assign。05 = 不用你了，系統自己來。
 
 📝 Kiro IDE 輸入：
 ```
-解釋 team.yaml 中的 cost_guard 設定，daily_limit_usd 怎麼運作
+打開 scheduler.yaml，加入一個新排程：
+- id: daily-tech-news
+- 描述: 每日科技日報
+- 時間: 每天早上 09:00（Asia/Taipei）
+- 任務: 請 market 蒐集今日科技新聞，report 產出日報
+- 指派: pm-agent（由 leader 拆解分工）
 ```
 
-💻 查看費用：
-```bash
-curl http://localhost:33333/api/admin/costs | python3 -m json.tool
+📝 確認格式：
+```
+檢查 scheduler.yaml 格式是否正確，
+列出所有排程的 id、cron、target
 ```
 
 ✅ 預期結果：
-- 看到每個 Agent 的呼叫次數和費用
-- `daily_limit_usd: 15.0`、`usage_percent`
-
-📝 Kiro IDE 問：
+```yaml
+schedules:
+  - id: daily-tech-news
+    cron: "0 9 * * *"
+    timezone: Asia/Taipei
+    target: pm-agent
+    prompt: "規劃今日科技日報：market 蒐集新聞、report 產出 HTML 日報"
 ```
-打開 src/coordinator/services/audit_logger.py，解釋審計日誌記錄哪些事件
-```
 
-✅ 理解：所有操作（派工、完成、失敗、費用）都有紀錄，可追溯
+📝 加碼 — 再加一個排程：
+```
+加入第二個排程：
+- id: weekly-competitor-report
+- 描述: 每週一競品分析
+- 時間: 每週一 10:00
+- 任務: market 蒐集捕魚機和老虎機最新動態，designer 分析 UI 趨勢，report 產出週報
+```
 
 ---
 
-## Step 4：排程管理（30-40 min）
+## Step 2：設定費用控管（10-20 min）
 
-**做什麼**：用 Kiro 加一個排程，觀察自動觸發  
-**為什麼**：排程 = 不需人工觸發的自動化
+**做什麼**：用 Kiro 調整 cost_guard，設定每日上限  
+**為什麼**：AI 不是免費的 — 上線前必須設定預算天花板
 
 📝 Kiro IDE 輸入：
 ```
-在 scheduler.yaml 加入一個測試排程：
-- id: test-schedule
-- target: market-agent
-- prompt: "測試排程觸發：回報目前時間"
-- cron: "*/2 * * * *"（每 2 分鐘）
+打開 team.yaml 的 cost_guard 區塊，解釋每個欄位的意思
 ```
 
-💻 重啟平台：
+✅ 預期理解：
+```yaml
+cost_guard:
+  daily_limit_usd: 15.0    # 每日上限 15 美元
+  warn_at_percentage: 80    # 到 80% 時警告
+  timezone: Asia/Taipei     # 時區（每日重置依據）
+```
+
+📝 Kiro IDE 輸入：
+```
+把 daily_limit_usd 改成 5.0，
+解釋如果超過會發生什麼事
+```
+
+✅ 預期結果：
+- Kiro 解釋：超過上限 → 新任務會被拒絕 + 通知 admin
+- team.yaml 更新為 `daily_limit_usd: 5.0`
+
+📝 思考題：
+```
+如果我只想限制 market-agent 的費用（它會大量呼叫 API），
+但不想影響其他 Agent，要怎麼設定？
+```
+
+---
+
+## Step 3：重啟 + 確認排程生效（20-25 min）
+
+**做什麼**：重啟平台，確認排程已註冊  
+**為什麼**：改完 yaml 要重啟才生效
+
+💻 重啟：
 ```bash
 python start.py
 ```
 
-📱 等 2 分鐘，觀察 Telegram 是否收到 market-agent 的回報
+📝 Kiro IDE 輸入：
+```
+呼叫 API 列出目前所有排程，確認 daily-tech-news 已註冊
+```
 
-💻 確認排程已註冊：
+💻 或用 curl：
 ```bash
 curl http://localhost:33333/api/admin/schedules
 ```
 
 ✅ 預期結果：
-- schedules API 列出 test-schedule
-- 2 分鐘後 Telegram 收到 market-agent 的訊息
-- /board 出現排程觸發的任務
-
-⚠️ 沒觸發 → 確認 cron 格式正確 + 確認重啟了
+- 列出 2 個排程（daily-tech-news + weekly-competitor-report）
+- 顯示下次觸發時間
 
 ---
 
-## Step 5：全系列回顧（40-50 min）
+# 後半段：Dashboard + Telegram 驗證（使用者視角）
 
-**做什麼**：回顧五堂課的完整旅程  
-**為什麼**：串起「說話→做事→記住→合作→管理」
+## Step 4：手動觸發排程 + 看任務執行（25-40 min）
+
+**做什麼**：手動觸發排程，在 Dashboard 和 Telegram 看結果  
+**為什麼**：不用等到明天 09:00 — 先手動跑一次確認流程正確
+
+💻 手動觸發：
+```bash
+curl -X POST http://localhost:33333/api/admin/schedules/daily-tech-news/trigger
+```
+
+📱 Telegram 觀察：
+1. pm-agent 接到排程任務
+2. 自動拆解 → market 抓新聞 → report 產出日報
+3. `/board` 看到任務狀態流轉
+
+✅ 預期結果：
+- Telegram 收到日報產出
+- `/board` 顯示排程觸發的任務（標記為 scheduled）
+
+💻 看後台任務記錄：
+```bash
+curl http://localhost:33333/api/admin/dashboard/stats
+```
+
+✅ 預期結果：
+```json
+{
+  "agents_online": 6,
+  "tasks_today": 3,
+  "success_rate": 1.0,
+  "cost_today_usd": 0.12
+}
+```
+
+📱 費用驗證：
+```
+/costs
+```
+
+✅ 預期：列出今日各 Agent 的費用消耗
+
+---
+
+## Step 5：完整上線清單（40-50 min）
+
+**做什麼**：用 Kiro 產出一份「正式上線 Checklist」  
+**為什麼**：從 Demo 到正式上線的差距 = 這份清單
 
 📝 Kiro IDE 輸入：
 ```
-幫我總結這五堂課學了什麼，用表格呈現每堂的核心概念和帶走的能力
+幫我列出這個 Agent Team 正式上線前的 Checklist：
+考慮排程、費用、監控、告警、備份、部署
 ```
 
-✅ 回顧：
-| 堂 | 學會 | 核心 |
-|---|------|------|
-| 01 | 控制 AI 說什麼 | SOUL.md |
-| 02 | 保證做得好 | Spec-Driven |
-| 03 | 越用越聰明 | RAG + 自演化 |
-| 04 | 一群 AI 協作 | TaskGraph |
-| 05 | 掌控全局 | Dashboard + 費用 |
+✅ 預期產出（Kiro 幫你整理）：
 
-🎉 帶走：
-- `samples/ai-bot/` → 個體 Agent（改 SOUL 直接用）
-- `samples/ai-team-agent/` → 團隊平台（選配置直接跑）
+| 類別 | 項目 | 狀態 |
+|------|------|------|
+| 排程 | scheduler.yaml 設定完成 | ✅ |
+| 費控 | daily_limit_usd 設定 | ✅ |
+| 費控 | 超額告警通知 admin | ✅ |
+| 監控 | Dashboard 能看到 KPI | ✅ |
+| 監控 | /board 能看任務狀態 | ✅ |
+| 部署 | docker-compose.prod.yml | 🔲 回家做 |
+| 備份 | knowledge/ 定期備份 | 🔲 回家做 |
+| 告警 | Agent 失敗時通知 | 🔲 回家做 |
+
+💡 **帶走的感覺：你已經有一個能自動運作的 AI 團隊了。剩下的只是部署和維運。**
 
 ---
 
@@ -161,16 +197,16 @@ curl http://localhost:33333/api/admin/schedules
 
 | 等級 | 達成條件 |
 |------|----------|
-| 🎯 保底 | curl health 有回應 |
-| ✅ 標準 | Dashboard 能開 + 看到 KPI |
-| 🏆 快速 | 費用理解 + 排程觸發 + 全系列融會貫通 |
+| 🎯 保底 | 排程設定完成 + 確認已註冊 |
+| ✅ 標準 | 手動觸發 + Telegram 收到結果 + 看到費用 |
+| 🏆 快速 | 完整流程 + 上線 Checklist + 理解營運需求 |
 
 ## 🏠 回家練習
 
-1. 📝 Kiro：「幫我設計一個每日 09:00 的科技日報排程」
-2. 📝 Kiro：「把 cost_guard 的 daily_limit 改成 5.0，解釋會有什麼影響」
-3. 挑戰：`docker compose -f docker-compose.prod.yml up -d` 部署到正式環境
+1. 📝 Kiro：「用 docker-compose.prod.yml 把整個平台容器化部署」
+2. 📝 Kiro：「設定 Agent 失敗時自動通知到我的 Telegram」
+3. 把你公司的一個重複性工作，改寫成排程任務丟給 Agent 做
 
 ---
 
-*本堂重點：看得到才管得到。Dashboard + 費用 + 排程 = 生產級掌控力。*
+*本堂重點：04 是手動派工。05 是自動運作。排程 + 費控 + 監控 = 正式上線。*
