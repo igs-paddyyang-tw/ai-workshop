@@ -9,7 +9,7 @@ from telegram.ext import ContextTypes
 from src.skills.registry import SkillRegistry
 from src.llm import gemini_chat
 from src.bot.handlers import (
-    _backfill_urls, _item_priority, _load_tw_game_keywords,
+    _item_priority, _load_tw_game_keywords,
     _TECH_PROMPT, _GAME_PROMPT, _CATEGORY_MAP,
 )
 
@@ -107,16 +107,12 @@ async def scheduled_daily(context: ContextTypes.DEFAULT_TYPE) -> None:
     tech_articles = await _call_llm(_TECH_PROMPT, tech_items[:12])
     if not tech_articles:
         tech_articles = _fallback(tech_items[:5])
-    if tech_articles:
-        _backfill_urls(tech_articles, tech_items)
 
     # 台灣遊戲情報
     game_items.sort(key=lambda x: _item_priority(x, tw_keywords))
     game_articles = await _call_llm(_GAME_PROMPT, game_items[:20])
     if not game_articles:
         game_articles = _fallback(game_items[:5])
-    if game_articles:
-        _backfill_urls(game_articles, game_items)
 
     # Step 4: 渲染兩份 HTML + 推送
     reports = []
@@ -156,17 +152,15 @@ async def scheduled_daily(context: ContextTypes.DEFAULT_TYPE) -> None:
 
 
 async def _call_llm(prompt_template: str, raw_items: list[dict]) -> list[dict]:
-    """通用 LLM 結構化。"""
+    """通用 LLM 結構化。用 index 綁定真實 URL。"""
     if not gemini_chat.is_available() or not raw_items:
         return []
 
     lines = []
-    for item in raw_items:
-        line = f"- [{item['category']}] {item['title']} (來源: {item['source']})"
-        if item.get("url"):
-            line += f"\n  網址: {item['url']}"
+    for i, item in enumerate(raw_items):
+        line = f"[{i}] [{item['category']}] {item['title']} (來源: {item['source']})"
         if item.get("description"):
-            line += f"\n  描述: {item['description']}"
+            line += f"\n    描述: {item['description']}"
         lines.append(line)
     material = "\n".join(lines)
 
@@ -187,7 +181,17 @@ async def _call_llm(prompt_template: str, raw_items: list[dict]) -> list[dict]:
         text = text.strip()
 
         data = json.loads(text)
-        return data.get("cards", [])
+        cards = data.get("cards", [])
+
+        # 用 index 綁定真實 URL
+        for card in cards:
+            idx = card.pop("index", None)
+            if idx is not None and isinstance(idx, int) and 0 <= idx < len(raw_items):
+                card["url"] = raw_items[idx].get("url", "")
+                if not card.get("source"):
+                    card["source"] = raw_items[idx].get("source", "")
+
+        return cards
     except Exception as e:
         logger.error("排程 LLM 結構化失敗: %s", e)
         return []

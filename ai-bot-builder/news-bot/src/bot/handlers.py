@@ -156,10 +156,7 @@ async def cmd_daily(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         game_articles = _fallback_structure(game_items[:5])
 
     # 回填 URL
-    if tech_articles:
-        _backfill_urls(tech_articles, tech_items)
-    if game_articles:
-        _backfill_urls(game_articles, game_items)
+    # (URL 已在 _call_llm_structure 裡直接綁定，不需要額外回填)
 
     # Step 4: 分別渲染兩份 HTML
     sent_count = 0
@@ -269,13 +266,13 @@ _TECH_PROMPT = """你是科技日報編輯，主軸聚焦 AI 相關議題。請�
 {
   "cards": [
     {
+      "index": 素材編號（對應上方 [0] [1] [2]... 的數字）,
       "topic": "分類名稱（AI 應用 / AI 資安 / AI 工具 / AI 產業 / 科技綜合）",
       "title": "新聞標題（精煉中文，15 字內）",
       "what": "發生了什麼（2-3 句，可用 <span class=\\"hl\\">重點</span> 標記關鍵字）",
       "why": "為什麼重要（1-2 句話說明影響）",
       "summary": "一句話總結（10 字內）",
       "source": "來源名稱",
-      "url": "原始新聞網址",
       "tags": [{"icon": "emoji", "text": "標籤文字（4字內）"}]
     }
   ]
@@ -306,13 +303,13 @@ _GAME_PROMPT = """你是台灣遊戲市場情報編輯。請根據以下台灣�
 {
   "cards": [
     {
+      "index": 素材編號（對應上方 [0] [1] [2]... 的數字）,
       "topic": "分類名稱（手遊動態 / 博弈遊戲 / 遊戲產業 / 活動情報 / 官方公告）",
       "title": "新聞標題（精煉中文，15 字內）",
       "what": "發生了什麼（2-3 句，可用 <span class=\\"hl\\">重點</span> 標記關鍵字）",
       "why": "為什麼重要（1-2 句話，市場/競品/玩家角度）",
       "summary": "一句話總結（10 字內）",
       "source": "來源名稱",
-      "url": "原始新聞網址",
       "tags": [{"icon": "emoji", "text": "標籤文字（4字內）"}]
     }
   ]
@@ -333,18 +330,16 @@ async def _structure_game_report(raw_items: list[dict]) -> list[dict]:
 
 
 async def _call_llm_structure(prompt_template: str, raw_items: list[dict]) -> list[dict]:
-    """通用 LLM 結構化呼叫。"""
+    """通用 LLM 結構化呼叫。LLM 回傳 index，程式端綁定真實 URL。"""
     if not gemini_chat.is_available() or not raw_items:
         return []
 
-    # 組裝素材 — 包含 description 和 URL
+    # 組裝素材 — 帶編號，不傳 URL 給 LLM（避免 LLM 亂改）
     lines = []
-    for item in raw_items:
-        line = f"- [{item['category']}] {item['title']} (來源: {item['source']})"
-        if item.get("url"):
-            line += f"\n  網址: {item['url']}"
+    for i, item in enumerate(raw_items):
+        line = f"[{i}] [{item['category']}] {item['title']} (來源: {item['source']})"
         if item.get("description"):
-            line += f"\n  描述: {item['description']}"
+            line += f"\n    描述: {item['description']}"
         lines.append(line)
     material = "\n".join(lines)
 
@@ -368,6 +363,22 @@ async def _call_llm_structure(prompt_template: str, raw_items: list[dict]) -> li
 
         data = json.loads(text)
         cards = data.get("cards", [])
+
+        # 用 index 綁定真實 URL 和來源
+        for card in cards:
+            idx = card.pop("index", None)
+            if idx is not None and isinstance(idx, int) and 0 <= idx < len(raw_items):
+                card["url"] = raw_items[idx].get("url", "")
+                if not card.get("source"):
+                    card["source"] = raw_items[idx].get("source", "")
+            else:
+                # 沒有 index，嘗試用標題匹配
+                card_title = card.get("title", "").lower()
+                for item in raw_items:
+                    if item.get("url") and item["title"][:8].lower() in card_title:
+                        card["url"] = item["url"]
+                        break
+
         logger.info("LLM 結構化成功：%d 張卡片", len(cards))
         return cards if cards else []
     except json.JSONDecodeError as e:
