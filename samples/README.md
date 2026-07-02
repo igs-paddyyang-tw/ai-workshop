@@ -5,7 +5,7 @@
 ## 結構
 
 ```
-sample/
+samples/
 ├── ai-bot/          ← 課程 A 產出（個體 Agent）
 └── ai-team-agent/     ← 課程 B 產出（Agent 團隊平台）
 ```

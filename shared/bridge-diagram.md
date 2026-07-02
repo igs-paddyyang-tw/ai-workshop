@@ -130,8 +130,8 @@ my-bot/               my-bot/                 my-wiki-bot/          my-team/    
 | 第三堂節奏 | `course-a/QUICKSTART-03-wiki.md` | 50 min |
 | 第四堂節奏 | `course-b/QUICKSTART-04-team.md` | 50 min |
 | 第五堂節奏 | `course-b/QUICKSTART-05-platform.md` | 50 min |
-| 課程 A 成品 | `sample/ai-bot/` | 可跑 |
-| 課程 B 成品 | `sample/ai-team-agent/` | 可跑 |
+| 課程 A 成品 | `samples/ai-bot/` | 可跑 |
+| 課程 B 成品 | `samples/ai-team-agent/` | 可跑 |
 | 講師指南 | `instructor/teaching-guide.md` | 教學 |
 
 ---

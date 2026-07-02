@@ -108,7 +108,7 @@
 - 費用控管是生產環境必備
 
 **收尾**：
-- 學員帶走 `sample/ai-team-agent/`
+- 學員帶走 `samples/ai-team-agent/`
 - 選擇 team-ops 或 team-dev
 - 鼓勵回家改 SOUL.md 自訂角色
 
@@ -140,5 +140,5 @@
 |------|------|
 | 課程 A 規格 | `course-a/build-guide.md` |
 | 課程 B 規格 | `course-b/build-guide.md` |
-| 體驗成品 | `sample/ai-bot/` + `sample/ai-team-agent/` |
+| 體驗成品 | `samples/ai-bot/` + `samples/ai-team-agent/` |
 | 銜接全覽 | `shared/bridge-diagram.md` |

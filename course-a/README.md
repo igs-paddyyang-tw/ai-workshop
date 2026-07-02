@@ -23,10 +23,10 @@
 
 ```bash
 # 直接體驗成品
-cd ../sample/ai-bot && pip install -r requirements.txt && python start.py
+cd ../sampless/ai-bot && pip install -r requirements.txt && python start.py
 
 # 從零建構
-cd ../sample/ai-bot  # 參考結構
+cd ../sampless/ai-bot  # 參考結構
 cat build-guide.md    # 跟著 Step 0-10 做
 ```
 
