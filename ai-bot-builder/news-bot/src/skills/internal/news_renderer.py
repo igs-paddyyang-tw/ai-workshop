@@ -100,6 +100,7 @@ h2 {{ margin: 0 0 16px; font-size: 22px; color: #1a1a2e; }}
         title = article.get("title", "")
         what = article.get("what", article.get("description", ""))
         why = article.get("why", "")
+        suggestion = article.get("suggestion", "")
         summary = article.get("summary", title[:30])
         tags = article.get("tags", [])
         source = article.get("source", "")
@@ -129,6 +130,7 @@ h2 {{ margin: 0 0 16px; font-size: 22px; color: #1a1a2e; }}
     <div class="section-content">{what}</div>
   </div>
   {"<div class='section'><div class='section-title'>💡 為什麼重要</div><div class='section-content'>" + why + "</div></div>" if why else ""}
+  {"<div class='section'><div class='section-title'>🎯 產業建議</div><div class='section-content'>" + suggestion + "</div></div>" if suggestion else ""}
   <div class="section">
     <div class="section-title">✨ 一句話總結</div>
     <div class="section-content"><strong>{summary}</strong></div>
