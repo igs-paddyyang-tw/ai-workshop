@@ -108,22 +108,38 @@ python start.py
 - working_directory: agents/designer-agent
 ```
 
-### 3.3 初始化新 Agent 的 .kiro/
+### 3.3 初始化新 Agent 的完整配置
 
 📝 Kiro IDE 輸入：
 ```
-幫 designer-agent 建立 .kiro/ 配置：
-- SOUL.md：UI 設計師，嚴格遵循設計原則，注重可用性
-- 加入基本的 skills 目錄
+用 ark-kiro-init 幫 designer-agent 初始化完整 .kiro/ 配置：
+- SOUL：UI 設計師，遵循設計 10 原則，注重可用性和一致性
+- MEMORY：記住使用者偏好的設計風格
+- 專屬能力方向：Wireframe、配色、RWD 佈局
+- knowledge/raw/ 放一份「UI 設計基本原則」作為種子知識
 ```
 
-✅ 預期結果：
-- team.yaml 多了 designer-agent
-- `agents/designer-agent/.kiro/steering/SOUL.md` 存在
-
-📝 確認配置正確：
+✅ 預期結果（對照 ark-kiro-init 產出結構）：
 ```
-檢查 team.yaml 格式是否正確，有沒有 YAML 語法問題
+agents/designer-agent/
+├── .kiro/
+│   ├── agents/designer-agent.json    ← Agent 配置
+│   ├── prompts/route-message.md      ← 路由提示
+│   ├── settings/mcp.json             ← MCP 配置
+│   ├── steering/
+│   │   ├── SOUL.md                   ← 人格定義
+│   │   ├── MEMORY.md                 ← 記憶策略
+│   │   └── USER.md                   ← 使用者資訊
+│   └── skills/                       ← Skill 目錄
+└── knowledge/
+    ├── raw/ui-design-principles.md   ← 種子知識
+    └── wiki/                         ← RAG 用（ingest 後產出）
+```
+
+📝 確認配置完整：
+```
+檢查 designer-agent 的 .kiro/ 是否完整：
+SOUL.md 有內容、MEMORY.md 有策略、knowledge/raw/ 有種子文件
 ```
 
 ---
