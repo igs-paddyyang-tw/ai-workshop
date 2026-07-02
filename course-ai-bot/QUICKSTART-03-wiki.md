@@ -22,20 +22,29 @@
 
 # 前半段：Kiro IDE 開發 + 驗證（開發者視角）
 
-## Step 1：建立基準 — 沒知識時的回答（0-5 min）
+## Step 1：建立基準 — 還沒 ingest 的狀態（0-5 min）
 
-**做什麼**：在 Kiro 內問一個問題，記住「差」的回答  
-**為什麼**：建立對比基準，等下加知識後看差異
+**做什麼**：在 Kiro 內問一個問題，確認 Wiki 還是空的  
+**為什麼**：raw/ 有素材 ≠ Agent 能引用。要先 ingest 才能查到。
 
 📝 Kiro IDE 輸入：
 ```
-用 wiki_query 查詢「Ocean King 系列捕魚機跟競品的差異」，
-目前 Wiki 有什麼相關內容？
+查詢 Wiki「Ocean King 系列捕魚機跟競品的差異」
 ```
 
 ✅ 預期結果：
-- 「Wiki 中沒有找到相關內容」或只有模糊匹配
-- 記住這個狀態：**知識庫是空的，Agent 無法引用。**
+- 「Wiki 中沒有找到相關內容」
+- knowledge/raw/ 有 3 篇檔案，但 knowledge/wiki/ 是空的
+- **素材存在 ≠ 知識可用。還沒 ingest = Agent 不知道。**
+
+📝 確認狀態：
+```
+列出 knowledge/raw/ 和 knowledge/wiki/ 各有什麼檔案
+```
+
+✅ 預期：
+- raw/：ocean-king-analysis.md、super-ace-analysis.md、fishing-vs-slot-comparison.md（3 篇素材）
+- wiki/：空的（還沒匯入）
 
 ---
 
