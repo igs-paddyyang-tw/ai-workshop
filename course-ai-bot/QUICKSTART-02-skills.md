@@ -3,96 +3,144 @@
 ## 🎯 課堂目標
 
 完成後你能：
-1. 理解 SKILL.md 格式（Ark Skill 規範：frontmatter + 步驟 + 輸出）
-2. 用 ark-grill-me 被拷問釐清需求，產出決策摘要
-3. 用 ark-superpowers 從決策摘要產出完整規格書
-4. 驗證 Code ↔ Spec 一致性，確保 Drift Score ≥ 90
+1. 理解 SKILL.md 格式（Ark Skill 規範）
+2. 用 ark-grill-me 被拷問，釐清需求
+3. 用 ark-superpowers 產出規格書
+4. 驗證 Code ↔ Spec 一致性（Score ≥ 90）
 
 ## 📋 前置條件
 
-- 完成第一堂，Bot 能正常啟動
-- Kiro CLI 已安裝且能正常使用
-- 熟悉基本 Markdown 語法
-- 約 50 分鐘完整時間
+- 已完成第一堂（samples/ai-bot 能跑）
+- Kiro IDE（含 .kiro/skills/ 已 clone）
 
 ---
 
 ## Step 1：觀察現有 Skill（0-5 min）
 
-**做什麼**：看一個完整 Skill 的結構，建立心智模型  
-**為什麼**：先看懂別人寫的，才能自己寫
+**做什麼**：看 NewsSkill 的觸發 + SKILL.md 格式  
+**為什麼**：理解「Skill 長什麼樣」才知道要產出什麼
 
-**操作**：
-1. 在 Telegram 切到 Market Agent，輸入「今天新聞」
-2. 打開 `src/skills/internal/news.py` 看實作
-3. 打開 `agents/market-agent/skills/ark-market-research/SKILL.md` 看規格
+📱 Telegram 操作：
+1. `/agents` → 選 Market → 輸入「今天新聞」
+2. 觀察 NewsSkill 觸發，回傳新聞列表
 
-**✅ 預期結果**：看到 NewsSkill 回傳新聞列表；SKILL.md 含 frontmatter（name/version/trigger）+ 執行步驟 + 輸出格式  
-**⚠️ 如果不成功**：Market Agent 沒反應 → 確認已切換 Agent（`/agents` → Market）
+📝 在 Kiro IDE 輸入：
+```
+打開 agents/market-agent/skills/ark-market-research/SKILL.md，解釋這個 Skill 的格式
+```
+
+✅ 預期結果：
+- Telegram 收到 5 則 HN 新聞
+- Kiro 解釋：frontmatter（name + description）+ steps + 輸出格式
 
 ---
 
-## Step 2：拷問設計（5-20 min）⭐ 核心體驗
+## Step 2：拷問設計（5-20 min）⭐ 核心
 
-**做什麼**：用 ark-grill-me 讓 AI 拷問你的設計想法  
-**為什麼**：強迫你在寫 code 前想清楚需求，避免做白工
+**做什麼**：用 ark-grill-me 被 AI 拷問，釐清需求  
+**為什麼**：先想清楚再寫 — 你保有設計控制權
 
-**操作**：
-在 Kiro CLI 輸入：
+📝 在 Kiro IDE 聊天框輸入：
 ```
-拷問我的設計：重構 market-agent 的 NewsSkill，加入多來源並發 + 失敗重試
+拷問我的設計：重構 market-agent 的新聞爬蟲 Skill，
+加入多來源併發 + 失敗重試 + 結構化 JSON 輸出
 ```
 
-**✅ 預期結果**：AI 連續問 8-15 題（來源有哪些？重試幾次？超時多久？），你回答後產出「決策摘要」表格  
-**⚠️ 如果不成功**：AI 直接給答案沒問問題 → 重新輸入「用 grill-me 模式拷問我」  
-**💡 重點**：不要全部回答 OK！主動質疑、補充邊界條件，產出才有價值
+→ AI 會一次問一個問題（8-15 題）
+
+📱 你的角色：
+- **主動參與**：質疑推薦答案
+- **控制範疇**：太細的說「之後再決定」
+- **不要被動 OK**：每個決策都想過
+
+✅ 預期結果：
+- 拷問結束後產出「決策摘要」表格
+- 包含：資料來源、失敗策略、輸出格式等決策
+
+⚠️ 如果 AI 沒問問題：
+- 確認 .kiro/skills/ 有 ark-grill-me
+- 重新觸發：「用 ark-grill-me 拷問我」
 
 ---
 
 ## Step 3：產出 Spec（20-30 min）
 
-**做什麼**：根據決策摘要，讓 AI 生成正式規格書  
-**為什麼**：Spec 是 code 的藍圖，也是驗證的依據
+**做什麼**：用 ark-superpowers 產出規格書  
+**為什麼**：有 Spec 才能驗證、才能分享、才能維護
 
-**操作**：
+📝 在 Kiro IDE 輸入：
 ```
-根據決策摘要，幫我寫 spec
+根據以上決策摘要，幫我寫 spec
 ```
 
-**✅ 預期結果**：產出 `docs/specs/news-scraper-spec.md`，包含：目標 / 非目標 / 技術方案 / 驗收條件  
-**⚠️ 如果不成功**：輸出不完整 → 追問「補上驗收條件和非目標」  
-**💡 檢查點**：好的 Spec 一定有「非目標」— 明確說不做什麼
+→ Kiro 產出 `docs/specs/news-scraper-spec.md`
+
+✅ 預期結果：
+- 檔案出現在 docs/specs/
+- 包含：目標、非目標、功能需求、驗收條件
+
+📝 確認內容：
+```
+打開 docs/specs/news-scraper-spec.md，列出驗收條件有哪幾項
+```
 
 ---
 
 ## Step 4：實作 Skill（30-40 min）
 
-**做什麼**：根據 Spec 讓 AI 產出完整的 SKILL.md 和程式碼  
-**為什麼**：體驗 Spec-Driven Development 的完整迴圈
+**做什麼**：用 ark-skill-creator 產出新 Skill  
+**為什麼**：從 Spec 驅動實作，而非憑感覺寫
 
-**操作**：
+📝 在 Kiro IDE 輸入：
 ```
-建立新 Skill：科技新聞爬蟲，根據 spec 實作
+建立新 Skill：科技新聞爬蟲，根據 docs/specs/news-scraper-spec.md 的規格實作，
+放在 agents/market-agent/skills/ark-news-scraper/
 ```
 
-**✅ 預期結果**：產出 `agents/market-agent/skills/ark-news-scraper/SKILL.md` + 對應 Python 實作  
-**⚠️ 如果不成功**：路徑錯誤 → 指定「放在 agents/market-agent/skills/ 下」  
-**💡 觀察**：AI 產出的 SKILL.md 結構是否符合 Step 1 看到的格式？
+→ Kiro 產出 SKILL.md + 可能附帶 scripts/
+
+✅ 預期結果：
+- `agents/market-agent/skills/ark-news-scraper/SKILL.md` 出現
+- frontmatter 有 name + description
+- 步驟跟 Spec 一致
+
+⚠️ 如果產出不完整：
+- 📝「幫我補齊 SKILL.md 的輸出格式段落」
 
 ---
 
-## Step 5：驗證一致性（40-50 min）
+## Step 5：驗證 Code ↔ Spec（40-50 min）
 
-**做什麼**：用 ark-code-spec-validator 檢查 Code 和 Spec 的偏離程度  
-**為什麼**：程式碼會漂移，定期驗證才能維持品質
+**做什麼**：用 ark-code-spec-validator 驗證一致性  
+**為什麼**：Score ≥ 90 才能信任、才能上線
 
-**操作**：
+📝 在 Kiro IDE 輸入：
 ```
 驗證 code 跟 spec 一致嗎
 ```
 
-**✅ 預期結果**：Drift Report 顯示 4 個維度分數（功能完整性 / 介面一致性 / 錯誤處理 / 邊界條件），總分 ≥ 90 = 可 Ship  
-**⚠️ 如果不成功**：Score < 70 → 閱讀報告找出偏離項目 → 輸入「修復 Drift Report 的問題」→ 重新驗證
+→ 產出 Drift Report
+
+✅ 預期結果：
+- 4 維度評分（API / Schema / 依賴 / 測試覆蓋）
+- 總分顯示 0-100
+
+📊 解讀：
+- ✅ ≥ 90：可 Ship
+- ⚠️ 70-89：需修復
+- ❌ < 70：嚴重漂移
+
+⚠️ 如果 Score 太低：
+
+📝 在 Kiro IDE 輸入：
+```
+修復 Drift Report 指出的問題
+```
+
+📝 然後再驗證一次：
+```
+再跑一次 spec 驗證
+```
 
 ---
 
@@ -100,13 +148,16 @@
 
 | 等級 | 達成條件 |
 |------|----------|
-| ⭐ 基礎 | 完成 Step 1-2，能被拷問並產出決策摘要 |
-| ⭐⭐ 標準 | 完成 Step 3-4，產出 Spec + SKILL.md |
-| ⭐⭐⭐ 進階 | 完成 Step 5，Drift Score ≥ 90，理解完整迴圈 |
+| 🎯 保底 | 觸發 NewsSkill + 理解 SKILL.md 格式 |
+| ✅ 標準 | 拷問完成 + Spec 產出 |
+| 🏆 快速 | 拷問 + Spec + 實作 + Score ≥ 90 |
 
 ## 🏠 回家練習
 
-1. 用 grill-me 設計另一個 Skill（例如：天氣查詢、匯率轉換）
-2. 完成 Spec → 實作 → 驗證 的完整迴圈
-3. 刻意在 code 中偷改一個行為，觀察 Drift Score 如何下降
-4. 思考：什麼時候 Drift 是「故意的」？怎麼處理？
+1. 📝 在 Kiro：「為 code-agent 設計一個 code-review Skill，先拷問我」
+2. 📝 在 Kiro：「幫我優化 ark-news-scraper 的 description，增加觸發關鍵字」
+3. 挑戰：讓所有自己開發的 Skill 都達到 Score ≥ 90
+
+---
+
+*本堂重點：Spec-Driven = 先想清楚再寫。有驗證才可信任。*
