@@ -223,4 +223,187 @@ async def handle_message(update, context):
 
 ---
 
+## Phase 2：進階 Memory 系統
+
+### 2.1 多輪對話記憶（Conversation History）
+
+**問題**：目前每次對話獨立，Agent 不記得上一句。
+
+**設計**：
+
+```python
+@dataclass
+class ConversationTurn:
+    role: str        # "user" | "agent"
+    content: str
+    timestamp: str
+
+@dataclass
+class UserSession:
+    user_id: int
+    current_agent: str
+    history: list[ConversationTurn] = field(default_factory=list)
+    max_turns: int = 10  # 保留最近 10 輪
+```
+
+**效果**：
+```
+使用者：「今天 AI 新聞」
+Agent：「1. Claude 5 發布 2. ...」
+使用者：「第一則詳細說」          ← Agent 記得上一輪
+Agent：「Claude 5 是 Anthropic...」
+```
+
+**注入方式**：把 history 作為 context 傳給 kiro-cli 或 Gemini API。
+
+### 2.2 使用者 Profile（User Persona）
+
+**問題**：每次對話都從零開始判斷使用者偏好。
+
+**設計**：
+
+```
+agents/{name}-agent/knowledge/raw/profiles/
+└── user_{id}.md
+```
+
+```markdown
+---
+user_id: 123456789
+first_seen: 2026-07-01
+total_interactions: 42
+---
+
+## 偏好
+
+- 語言：繁體中文
+- 關注領域：AI、Python、雲端架構
+- 回答風格偏好：簡潔、附程式碼
+- 活躍時段：早 9-11、晚 8-10
+
+## 常問主題
+
+| 主題 | 次數 | 最近一次 |
+|------|------|---------|
+| AI 新聞 | 15 | 2026-07-02 |
+| Python 問題 | 12 | 2026-07-01 |
+| FastAPI | 8 | 2026-06-30 |
+
+## 特殊備註
+
+- 偏好用 httpx 而非 requests
+- 專案用 Python 3.12 + FastAPI
+- 不喜歡太長的解釋
+```
+
+**觸發時機**：每 10 次互動或每日結束時，Agent 用 LLM 更新 profile。
+
+**讀取方式**：對話前載入 profile 作為額外 context 注入。
+
+### 2.3 知識缺口追蹤（Knowledge Gap）
+
+**問題**：使用者問了但 Wiki 查不到的，沒有被記錄。
+
+**設計**：
+
+```
+agents/{name}-agent/knowledge/raw/gaps/
+└── 2026-07-02_gaps.md
+```
+
+```markdown
+---
+date: 2026-07-02
+agent: wiki-agent
+---
+
+## 知識缺口（今日查不到的問題）
+
+| 問題 | 使用者 | 建議補充 |
+|------|--------|---------|
+| Docker Compose v2 差異 | user123 | 需要 docker 相關文件 |
+| asyncio vs threading 比較 | user456 | 可從 python-async-guide 擴充 |
+```
+
+**用途**：
+- 定期 review gaps → 補充 raw/ 文件 → ingest → Wiki 成長
+- 這就是「自演化循環」的起點
+
+### 2.4 跨 Agent 共享記憶（Shared Memory）
+
+**問題**：user 在 news-agent 聊的，admin-agent 不知道。
+
+**設計**：
+
+```
+knowledge/shared/
+├── user_{id}_summary.md    ← 跨 Agent 的使用者摘要
+└── today_highlights.md     ← 今日各 Agent 的重要發現
+```
+
+**寫入時機**：Agent 完成任務時，如果是「重要發現」就同步寫 shared。
+
+**讀取時機**：切換 Agent 時，新 Agent 載入 shared/ 了解上下文。
+
+**效果**：
+```
+User 在 news-agent 問了 AI 新聞
+    → shared/user_123_summary.md 記錄「user 關注 AI」
+User 切到 code-agent 問問題
+    → code-agent 讀 shared → 知道 user 在看 AI 新聞
+    → 回答時自然關聯「剛看到 Claude 5 的新 API，你可以這樣用...」
+```
+
+### 2.5 情緒/滿意度追蹤
+
+**設計**：在 memory 檔案加入 LLM 自評：
+
+```markdown
+## Agent 自評
+
+- 回答完整度：8/10
+- 使用者可能滿意度：7/10（問題較廣泛，回答可能不夠聚焦）
+- 改善建議：下次先確認使用者想要的深度
+```
+
+**用途**：長期追蹤 Agent 的回答品質，找出需要改善的模式。
+
+---
+
+## Phase 2 執行優先順序
+
+| # | 功能 | 難度 | 價值 | 建議時機 |
+|---|------|------|------|---------|
+| 1 | 多輪對話記憶 | 中 | 🔴 高 | Phase 1 完成後立即 |
+| 2 | 使用者 Profile | 中 | 🟡 中 | 互動 > 20 次時 |
+| 3 | 知識缺口追蹤 | 低 | 🟡 中 | Wiki 穩定後 |
+| 4 | 跨 Agent 共享 | 高 | 🟢 低（a-agent 場景） | 需要協作時 |
+| 5 | 情緒/滿意度 | 低 | 🟢 低 | 品質優化期 |
+
+> 注意：功能 4（跨 Agent 共享）在課程 B 的 b-agent-team 中已內建（A2A + shared_memory）。
+> a-agent 的定位是「個體」，跨 Agent 共享是可選的進階功能。
+
+---
+
+## 完整 Memory 架構圖
+
+```
+agents/{name}-agent/
+├── knowledge/
+│   ├── raw/                         ← Agent 寫入
+│   │   ├── 2026-07-02_0930_user123.md   ← 任務記錄（Phase 1）
+│   │   ├── profiles/                     ← 使用者畫像（Phase 2.2）
+│   │   │   └── user_123.md
+│   │   └── gaps/                         ← 知識缺口（Phase 2.3）
+│   │       └── 2026-07-02_gaps.md
+│   └── wiki/                        ← ingest 產出（不手動改）
+│       └── ...
+│
+knowledge/shared/                    ← 跨 Agent 共享（Phase 2.4）
+├── user_123_summary.md
+└── today_highlights.md
+```
+
+---
+
 *使用 ark-superpowers 框架產出。*
