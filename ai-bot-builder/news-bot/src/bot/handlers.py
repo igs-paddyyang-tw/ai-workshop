@@ -391,39 +391,34 @@ def _fallback_structure(raw_items: list[dict]) -> list[dict]:
 
 
 def _backfill_urls(articles: list[dict], raw_items: list[dict]) -> None:
-    """將原始 URL 回填到 LLM 產出的卡片（LLM 不一定會保留 URL）。"""
-    # 建立標題→URL 的對照表
-    title_url_map = {}
-    for item in raw_items:
-        if item.get("url"):
-            # 用原始標題的前 20 字當 key（因為 LLM 可能翻譯或精簡標題）
-            title_url_map[item["title"].lower()[:30]] = item["url"]
-            # 也用來源名做 fallback matching
-            key = f"{item['source']}_{item['title'][:15]}".lower()
-            title_url_map[key] = item["url"]
-
+    """將原始 URL 回填到 LLM 產出的卡片。只在能明確匹配時才回填，不亂塞。"""
     for article in articles:
         if article.get("url"):
-            continue  # 已經有 URL 了
+            continue  # LLM 已正確保留 URL
 
-        # 嘗試用 source 名稱匹配
-        source = article.get("source", "")
-        matched = False
+        # 用 source 名稱 + 標題關鍵字雙重匹配
+        article_title = article.get("title", "").lower()
+        article_source = article.get("source", "").lower()
+
         for item in raw_items:
-            if item.get("url") and item["source"] == source:
-                # 檢查標題是否相關（簡單比對）
-                if (item["title"][:10].lower() in article.get("title", "").lower() or
-                    article.get("title", "")[:5] in item["title"]):
-                    article["url"] = item["url"]
-                    matched = True
-                    break
+            if not item.get("url"):
+                continue
+            item_title = item["title"].lower()
+            item_source = item.get("source", "").lower()
 
-        # 如果沒匹配到，按順序分配
-        if not matched:
-            for item in raw_items:
-                if item.get("url") and item["url"] not in [a.get("url") for a in articles]:
-                    article["url"] = item["url"]
-                    break
+            # 嚴格匹配：來源相同 且 標題有明確重疊（至少5個字元匹配）
+            source_match = (
+                article_source and item_source and
+                (article_source in item_source or item_source in article_source)
+            )
+            title_overlap = (
+                (len(article_title) >= 5 and article_title[:5] in item_title) or
+                (len(item_title) >= 8 and item_title[:8] in article_title)
+            )
+
+            if source_match and title_overlap:
+                article["url"] = item["url"]
+                break
 
 
 # ── 自然語言主流程 ────────────────────────────────────────────
