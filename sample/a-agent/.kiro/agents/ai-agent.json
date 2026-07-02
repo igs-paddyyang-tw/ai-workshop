@@ -1,0 +1,7 @@
+{
+  "name": "ai-agent",
+  "display_name": "科技日報助手",
+  "description": "個體 AI Agent — 有人格的智能助手",
+  "role": "standalone",
+  "created": "2026-07-02"
+}
