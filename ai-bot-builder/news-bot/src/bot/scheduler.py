@@ -103,7 +103,7 @@ async def scheduled_daily(context: ContextTypes.DEFAULT_TYPE) -> None:
     # 台灣遊戲情報
     tw_keywords = _load_tw_game_keywords()
     game_items.sort(key=lambda x: _item_priority(x, tw_keywords))
-    game_articles = await _call_llm(_GAME_PROMPT, game_items[:12])
+    game_articles = await _call_llm(_GAME_PROMPT, game_items[:20])
     if not game_articles:
         game_articles = _fallback(game_items[:5])
     if game_articles:

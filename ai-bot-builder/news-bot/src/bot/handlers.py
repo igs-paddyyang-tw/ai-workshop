@@ -141,7 +141,7 @@ async def cmd_daily(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     # 台灣遊戲情報日報
     tw_keywords = _load_tw_game_keywords()
     game_items.sort(key=lambda x: _item_priority(x, tw_keywords))
-    game_articles = await _structure_game_report(game_items[:12])
+    game_articles = await _structure_game_report(game_items[:20])
     if not game_articles:
         game_articles = _fallback_structure(game_items[:5])
 
@@ -211,25 +211,32 @@ def _load_tw_game_keywords() -> list[str]:
 
 
 def _item_priority(item: dict, tw_keywords: list[str]) -> int:
-    """排序優先度：0=台灣遊戲品牌相關, 1=有描述, 2=其他。"""
+    """排序優先度：0=官網公告, 1=品牌關鍵字命中, 2=台灣遊戲分類, 3=有描述, 4=其他。"""
     title_lower = item.get("title", "").lower()
     desc_lower = item.get("description", "").lower()
+    source_lower = item.get("source", "").lower()
     text = title_lower + " " + desc_lower
 
-    # 台灣博弈品牌關鍵字命中 → 最高優先
-    for kw in tw_keywords:
-        if kw.lower() in text:
+    # 官網來源 → 最高優先
+    official_sources = ["官網", "星城online", "豪神", "包你發", "老子有錢", "天狐宴", "金爸爸", "滿貫大亨"]
+    for os_name in official_sources:
+        if os_name in source_lower:
             return 0
 
-    # 台灣遊戲分類 → 次高
+    # 台灣博弈品牌關鍵字命中 → 次高
+    for kw in tw_keywords:
+        if kw.lower() in text:
+            return 1
+
+    # 台灣遊戲分類 → 中高
     if item.get("category") == "tw_game":
-        return 1
+        return 2
 
     # 有描述 → 中等
     if item.get("description"):
-        return 2
+        return 3
 
-    return 3
+    return 4
 
 _TECH_PROMPT = """你是科技日報編輯。請根據以下國際科技新聞素材，撰寫結構化日報卡片。
 
@@ -263,22 +270,27 @@ _TECH_PROMPT = """你是科技日報編輯。請根據以下國際科技新聞�
 
 _GAME_PROMPT = """你是台灣遊戲市場情報編輯。請根據以下台灣遊戲新聞素材，撰寫結構化日報卡片。
 
-特別關注品牌：金好運、包你發、老子有錢、星城Online、豪神、明星三缺一（明星3缺1）、鉅網、IGS、滿貫大亨、大福，以及其他博弈/手遊相關新聞。
-如果素材中有上述品牌，必須優先收錄。
+特別關注品牌：金好運、包你發、老子有錢、星城Online、豪神、明星三缺一（明星3缺1）、鉅網、IGS、滿貫大亨、天狐宴、金爸爸，以及其他博弈/手遊相關新聞。
+
+優先收錄規則（按重要性排序）：
+1. 來自官網的公告（星城Online、豪神、包你發、老子有錢、天狐宴、金爸爸、滿貫大亨）必須優先收錄
+2. 上述品牌在巴哈姆特或 4Gamers 的新聞報導次之
+3. 其他台灣遊戲市場相關新聞補充
 
 重要規則：
 1. 只使用素材中提供的真實資訊，禁止編造不存在的數據或細節
-2. 挑選最有價值的 5 則遊戲新聞
+2. 挑選最有價值的 5-6 則遊戲新聞
 3. 用繁體中文撰寫
 4. "what" 欄位要基於素材中的 description 來寫，如果沒有 description 就簡述標題含義
 5. "why" 欄位從市場競爭、玩家影響或產業趨勢角度分析
 6. "url" 欄位必須保留素材中提供的原始網址，不可省略或修改
+7. "source" 欄位要標明來自哪個來源（如：星城Online 官網、巴哈姆特 GNN 等）
 
 回傳純 JSON（不要 markdown code block），格式：
 {
   "cards": [
     {
-      "topic": "分類名稱（手遊動態 / 博弈遊戲 / 遊戲產業 / 活動情報）",
+      "topic": "分類名稱（手遊動態 / 博弈遊戲 / 遊戲產業 / 活動情報 / 官方公告）",
       "title": "新聞標題（精煉中文，15 字內）",
       "what": "發生了什麼（2-3 句，可用 <span class=\\"hl\\">重點</span> 標記關鍵字）",
       "why": "為什麼重要（1-2 句話，市場/競品/玩家角度）",
