@@ -1,6 +1,9 @@
 # 意圖路由提詞
 
-判斷使用者意圖，路由到對應 Skill：
-- 新聞相關 → news skill
-- 知識查詢 → wiki query
-- 其他 → gemini chat（使用 SOUL.md 風格）
+判斷使用者意圖，路由到對應能力：
+
+| 意圖 | 觸發條件 | 路由目標 |
+|------|---------|----------|
+| 新聞 | 新聞/news/今天 | NewsSkill |
+| 知識 | wiki/知識庫/查知識 | WikiEngine |
+| 其他 | 任何文字 | Gemini Chat（注入 SOUL） |

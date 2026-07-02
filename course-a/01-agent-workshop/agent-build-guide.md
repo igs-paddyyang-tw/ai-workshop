@@ -53,16 +53,18 @@ cd ../../sample && pip install -r requirements.txt && python start.py
 |---|------|-------|------|
 | 0 | 環境準備 | `ark-env-doctor` | 環境診斷 + Skills 取得 |
 | 1 | Bot 專案骨架 | `ark-agent-builder` | 完整專案結構 |
-| 2 | 系統提詞設計 | — （手動） | SOUL.md 八段式人格定義 |
-| 3 | 意圖路由 + Gemini 對話 | `ark-llm-tools` | Planner + Gemini Chat（注入 SOUL） |
-| 4 | 🚧 瓶頸體驗 + 下堂預告 | — | 理解單兵限制 |
+| 2 | Agent 配置初始化 | `ark-kiro-init --standalone` | .kiro/ + knowledge/ |
+| 3 | 系統提詞設計 | — （手動修改） | SOUL.md 八段式人格定義 |
+| 4 | 意圖路由 + Gemini 對話 | `ark-llm-tools` | Planner + Gemini Chat（注入 SOUL） |
+| 5 | 🚧 瓶頸體驗 + 下堂預告 | — | 理解單兵限制 |
 
 ```
 Step 0: 環境準備 → Skills 取得
 Step 1: 一鍵建構 Bot（ark-agent-builder）
-Step 2: 寫 SOUL.md → 定義 Bot 人格 ← ⭐ 本堂核心
-Step 3: 意圖路由 + Gemini 對話（注入 SOUL）
-Step 4: 瓶頸體驗 → 02 Skills 開發預告
+Step 2: 初始化 Agent 配置（ark-kiro-init --standalone）
+Step 3: 修改 SOUL.md → 定義 Bot 人格 ← ⭐ 本堂核心
+Step 4: 意圖路由 + Gemini 對話（注入 SOUL）
+Step 5: 瓶頸體驗 → 02 Skills 開發預告
 ```
 
 ---
@@ -153,7 +155,55 @@ python start.py
 
 ---
 
-## Step 2：系統提詞設計（SOUL.md）⭐ 本堂核心
+## Step 2：初始化 Agent 配置（ark-kiro-init）
+
+> 用 `ark-kiro-init --standalone` 一次產出完整的 `.kiro/` 配置 + `knowledge/` 結構。
+
+### 使用方式
+
+💻 在專案目錄中執行：
+
+```bash
+python3 .kiro/skills/ark-kiro-init/scripts/build_kiro.py --standalone my-bot --name "科技日報助手"
+```
+
+### 產出
+
+```
+my-bot/
+├── .kiro/
+│   ├── steering/
+│   │   ├── SOUL.md          ← ⭐ 系統提詞（下一步要修改它）
+│   │   ├── KIRO.md          ← 程式碼規範
+│   │   ├── MEMORY.md        ← 記憶規則
+│   │   └── USER.md          ← 使用者偏好
+│   ├── settings/
+│   │   └── mcp.json         ← MCP 工具設定
+│   ├── agents/
+│   │   └── 科技日報助手.json ← Agent 定義
+│   └── prompts/
+│       └── route-message.md ← 意圖路由提詞
+└── knowledge/
+    ├── raw/                  ← 原始文件（你丟進來的）
+    ├── wiki/                 ← 結構化知識（ingest 產出）
+    ├── schema.md             ← 知識庫規則
+    ├── index.md              ← 索引
+    └── log.md                ← 操作日誌
+```
+
+### 為什麼要用工具產出？
+
+| 手動建 | 用 ark-kiro-init |
+|--------|-----------------|
+| 容易漏檔案 | 一次到位（10 項） |
+| 格式不標準 | 統一模板 |
+| 不知道該寫什麼 | 有完整範例可改 |
+
+> 💡 工具產出的 SOUL.md 是「標準模板」。下一步（Step 3）你要修改它，定義你的 Bot 人格。
+
+---
+
+## Step 3：系統提詞設計（SOUL.md）⭐ 本堂核心
 
 > 這是 01 最重要的教學內容。SOUL.md 決定了 Bot「是誰」。
 
@@ -223,7 +273,7 @@ LLM 回答風格受 SOUL 控制
 
 ---
 
-## Step 3：意圖路由 + Gemini 對話（注入 SOUL）
+## Step 4：意圖路由 + Gemini 對話（注入 SOUL）
 
 ### 意圖路由（Planner）
 
@@ -302,7 +352,7 @@ python start.py
 
 ---
 
-## Step 4：🚧 瓶頸體驗 + 下堂預告（選讀，5 分鐘）
+## Step 5：🚧 瓶頸體驗 + 下堂預告（選讀，5 分鐘）
 
 > 親身感受「一個 Agent 全做」的天花板。
 
@@ -370,14 +420,15 @@ git clone https://github.com/igs-paddyyang-tw/ark-agent-skills .kiro/skills/
 # 1. 建構
 python3 .kiro/skills/ark-agent-builder/scripts/build_agent.py my-bot
 
-# 2. 寫 SOUL.md（複製 soul-example.md 再修改）
-cp soul-example.md my-bot/soul.md
+# 2. 初始化 Agent 配置
+python3 .kiro/skills/ark-kiro-init/scripts/build_kiro.py --standalone my-bot --name "科技日報助手"
 
-# 3. 設定 .env
+# 3. 修改 SOUL.md（定義人格）
+vim my-bot/.kiro/steering/SOUL.md
+
+# 4. 設定 .env + 啟動
 cd my-bot && cp .env.example .env
 # 填入 TELEGRAM_BOT_TOKEN + GEMINI_API_KEY
-
-# 4. 啟動
 pip install -r requirements.txt
 python start.py
 ```
