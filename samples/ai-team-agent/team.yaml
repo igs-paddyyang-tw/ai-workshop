@@ -29,7 +29,7 @@ hang_detector:
 
 instances:
   admin-agent:
-    working_directory: "."
+    working_directory: agents/admin-agent
     description: "⚙️ 管理者 — 服務監控、重啟、成本控制"
     role: admin
     skip_resume: true
