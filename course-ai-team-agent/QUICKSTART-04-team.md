@@ -153,38 +153,38 @@ SOUL.md 有內容、MEMORY.md 有策略、knowledge/raw/ 有種子文件
 
 💻 重啟：Ctrl+C → `python start.py`
 
-### 4.1 基本派工
+### 4.1 指令式派工
 
 📱 Telegram：
 1. `/agents` → 看到 6 個 Agent（含新加的 designer）
-2. `/assign 寫一個 REST API` → 觀察分配給誰
-3. `/assign 設計一個登入頁面` → 觀察是否分配給 designer
-4. `/board` → 看任務狀態
+2. `/assign 規劃科技日報：market 抓新聞、data 做分析、report 產出 HTML 日報`
+3. `/board` → 看任務狀態流轉
 
 ✅ 預期結果：
 - `/agents` 列出 6 個（含 designer-agent）
-- API 任務 → 分配給 coder 或 ai-dev
-- 設計任務 → 分配給 designer
-- `/board` 顯示任務狀態
+- `/assign` → pm-agent（leader）接收，拆成 3 個子任務
+- `/board` 顯示 3 個任務：market(fetch) → data(analyze) → report(render)
 
-### 4.2 科技日報 — 多 Agent 分工
+### 4.2 自然語言派工（同一任務）
 
-📱 Telegram 輸入：
+📱 Telegram 直接打字：
 ```
-@leader 規劃科技日報：market 抓新聞、data 做分析、report 產出 HTML 日報
+@pm 規劃科技日報：market 抓新聞、data 做分析、report 產出 HTML 日報
 ```
-
-📱 觀察：
-1. leader 拆為 3 個子任務
-2. `/board` 看到 3 個任務的狀態流轉
-3. market 先完成 → data 分析 → report 渲染
 
 ✅ 預期結果：
-- 三個任務依序或並行完成
-- 最終收到日報結果
-- **你只說了目標，leader 自動決定分工順序**
+- 跟 4.1 一樣 — pm-agent 接收、拆任務、分工
+- `/board` 同樣看到 3 個任務
 
-💡 **這就是 Agent Team 的價值：一句話 → 自動拆解 → 自動選人 → 自動排序。**
+💡 **對比重點：**
+| | `/assign` | `@pm` |
+|---|-----------|-------|
+| 方式 | 指令式 | 自然對話 |
+| 路由 | 直接走 cmd_assign | message handler → is_complex |
+| 結果 | 相同 | 相同 |
+| 適合 | 明確派工 | 像跟人說話 |
+
+**兩種都能用 — `/assign` 精確、`@pm` 自然。**
 
 ---
 
