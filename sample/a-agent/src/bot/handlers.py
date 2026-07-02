@@ -22,14 +22,18 @@ _SOUL_CONTENT = _SOUL_PATH.read_text(encoding="utf-8") if _SOUL_PATH.exists() el
 
 
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    from src.agent.cli import is_cli_available
-    mode = "🧠 Agent CLI 模式" if is_cli_available() else "⚡ Gemini API 模式"
+    from src.agent.cli import is_cli_available, get_current_agent, AVAILABLE_AGENTS
+    mode = "🧠 Agent CLI" if is_cli_available() else "⚡ Gemini API"
+    agent = AVAILABLE_AGENTS[get_current_agent()]
     await update.message.reply_text(
-        f"🤖 AI Agent 已就緒！（{mode}）\n\n"
+        f"🤖 AI Agent 已就緒！\n\n"
+        f"• 模式：{mode}\n"
+        f"• Agent：{agent['emoji']} {agent['name']}\n\n"
+        "指令：\n"
         "• 直接打字 → AI 對話\n"
         "• 「今天新聞」 → 新聞摘要\n"
-        "• /help → 指令清單\n"
-        "• /mode → 查看當前模式"
+        "• /agent → 切換 Agent\n"
+        "• /help → 指令清單"
     )
 
 
@@ -38,10 +42,39 @@ async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "📋 指令清單：\n"
         "/start — 歡迎訊息\n"
         "/help — 本清單\n"
-        "/mode — 查看 Agent 模式\n\n"
+        "/agent — 列出可用 Agent\n"
+        "/agent <id> — 切換 Agent\n"
+        "/mode — 查看執行模式\n\n"
         "💬 直接輸入文字即可對話\n"
         "📰 輸入「今天新聞」觸發 NewsSkill"
     )
+
+
+async def cmd_agent(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """列出或切換 Agent。"""
+    from src.agent.cli import list_agents, set_current_agent, AVAILABLE_AGENTS
+
+    args = context.args
+    if not args:
+        # 列出所有 Agent
+        agents = list_agents()
+        lines = ["👤 **可用 Agent：**\n"]
+        for a in agents:
+            marker = "→" if a["current"] else " "
+            lines.append(f"{marker} {a['emoji']} `{a['id']}` — {a['desc']}")
+        lines.append(f"\n切換：`/agent <id>`")
+        await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
+    else:
+        agent_id = args[0].lower()
+        if set_current_agent(agent_id):
+            info = AVAILABLE_AGENTS[agent_id]
+            await update.message.reply_text(
+                f"✅ 已切換到 {info['emoji']} **{info['name']}**\n\n{info['desc']}",
+                parse_mode="Markdown",
+            )
+        else:
+            available = ", ".join(AVAILABLE_AGENTS.keys())
+            await update.message.reply_text(f"❌ 找不到 `{agent_id}`\n可用：{available}")
 
 
 async def cmd_mode(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:

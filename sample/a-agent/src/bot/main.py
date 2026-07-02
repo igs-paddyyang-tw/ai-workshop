@@ -5,7 +5,7 @@ import os
 
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters
 
-from src.bot.handlers import cmd_start, cmd_help, cmd_mode, handle_message
+from src.bot.handlers import cmd_start, cmd_help, cmd_mode, cmd_agent, handle_message
 
 
 def create_app():
@@ -16,5 +16,7 @@ def create_app():
     app.add_handler(CommandHandler("start", cmd_start))
     app.add_handler(CommandHandler("help", cmd_help))
     app.add_handler(CommandHandler("mode", cmd_mode))
+    app.add_handler(CommandHandler("agent", cmd_agent))
+    app.add_handler(CommandHandler("agents", cmd_agent))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     return app
