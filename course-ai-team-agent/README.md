@@ -1,40 +1,37 @@
 # 課程 B — AI Agent Team 實戰
 
-> 一個平台，兩堂課：合作 → 管理（共 1.5 小時）
+> 用 `samples/ai-team-agent` 體驗：合作 → 管理（2 堂 × 50 min）
 
-## 文件結構
+## 教學方式
+
+```
+啟動 samples/ai-team-agent → 派工操作 → 理解架構
+```
+
+## 文件
 
 | 文件 | 用途 |
 |------|------|
-| **[build-guide.md](build-guide.md)** | 完整規格（Phase 1-2，Step 0-8） |
-| [QUICKSTART-04-team.md](QUICKSTART-04-team.md) | 第四堂 50 min（建團隊 + 派工） |
-| [QUICKSTART-05-platform.md](QUICKSTART-05-platform.md) | 第五堂 50 min（API + Dashboard） |
+| [QUICKSTART-04-team.md](QUICKSTART-04-team.md) | 第四堂：派工 + 科技日報分工 |
+| [QUICKSTART-05-platform.md](QUICKSTART-05-platform.md) | 第五堂：API + Dashboard + 排程 |
+| [build-guide.md](build-guide.md) | 課後：從零建構（Step 0-8） |
+| [quickstart.html](quickstart.html) | 教材展示頁 |
 
-## 兩堂課一覽
+## 兩堂課體驗什麼
 
-| Phase | 主題 | 核心 Skill | 產出 |
-|-------|------|-----------|------|
-| 1 | Agent Team | `ark-agent-team-builder` + `ark-kiro-init` | 5 Agent 並行 |
-| 2 | 平台管理 | （續用 Phase 1） | Dashboard + 運維 |
+| 堂 | 主題 | 核心操作 |
+|----|------|---------|
+| 04 | 合作 | `/assign` 派工 → 觀察 5 Agent 並行 → 科技日報分工 |
+| 05 | 管理 | curl API → Dashboard → 費用追蹤 → 改排程 |
 
-## 快速開始
+## 快速啟動
 
 ```bash
-# 直接體驗成品
-cd ../sampless/ai-team-agent && pip install -r requirements.txt
-cp .env.example .env && cp team-ops.yaml team.yaml
+cd ../samples/ai-team-agent
+pip install -r requirements.txt && cp .env.example .env
+cp team-ops.yaml team.yaml
 python start.py
-
-# 從零建構
-cat build-guide.md    # 跟著 Step 0-8 做
 ```
-
-## 素材
-
-| 檔案 | 用途 |
-|------|------|
-| `team.example.yaml` | team.yaml 完整格式範例 |
-| `troubleshooting.md` | 常見問題排除 |
 
 ## 團隊配置
 
@@ -43,22 +40,21 @@ cat build-guide.md    # 跟著 Step 0-8 做
 | 營運 | admin + pm + market + data + report | 市場 + 數據 + 報告 |
 | 研發 | admin + pm + ai-dev + coder + qa | 開發 + 測試 |
 
-## 完成後你有
+## 素材
+
+| 檔案 | 用途 |
+|------|------|
+| `team.example.yaml` | team.yaml 格式範例 |
+| `troubleshooting.md` | 常見問題排除 |
+
+## 完成後
 
 ```
-5 Agent 並行（CoreDaemon）
-  + A2A 通訊（delegate_task）
-  + 21+ API 端點
-  + Web Dashboard
-  + 費用控管 + 排程 + 監控
-  + Docker 部署
-  = 可實戰運作的 Agent Team 平台
+5 Agent 並行 + A2A 通訊 + Dashboard + 費用控管 + Docker 部署 = 可實戰平台
 ```
 
-## 前置建議
-
-已完成課程 A，或至少理解「一個 Agent 是什麼」。
+→ 帶走 `samples/ai-team-agent/`，選團隊配置直接用！
 
 ---
 
-*課程 A = 個體能力。課程 B = 團隊協作。*
+*QUICKSTART = 上課體驗。build-guide = 課後建構。*
