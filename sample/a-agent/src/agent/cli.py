@@ -1,14 +1,6 @@
-"""Agent CLI — 透過 kiro-cli 執行對話（支援多 Agent 切換）。
+"""Agent CLI — 透過 kiro-cli 執行對話（支援多 Agent）。
 
-對話路由：
-  預設 → admin-agent（通用助手）
-  /agent news → news-agent（科技新聞）
-  /agent code → code-agent（程式碼）
-  /agent wiki → wiki-agent（知識庫）
-  /agent admin → admin-agent（切回預設）
-
-kiro-cli 啟動時從 working_dir 讀取 .kiro/ 配置，
-不同 agent 有不同的 SOUL.md → 回覆風格和能力完全不同。
+Agent 清單定義在此，session 管理由 session.py 負責。
 """
 from __future__ import annotations
 
@@ -45,37 +37,6 @@ AVAILABLE_AGENTS = {
     },
 }
 
-# 當前使用的 Agent（module-level state）
-_current_agent: str = "admin"
-
-
-def get_current_agent() -> str:
-    """取得當前 Agent ID。"""
-    return _current_agent
-
-
-def set_current_agent(agent_id: str) -> bool:
-    """切換 Agent。回傳是否成功。"""
-    global _current_agent
-    if agent_id in AVAILABLE_AGENTS:
-        _current_agent = agent_id
-        return True
-    return False
-
-
-def get_agent_working_dir() -> Path:
-    """取得當前 Agent 的工作目錄。"""
-    info = AVAILABLE_AGENTS.get(_current_agent, AVAILABLE_AGENTS["admin"])
-    return Path(info["dir"])
-
-
-def list_agents() -> list[dict]:
-    """列出所有可用 Agent。"""
-    return [
-        {"id": k, "current": k == _current_agent, **v}
-        for k, v in AVAILABLE_AGENTS.items()
-    ]
-
 
 def is_cli_available() -> bool:
     """檢查 kiro-cli 是否已安裝。"""
@@ -85,27 +46,24 @@ def is_cli_available() -> bool:
 async def agent_cli_chat(
     message: str,
     *,
-    agent_id: str | None = None,
+    agent_id: str = "admin",
     timeout: int = 60,
 ) -> str | None:
     """透過 kiro-cli 執行對話。
 
     Args:
         message: 使用者訊息
-        agent_id: 指定 Agent（None = 使用當前 Agent）
+        agent_id: 指定 Agent（決定 working_dir → .kiro/）
         timeout: 超時秒數
     """
     if not is_cli_available():
         return None
 
-    # 決定工作目錄
-    aid = agent_id or _current_agent
-    info = AVAILABLE_AGENTS.get(aid, AVAILABLE_AGENTS["admin"])
+    info = AVAILABLE_AGENTS.get(agent_id, AVAILABLE_AGENTS["admin"])
     working_dir = Path(info["dir"])
 
     # 確認 .kiro/ 存在
     if not (working_dir / ".kiro" / "steering" / "SOUL.md").exists():
-        # fallback 到根目錄的 .kiro/
         working_dir = Path(".")
 
     try:
@@ -137,7 +95,7 @@ async def agent_cli_chat(
 
 
 def _clean_output(text: str) -> str:
-    """移除 ANSI escape codes 和多餘的空行。"""
+    """移除 ANSI escape codes。"""
     text = re.sub(r"\x1b\[[0-9;]*m", "", text)
     lines = [line for line in text.split("\n") if line.strip()]
     return "\n".join(lines)

@@ -1,157 +1,216 @@
-"""Bot 指令處理 + 意圖路由（雙模式）。
+"""Bot 指令處理 — Inline Button Agent 切換 + Memory 管理。
 
 對話流程：
-  1. 關鍵字命中 → Skill 直接執行（快速路徑，不需 LLM）
-  2. 有 kiro-cli → agent_cli_chat（完整 Agent 模式，.kiro/ 全生效）
-  3. 無 kiro-cli → gemini_chat（直呼 API，用 SOUL 作 system prompt）
+  /agents → Inline Keyboard → 選 Agent → 對話 → 自動寫 memory
 """
 from __future__ import annotations
 
 import os
 from pathlib import Path
 
-from telegram import Update
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
 
-# ── 載入 SOUL.md（Gemini fallback 模式使用）──
-_SOUL_PATH = Path(".kiro/steering/SOUL.md")
-_SOUL_CONTENT = _SOUL_PATH.read_text(encoding="utf-8") if _SOUL_PATH.exists() else ""
+from src.agent.session import session_manager
+from src.agent.memory import save_memory
+from src.agent.cli import AVAILABLE_AGENTS, is_cli_available, agent_cli_chat
+
+# ── 載入 SOUL（fallback 模式用）──
+_SOUL_DIR = Path("agents/admin-agent/.kiro/steering")
+
+
+def _load_soul(agent_id: str) -> str:
+    """載入指定 Agent 的 SOUL.md。"""
+    path = Path(f"agents/{agent_id}-agent/.kiro/steering/SOUL.md")
+    if path.exists():
+        return path.read_text(encoding="utf-8")
+    # fallback 到根 .kiro/
+    root_soul = Path(".kiro/steering/SOUL.md")
+    return root_soul.read_text(encoding="utf-8") if root_soul.exists() else ""
 
 
 # ── 指令 ─────────────────────────────────────────────────
 
 
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    from src.agent.cli import is_cli_available, get_current_agent, AVAILABLE_AGENTS
+    user_id = update.effective_user.id
+    session = session_manager.get_or_create(user_id)
+    agent = AVAILABLE_AGENTS[session.current_agent]
     mode = "🧠 Agent CLI" if is_cli_available() else "⚡ Gemini API"
-    agent = AVAILABLE_AGENTS[get_current_agent()]
     await update.message.reply_text(
         f"🤖 AI Agent 已就緒！\n\n"
         f"• 模式：{mode}\n"
         f"• Agent：{agent['emoji']} {agent['name']}\n\n"
-        "指令：\n"
-        "• 直接打字 → AI 對話\n"
-        "• 「今天新聞」 → 新聞摘要\n"
-        "• /agent → 切換 Agent\n"
-        "• /help → 指令清單"
+        "📌 /agents → 選擇 Agent\n"
+        "💬 直接打字 → 對話\n"
+        "📋 /help → 指令清單"
     )
 
 
 async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(
-        "📋 指令清單：\n"
+        "📋 指令清單：\n\n"
         "/start — 歡迎訊息\n"
-        "/help — 本清單\n"
-        "/agent — 列出可用 Agent\n"
-        "/agent <id> — 切換 Agent\n"
-        "/mode — 查看執行模式\n\n"
-        "💬 直接輸入文字即可對話\n"
-        "📰 輸入「今天新聞」觸發 NewsSkill"
+        "/agents — 🔘 選擇 Agent（按鈕）\n"
+        "/mode — 查看執行模式\n"
+        "/history — 查看對話歷史\n"
+        "/help — 本清單\n\n"
+        "💬 直接輸入文字即可對話"
     )
 
 
-async def cmd_agent(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """列出或切換 Agent。"""
-    from src.agent.cli import list_agents, set_current_agent, AVAILABLE_AGENTS
+async def cmd_agents(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """顯示 Inline Keyboard 選擇 Agent。"""
+    user_id = update.effective_user.id
+    session = session_manager.get_or_create(user_id)
 
-    args = context.args
-    if not args:
-        # 列出所有 Agent
-        agents = list_agents()
-        lines = ["👤 **可用 Agent：**\n"]
-        for a in agents:
-            marker = "→" if a["current"] else " "
-            lines.append(f"{marker} {a['emoji']} `{a['id']}` — {a['desc']}")
-        lines.append(f"\n切換：`/agent <id>`")
-        await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
-    else:
-        agent_id = args[0].lower()
-        if set_current_agent(agent_id):
-            info = AVAILABLE_AGENTS[agent_id]
-            await update.message.reply_text(
-                f"✅ 已切換到 {info['emoji']} **{info['name']}**\n\n{info['desc']}",
-                parse_mode="Markdown",
-            )
-        else:
-            available = ", ".join(AVAILABLE_AGENTS.keys())
-            await update.message.reply_text(f"❌ 找不到 `{agent_id}`\n可用：{available}")
+    keyboard = [
+        [
+            InlineKeyboardButton(
+                f"{'→ ' if session.current_agent == 'admin' else ''}🤖 Admin",
+                callback_data="switch_agent:admin",
+            ),
+            InlineKeyboardButton(
+                f"{'→ ' if session.current_agent == 'news' else ''}📰 News",
+                callback_data="switch_agent:news",
+            ),
+        ],
+        [
+            InlineKeyboardButton(
+                f"{'→ ' if session.current_agent == 'code' else ''}💻 Code",
+                callback_data="switch_agent:code",
+            ),
+            InlineKeyboardButton(
+                f"{'→ ' if session.current_agent == 'wiki' else ''}📚 Wiki",
+                callback_data="switch_agent:wiki",
+            ),
+        ],
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    current = AVAILABLE_AGENTS[session.current_agent]
+    await update.message.reply_text(
+        f"當前：{current['emoji']} {current['name']}\n\n選擇要對話的 Agent：",
+        reply_markup=reply_markup,
+    )
+
+
+async def callback_switch_agent(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Inline Button 回調 — 切換 Agent。"""
+    query = update.callback_query
+    await query.answer()
+
+    agent_id = query.data.split(":")[1]  # "switch_agent:news" → "news"
+    user_id = query.from_user.id
+
+    if agent_id not in AVAILABLE_AGENTS:
+        await query.edit_message_text("❌ 無效的 Agent")
+        return
+
+    session = session_manager.switch_agent(user_id, agent_id)
+    info = AVAILABLE_AGENTS[agent_id]
+    await query.edit_message_text(
+        f"✅ 已切換到 {info['emoji']} **{info['name']}**\n\n"
+        f"{info['desc']}\n\n"
+        f"現在開始對話吧！",
+        parse_mode="Markdown",
+    )
 
 
 async def cmd_mode(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """顯示當前 Agent 執行模式。"""
-    from src.agent.cli import is_cli_available
+    """顯示當前執行模式。"""
     if is_cli_available():
         await update.message.reply_text(
             "🧠 **Agent CLI 模式**\n\n"
             "• kiro-cli 已安裝 ✅\n"
-            "• .kiro/steering/SOUL.md → 人格生效\n"
-            "• .kiro/skills/ → Skills 自動觸發\n"
-            "• .kiro/prompts/ → 提詞模板載入\n\n"
-            "對話由 kiro-cli 驅動（完整 Agent 能力）",
+            "• .kiro/ 配置全部生效\n"
+            "• 對話由 kiro-cli 驅動",
             parse_mode="Markdown",
         )
     else:
         has_key = "✅" if os.getenv("GEMINI_API_KEY") else "❌"
         await update.message.reply_text(
-            "⚡ **Gemini API 模式**（fallback）\n\n"
-            f"• kiro-cli 未安裝\n"
-            f"• Gemini API Key: {has_key}\n"
-            f"• SOUL.md 作為 system prompt 注入\n\n"
-            "安裝 kiro-cli 後自動升級為 Agent CLI 模式：\n"
-            "`npm i -g kiro-cli && kiro-cli login`",
+            f"⚡ **Gemini API 模式**\n\n"
+            f"• Gemini Key: {has_key}\n"
+            f"• SOUL.md 作為 system prompt\n\n"
+            "升級：`npm i -g kiro-cli && kiro-cli login`",
             parse_mode="Markdown",
         )
+
+
+async def cmd_history(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """顯示近期對話歷史。"""
+    user_id = update.effective_user.id
+    session = session_manager.get_or_create(user_id)
+    if not session.history:
+        await update.message.reply_text("📭 目前沒有對話歷史")
+        return
+    lines = [f"📜 對話歷史（{AVAILABLE_AGENTS[session.current_agent]['emoji']} {session.current_agent}）：\n"]
+    for turn in session.history[-6:]:  # 最近 6 輪
+        prefix = "👤" if turn.role == "user" else "🤖"
+        content = turn.content[:80] + "..." if len(turn.content) > 80 else turn.content
+        lines.append(f"{prefix} {content}")
+    await update.message.reply_text("\n".join(lines))
 
 
 # ── 自然語言路由 ─────────────────────────────────────────
 
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """意圖路由：關鍵字 → Skill / kiro-cli / Gemini fallback。"""
+    """主對話處理：session 驅動 + 多輪記憶 + memory 寫入。"""
     text = update.message.text.strip()
+    user_id = update.effective_user.id
+    session = session_manager.get_or_create(user_id)
+    current_agent = session.current_agent
 
-    # ── 1. 關鍵字快速路由（不需 LLM，毫秒級）──
-    if any(kw in text for kw in ["新聞", "news", "今天"]):
-        await _handle_news(update)
-        return
+    # 記錄 user 這輪
+    session.add_turn("user", text)
 
-    # ── 2. Agent CLI 模式（kiro-cli 已安裝）──
-    from src.agent.cli import is_cli_available, agent_cli_chat
+    # ── 1. 關鍵字快速路由 ──
+    if any(kw in text for kw in ["新聞", "news", "今天新聞"]):
+        reply = await _handle_news()
+        if reply:
+            session.add_turn("agent", reply)
+            await save_memory(current_agent, user_id, text, reply)
+            await update.message.reply_text(reply, parse_mode="Markdown", disable_web_page_preview=True)
+            return
+
+    # ── 2. Agent CLI 模式 ──
+    reply: str | None = None
     if is_cli_available():
         await update.message.reply_text("🧠 思考中...")
-        reply = await agent_cli_chat(text)
-        if reply:
-            await update.message.reply_text(reply)
-            return
-        # kiro-cli 失敗 → fallback 到 Gemini API
+        reply = await agent_cli_chat(text, agent_id=current_agent)
 
-    # ── 3. Gemini API fallback（直呼 API + SOUL 注入）──
-    gemini_key = os.getenv("GEMINI_API_KEY", "")
-    if gemini_key:
-        try:
-            from src.llm.gemini_chat import gemini_chat
-            reply = await gemini_chat(text, system=_SOUL_CONTENT)
-            if reply:
-                await update.message.reply_text(reply)
-            else:
-                await update.message.reply_text("⚠️ Gemini 回覆失敗，請稍後再試")
-        except Exception as e:
-            await update.message.reply_text(f"⚠️ Gemini 錯誤: {e}")
-    else:
-        await update.message.reply_text(
-            f"🔄 echo: {text}\n\n"
-            "💡 開啟 AI 對話：\n"
-            "• 方式 A：填入 GEMINI_API_KEY（快速）\n"
-            "• 方式 B：安裝 kiro-cli（完整 Agent）"
-        )
+    # ── 3. Gemini API fallback ──
+    if not reply:
+        gemini_key = os.getenv("GEMINI_API_KEY", "")
+        if gemini_key:
+            try:
+                from src.llm.gemini_chat import gemini_chat
+                soul = _load_soul(current_agent)
+                # 注入對話歷史
+                context_str = session.get_context()
+                full_system = f"{soul}\n\n{context_str}" if context_str else soul
+                reply = await gemini_chat(text, system=full_system)
+            except Exception as e:
+                reply = f"⚠️ 錯誤: {e}"
+        else:
+            reply = (
+                f"🔄 echo: {text}\n\n"
+                "💡 開啟 AI：填入 GEMINI_API_KEY 或安裝 kiro-cli"
+            )
+
+    # ── 4. 回覆 + 記憶 ──
+    if reply:
+        session.add_turn("agent", reply)
+        await save_memory(current_agent, user_id, text, reply)
+        await update.message.reply_text(reply)
 
 
 # ── Skill 處理 ───────────────────────────────────────────
 
 
-async def _handle_news(update: Update) -> None:
+async def _handle_news() -> str | None:
     """新聞 Skill 快速路徑。"""
-    await update.message.reply_text("🔍 正在抓取新聞...")
     try:
         from src.skills.internal.news import NewsSkill
         skill = NewsSkill()
@@ -160,10 +219,7 @@ async def _handle_news(update: Update) -> None:
             lines = [f"📰 *{result.data['source']}* — {result.data['count']} 則\n"]
             for i, art in enumerate(result.data["articles"], 1):
                 lines.append(f"{i}. [{art['title']}]({art['url']}) (⬆️{art['score']})")
-            await update.message.reply_text(
-                "\n".join(lines), parse_mode="Markdown", disable_web_page_preview=True
-            )
-        else:
-            await update.message.reply_text(f"⚠️ {result.error}")
+            return "\n".join(lines)
+        return f"⚠️ {result.error}"
     except Exception as e:
-        await update.message.reply_text(f"⚠️ 新聞抓取失敗: {e}")
+        return f"⚠️ 新聞抓取失敗: {e}"
