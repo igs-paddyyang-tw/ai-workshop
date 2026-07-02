@@ -75,18 +75,28 @@ async def scheduled_daily(context: ContextTypes.DEFAULT_TYPE) -> None:
                 })
 
     if game_result.success:
+        tw_keywords = _load_tw_game_keywords()
         for cat, items in game_result.data.get("categories", {}).items():
-            for item in items[:10]:
+            for item in items:
                 desc = item.get("description", "")
                 if desc == item["title"]:
                     desc = ""
-                game_items.append({
+                source_name = item.get("source", "")
+                entry = {
                     "category": cat,
                     "title": item["title"],
                     "description": desc,
                     "url": item.get("url", ""),
-                    "source": item.get("source", ""),
-                })
+                    "source": source_name,
+                }
+                # 官網來源：全部收錄
+                if "官網" in source_name or "官方" in source_name:
+                    game_items.append(entry)
+                    continue
+                # RSS 來源：只收錄命中關鍵字的
+                text_to_match = (item["title"] + " " + desc).lower()
+                if any(kw.lower() in text_to_match for kw in tw_keywords):
+                    game_items.append(entry)
 
     if not tech_items and not game_items:
         logger.warning("排程：今日無新聞")
@@ -101,7 +111,6 @@ async def scheduled_daily(context: ContextTypes.DEFAULT_TYPE) -> None:
         _backfill_urls(tech_articles, tech_items)
 
     # 台灣遊戲情報
-    tw_keywords = _load_tw_game_keywords()
     game_items.sort(key=lambda x: _item_priority(x, tw_keywords))
     game_articles = await _call_llm(_GAME_PROMPT, game_items[:20])
     if not game_articles:
