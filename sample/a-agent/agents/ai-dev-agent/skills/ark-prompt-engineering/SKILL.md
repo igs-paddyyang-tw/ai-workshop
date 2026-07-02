@@ -1,5 +1,5 @@
 ---
-name: prompt-engineering
+name: ark-prompt-engineering
 description: |
   Prompt 工程與 AI 整合：設計系統提詞、評估 LLM、建立 MCP 工具。
   觸發：當使用者提到 prompt、提詞、SOUL、LLM、模型、AI 整合。

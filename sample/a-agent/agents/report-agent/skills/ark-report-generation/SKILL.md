@@ -1,5 +1,5 @@
 ---
-name: report-generation
+name: ark-report-generation
 description: |
   報告產出與彙整：收集數據 → 套模板 → 渲染圖表 → 品質檢查 → 輸出。
   觸發：當使用者提到 報告、日報、weekly、月報、HTML、摘要。

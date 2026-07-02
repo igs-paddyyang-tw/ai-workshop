@@ -1,5 +1,5 @@
 ---
-name: code-implementation
+name: ark-code-implementation
 description: |
   程式碼實作：讀取 Spec → 撰寫程式碼 → 執行測試 → 交付。
   觸發：當使用者提到 寫、實作、implement、code、開發、bug。

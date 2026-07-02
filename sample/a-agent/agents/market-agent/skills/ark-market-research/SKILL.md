@@ -1,5 +1,5 @@
 ---
-name: market-research
+name: ark-market-research
 description: |
   市場研究與情報蒐集：多源搜尋 → 過濾雜訊 → 交叉驗證 → 洞察摘要。
   觸發：當使用者提到 市場、競品、新聞、輿情、trend、research。

@@ -1,5 +1,5 @@
 ---
-name: data-analysis
+name: ark-data-analysis
 description: |
   數據分析與洞察：查詢數據 → 計算指標 → 偵測趨勢 → 產出洞察。
   觸發：當使用者提到 分析、數據、KPI、趨勢、統計、report。

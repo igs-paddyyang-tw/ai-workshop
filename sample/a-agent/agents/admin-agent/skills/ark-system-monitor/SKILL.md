@@ -1,5 +1,5 @@
 ---
-name: system-monitor
+name: ark-system-monitor
 description: |
   系統監控與狀態報告：檢查服務健康、費用統計、Agent 狀態。
   觸發：當使用者提到 狀態、status、健康、health、費用、costs。

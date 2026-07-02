@@ -1,5 +1,5 @@
 ---
-name: task-planning
+name: ark-task-planning
 description: |
   任務規劃與派工：需求分析 → 拆解子任務 → 指派 Agent → 追蹤進度。
   觸發：當使用者提到 規劃、plan、拆解、assign、派工、任務。

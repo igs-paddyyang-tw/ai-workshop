@@ -1,5 +1,5 @@
 ---
-name: quality-check
+name: ark-quality-check
 description: |
   品質檢查與測試：Linter → 測試 → 覆蓋率 → 安全掃描 → 報告。
   觸發：當使用者提到 測試、test、review、品質、QA、安全。
