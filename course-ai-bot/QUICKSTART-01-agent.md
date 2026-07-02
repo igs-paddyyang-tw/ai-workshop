@@ -5,8 +5,8 @@
 完成後你能：
 1. 理解 SOUL.md 如何控制 Agent 人格與回應風格
 2. 用 Inline Button 切換不同 Agent，體驗多人格系統
-3. 在 Kiro IDE 用自然語言修改 SOUL，即時看到效果
-4. 理解 Planner 三層意圖路由，用 vibe coding 加新路由
+3. 用 Kiro IDE 設計多種 SOUL，即時看到效果
+4. 能為真實業務場景（客服/助手/專家）設計合適的 SOUL
 
 ## 📋 前置條件
 
@@ -18,9 +18,9 @@
 ## Step 1：啟動 Bot（0-5 min）
 
 **做什麼**：啟動 samples/ai-bot  
-**為什麼**：讓 Bot 跑起來，準備後續操作
+**為什麼**：讓 8 Agent 系統跑起來
 
-💻 在 Kiro IDE 終端輸入：
+💻 Kiro IDE 終端：
 ```bash
 cd samples/ai-bot
 python3 -m venv .venv && source .venv/bin/activate
@@ -28,9 +28,9 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-📝 在 Kiro IDE 聊天框輸入：
+📝 Kiro IDE 輸入：
 ```
-幫我打開 .env，填入以下內容：
+打開 .env，填入：
 TELEGRAM_BOT_TOKEN=（你的 Token）
 GEMINI_API_KEY=（你的 Key）
 ```
@@ -41,150 +41,140 @@ python start.py
 ```
 
 ✅ 預期結果：
-- 終端顯示「🤖 AI Agent」
-- 顯示「📦 Skills: 5 個」
-- 顯示「🤖 Bot: polling 啟動」
+- 「📦 Skills: 5 個」
+- 「🤖 Bot: polling 啟動」
 
-⚠️ 如果不成功：
-- `No module` → 確認在 .venv 中
-- Bot 沒回應 → 確認 .env Token 正確
+⚠️ 如果不成功：`No module` → 確認 venv；Bot 沒回應 → 確認 Token
 
 ---
 
 ## Step 2：切換 Agent 體驗（5-15 min）
 
 **做什麼**：用 Telegram 切換 Agent，觀察人格差異  
-**為什麼**：親身感受「同一系統、不同 SOUL = 不同人格」
+**為什麼**：親身感受「同一系統，不同 SOUL = 不同人格」
 
-📱 Telegram 操作：
-1. 發送 `/agents` → 出現 8 個 Inline Button
-2. 點「👑 Admin」→ 問「你是誰？」
-3. 點「💻 Coder」→ 問同一個「你是誰？」
-4. 點「🗺️ Market」→ 問「今天新聞」
+📱 Telegram：
+1. `/agents` → 出現 8 個按鈕
+2. 點「👑 Admin」→ 問「用一句話介紹你自己」
+3. 點「💻 Coder」→ 問同一個問題
+4. 點「🗺️ Market」→ 問同一個問題
+5. 點「📝 Report」→ 問同一個問題
 
 ✅ 預期結果：
-- Admin：簡潔專業風格
-- Coder：技術導向、可能附程式碼
-- Market：觸發 NewsSkill，回傳 HN 新聞列表（5 則）
+- Admin：簡潔通用
+- Coder：技術導向、可能提到程式語言
+- Market：提到市場研究、資訊蒐集
+- Report：提到報告產出、格式化
 
-⚠️ 如果不成功：
-- 按鈕沒出現 → 確認 Bot 有運行
-- 回答都一樣 → 確認 agents/ 目錄下各 Agent 有不同 SOUL.md
-
-📝 在 Kiro IDE 問（加深理解）：
-```
-解釋一下 agents/admin-agent/.kiro/steering/SOUL.md 跟 agents/coder-agent/.kiro/steering/SOUL.md 有什麼差異
-```
+💡 觀察重點：**同一個問題，4 種完全不同的回答** — 這就是 SOUL 的力量
 
 ---
 
-## Step 3：用 Kiro 修改 SOUL（15-30 min）⭐ 核心
+## Step 3：修改 SOUL 體驗變化（15-30 min）⭐ 核心
 
-**做什麼**：在 Kiro IDE 用自然語言改 SOUL，觀察 Bot 風格變化  
-**為什麼**：體驗 vibe coding — 用一句話改變 AI 的行為
+**做什麼**：用 Kiro 改 SOUL，觀察 Bot 風格即時變化  
+**為什麼**：證明 SOUL.md 是控制行為的唯一入口
 
-📝 在 Kiro IDE 聊天框輸入：
+### 3.1 改成幽默風格
+
+📝 Kiro IDE 輸入：
 ```
 打開 agents/admin-agent/.kiro/steering/SOUL.md，
 把人格特質改成「幽默搞笑，每句話都帶一個冷笑話」，
 身份改成「脫口秀主持人兼 AI 助手」
 ```
 
-→ Kiro IDE 自動修改 SOUL.md，顯示 diff
+💻 重啟：Ctrl+C → `python start.py`
 
-💻 重啟 Bot：
-```bash
-# Ctrl+C 停止 → 重啟
-python start.py
+📱 驗證：`/agents` → Admin → 問「什麼是 Python？」
+
+✅ 預期：回答帶幽默/冷笑話語氣
+
+### 3.2 改成專業顧問
+
+📝 Kiro IDE 輸入：
+```
+把 admin-agent 的 SOUL 改回來，這次設計成「資深技術顧問」風格：
+- 身份：10 年經驗的架構師
+- 人格：嚴謹、有條理、引用最佳實踐
+- 輸出格式：先結論、再解釋、附建議
 ```
 
-📱 Telegram 驗證：
-1. `/agents` → 選 Admin
-2. 問「什麼是 Python？」
-3. 觀察：回答是否帶幽默/冷笑話
+💻 重啟 → 📱 問同一個「什麼是 Python？」
 
-✅ 預期結果：
-- Admin 回答風格明顯變化（帶幽默）
-- 其他 Agent（Coder 等）不受影響
+✅ 預期：回答變嚴謹、有結構（結論→解釋→建議）
 
-⚠️ 如果沒變化：
-- 確認 Kiro 真的修改了檔案（看 diff）
-- 確認重啟了 Bot
-
-🔥 延伸（再試一次）：
-
-📝 在 Kiro IDE 輸入：
-```
-把 admin-agent 的 SOUL 改成「海盜船長風格」，
-每句話開頭要有 Ahoy!，用航海比喻解釋技術概念
-```
-
-📱 驗證：問「什麼是 API？」→ 看是否用航海比喻回答
+💡 **重點：改幾行字 → Bot 完全變一個人。這就是 SOUL 的設計威力。**
 
 ---
 
-## Step 4：理解路由（30-40 min）
+## Step 4：為多 Agent 設計獨特 SOUL（30-40 min）
 
-**做什麼**：用 Kiro IDE 問路由原理，理解三層降級  
-**為什麼**：知道訊息怎麼被分配到對應 Skill
+**做什麼**：用 Kiro 為不同 Agent 設計專屬人格  
+**為什麼**：每個 Agent 有獨立 SOUL = 各有所長
 
-📝 在 Kiro IDE 聊天框輸入：
+### 4.1 設計新聞主播風格
+
+📝 Kiro IDE 輸入：
 ```
-解釋 src/agent/planner.py 的意圖路由邏輯，
-特別是 KEYWORD_ROUTES 字典怎麼運作，三層降級是什麼意思
+重新設計 agents/market-agent/.kiro/steering/SOUL.md，
+讓他像「新聞主播」一樣報新聞：
+- 開頭有「各位觀眾好」
+- 用條列式報重點
+- 結尾有「以上是今日科技快報」
 ```
 
-→ Kiro 會解釋程式碼並標示重點
+💻 重啟 → 📱 `/agents` → Market → 「今天新聞」
 
-✅ 預期理解：
-- 第一層：關鍵字精確匹配（毫秒級，如「新聞」→ news skill）
-- 第二層：Skill description 模糊匹配
-- 第三層：LLM 對話 fallback（兜底）
+✅ 預期：回答像新聞播報風格
 
-📝 追問：
+### 4.2 設計嚴格審查員
+
+📝 Kiro IDE 輸入：
 ```
-KEYWORD_ROUTES 目前有哪些路由規則？列表給我看
+重新設計 agents/qa-agent/.kiro/steering/SOUL.md，
+讓他像「嚴格的程式碼審查員」：
+- 先找問題，再看優點
+- 用 ❌/⚠️/✅ 標記
+- 語氣直接不客氣
 ```
+
+📱 `/agents` → QA → 「幫我看這段：def add(a,b): return a+b」
+
+✅ 預期：回答用 ❌/⚠️/✅ 標記，語氣直接
 
 ---
 
-## Step 5：用 Kiro 加新路由（40-50 min）
+## Step 5：設計真實應用場景的 SOUL（40-50 min）
 
-**做什麼**：用 vibe coding 加一條路由規則  
-**為什麼**：驗證你理解路由機制，且能用自然語言擴充功能
+**做什麼**：為真實業務場景設計 SOUL  
+**為什麼**：這才是帶走的核心能力 — 把 SOUL 用在工作中
 
-📝 在 Kiro IDE 聊天框輸入：
+📝 Kiro IDE 輸入（選一個場景）：
+
+**場景 A：公司客服 Bot**
 ```
-在 src/agent/planner.py 的 KEYWORD_ROUTES 加入一條新規則：
-當使用者訊息包含「翻譯」或「translate」時，路由到 translate skill
-```
-
-→ Kiro 自動修改 planner.py
-
-💻 重啟 Bot：
-```bash
-python start.py
-```
-
-📱 Telegram 驗證：
-1. 輸入「翻譯 hello」
-2. 觀察是否觸發 translate skill
-
-✅ 預期結果：
-- Bot 回覆包含 `[en] hello` 的翻譯結果
-
-⚠️ 如果沒觸發：
-- 📝 在 Kiro 問：「確認 KEYWORD_ROUTES 有沒有成功加入翻譯的路由」
-- 確認重啟了 Bot
-
-🔥 額外挑戰：
-
-📝 在 Kiro IDE 輸入：
-```
-再加一條路由：當使用者說「摘要」或「summarize」時，路由到 summarize skill
+幫我設計一個公司客服的 SOUL.md：
+- 公司名：XXX 科技
+- 語氣：親切有禮但專業
+- 能力：回答產品問題、引導到對的頁面
+- 邊界：不承諾退款、不給競品比較
+- 格式：先問好 → 理解問題 → 回答 → 詢問是否還需要幫助
 ```
 
-📱 驗證：輸入「摘要 這是一段很長的文字...」
+**場景 B：團隊日報助手**
+```
+幫我設計一個日報助手的 SOUL.md：
+- 每天早上自動抓新聞
+- 用「🔥重點/📊數據/💡啟發」三段式摘要
+- 語氣像資深同事分享，不像機器人
+```
+
+📱 驗證：替換到 admin-agent → 重啟 → 測試
+
+✅ 預期：Bot 的行為完全符合你設計的場景
+
+💡 **帶走的能力：你現在能為任何業務場景設計 AI 人格。**
 
 ---
 
@@ -192,16 +182,16 @@ python start.py
 
 | 等級 | 達成條件 |
 |------|----------|
-| 🎯 保底 | Bot 啟動 + /agents 有回應 |
-| ✅ 標準 | 用 Kiro 改 SOUL + Telegram 觀察到風格變化 |
-| 🏆 快速 | 改 SOUL + 加路由 + 理解三層降級 + 額外挑戰 |
+| 🎯 保底 | Bot 啟動 + /agents 切換 + 看到風格差異 |
+| ✅ 標準 | 改 SOUL 看到變化 + 為 2 個 Agent 設計新人格 |
+| 🏆 快速 | 完整體驗 + 設計真實場景 SOUL + 理解八段式結構 |
 
 ## 🏠 回家練習
 
-1. 📝 在 Kiro 輸入：「幫 8 個 Agent 各寫一份獨特的 SOUL.md」
-2. 📝 在 Kiro 輸入：「在 KEYWORD_ROUTES 多加 3 條自訂路由」
-3. 思考：如果要做一個「公司客服 Agent」，SOUL.md 該怎麼寫？用 Kiro 試試看
+1. 📝 Kiro：「幫 8 個 Agent 各設計一份獨特的 SOUL.md」
+2. 為你的公司/團隊設計一個專屬 Bot 的 SOUL
+3. 思考：好的 SOUL 和差的 SOUL 有什麼區別？（提示：邊界 + 格式）
 
 ---
 
-*本堂重點：SOUL = AI 的靈魂。用 Kiro vibe coding 改一句話，Bot 行為就不同。*
+*本堂重點：SOUL = AI 的靈魂。改一句話，Bot 行為就不同。這是 AI 產品的核心競爭力。*
