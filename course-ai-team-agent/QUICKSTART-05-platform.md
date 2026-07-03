@@ -122,31 +122,56 @@ curl http://localhost:33333/api/admin/schedules
 
 # 後半段：Dashboard + Telegram 驗證（使用者視角）
 
-## Step 4：手動觸發排程 + 看任務執行（25-40 min）
+## Step 4：手動觸發排程 + 看迴圈效果（25-40 min）
 
-**做什麼**：手動觸發排程，在 Dashboard 和 Telegram 看結果  
-**為什麼**：不用等到明天 09:00 — 先手動跑一次確認流程正確
+**做什麼**：觸發週競品排程，觀察 3 Agent 協作 + 結果自動進知識庫  
+**為什麼**：04 手動做的事，現在排程自動跑 + 產出自動累積成知識
 
-💻 手動觸發：
+💻 手動觸發（不用等到下週一）：
 ```bash
-curl -X POST http://localhost:33333/api/admin/schedules/daily-tech-news/trigger
+curl -X POST http://localhost:33333/api/admin/schedules/weekly-competitor-report/trigger
 ```
 
 📱 Telegram 觀察：
 1. pm-agent 接到排程任務
-2. 自動拆解 → market 抓新聞 → report 產出日報
-3. `/board` 看到任務狀態流轉
+2. 自動拆解 → market 蒐集資料 → designer 分析 UI → report 產出週報
+3. `/board` 看到 3 個任務狀態流轉（跟 04 Step 5 一樣，但這次是排程觸發）
 
 ✅ 預期結果：
-- Telegram 收到日報產出
-- `/board` 顯示排程觸發的任務（標記為 scheduled）
+- Telegram 收到競品週報
+- `/board` 顯示任務來源為 `scheduled`（非手動 /assign）
 
-💻 看後台任務記錄：
+💡 **關鍵：排程產出的報告會自動寫入 knowledge/raw/**
+
+📝 Kiro IDE 輸入：
+```
+列出 knowledge/raw/ 最新的檔案，確認排程產出有被記錄
+```
+
+✅ 預期：看到今天新增的檔案（如 `2026-07-03_weekly-competitor-report.md`）
+
+📝 Kiro IDE 問：
+```
+如果我再執行一次 ingest，這份週報就會進入 Wiki。
+下次問「最新的捕魚機競品動態」，Agent 就能引用這份報告回答。
+這就是迴圈工程的完整循環對嗎？
+```
+
+✅ 迴圈完成：
+```
+排程觸發 → Agent 執行產出報告
+    → 報告自動寫入 knowledge/raw/
+    → 定期 ingest → 進入 Wiki
+    → 下次問答能引用 → 回答越來越新、越來越準
+    → 下週排程再觸發 → 累積更多知識 → ♻️
+```
+
+💻 看後台統計：
 ```bash
 curl http://localhost:33333/api/admin/dashboard/stats
 ```
 
-✅ 預期結果：
+✅ 預期：
 ```json
 {
   "agents_online": 6,
@@ -156,40 +181,53 @@ curl http://localhost:33333/api/admin/dashboard/stats
 }
 ```
 
-📱 費用驗證：
-```
-/costs
-```
-
-✅ 預期：列出今日各 Agent 的費用消耗
+📱 費用驗證：`/costs` → 列出各 Agent 消耗
 
 ---
 
-## Step 5：完整上線清單（40-50 min）
+## Step 5：遊戲部門上線清單（40-50 min）
 
-**做什麼**：用 Kiro 產出一份「正式上線 Checklist」  
-**為什麼**：從 Demo 到正式上線的差距 = 這份清單
+**做什麼**：產出一份具體的業務上線 Checklist  
+**為什麼**：從 Demo 到正式 = 這份清單。所有排程產出都會持續餵養知識庫。
 
 📝 Kiro IDE 輸入：
 ```
-幫我列出這個 Agent Team 正式上線前的 Checklist：
-考慮排程、費用、監控、告警、備份、部署
+幫我列出「遊戲部門 AI 團隊」正式上線的完整 Checklist：
+
+排程需求：
+- 每日 09:00 科技日報（market + report）
+- 每週一 10:00 捕魚機+老虎機競品分析（market + designer + report）
+- 每月 1 號市場趨勢總結（全員協作）
+
+知識累積：
+- 所有排程產出自動寫入 knowledge/raw/
+- 每日 ingest 一次，Wiki 持續成長
+- Agent 回答越來越精準（有本週、上週、上個月的數據可引用）
+
+費用 + 監控 + 部署也要列出
 ```
 
-✅ 預期產出（Kiro 幫你整理）：
+✅ 預期產出：
 
 | 類別 | 項目 | 狀態 |
 |------|------|------|
-| 排程 | scheduler.yaml 設定完成 | ✅ |
-| 費控 | daily_limit_usd 設定 | ✅ |
-| 費控 | 超額告警通知 admin | ✅ |
-| 監控 | Dashboard 能看到 KPI | ✅ |
-| 監控 | /board 能看任務狀態 | ✅ |
-| 部署 | docker-compose.prod.yml | 🔲 回家做 |
-| 備份 | knowledge/ 定期備份 | 🔲 回家做 |
-| 告警 | Agent 失敗時通知 | 🔲 回家做 |
+| **排程** | 每日科技日報 09:00 | ✅ |
+| **排程** | 每週競品分析（週一 10:00） | ✅ |
+| **排程** | 每月趨勢總結（1 號 10:00） | 🔲 回家加 |
+| **知識累積** | 排程產出 → knowledge/raw/ 自動寫入 | ✅ |
+| **知識累積** | 每日 ingest → Wiki 持續成長 | 🔲 加 ingest 排程 |
+| **知識累積** | Agent 能引用上週/上月報告回答 | ✅（ingest 後生效） |
+| **費控** | daily_limit_usd: 5.0 | ✅ |
+| **費控** | 超額通知到部門 Telegram 群組 | 🔲 回家設 |
+| **監控** | /board + /costs 可看 | ✅ |
+| **部署** | docker-compose.prod.yml | 🔲 回家做 |
+| **備份** | knowledge/ 每日備份 | 🔲 回家做 |
 
-💡 **帶走的感覺：你已經有一個能自動運作的 AI 團隊了。剩下的只是部署和維運。**
+💡 **帶走的感覺：**
+- 你有一個每天自動運作的 AI 團隊
+- 它每天產出的報告會自動變成知識
+- 下次回答更精準 = 系統在自己成長
+- **這就是自演化：你設定好迴圈，剩下的它自己來。**
 
 ---
 
