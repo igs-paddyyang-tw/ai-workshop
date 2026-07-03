@@ -486,15 +486,16 @@ python start.py</code></pre>
 
 <hr>
 
-<h2>事件驅動生命週期案例：修復魚群碰撞 Bug</h2>
+<h2>事件驅動生命週期案例：開發新魚種「黃金鯊魚」</h2>
 <table>
 <tr><th>Layer</th><th>事件</th><th>動作</th></tr>
-<tr><td>L1 Gateway</td><td>收到「魚群碰撞有 Bug」</td><td>路由到 pm-agent</td></tr>
-<tr><td>L4 Collaboration</td><td>pm 拆解任務</td><td>分配 coder 修復 + qa 測試</td></tr>
-<tr><td>L2 Runtime</td><td>coder 執行修復</td><td>產出 PR</td></tr>
-<tr><td>L2 Runtime</td><td>qa 執行測試</td><td>產出測試報告</td></tr>
-<tr><td>L3 Knowledge</td><td>記錄修復方案</td><td>寫入 wiki → 下次類似問題秒解</td></tr>
-<tr><td>L5 Operations</td><td>audit log 記錄</td><td>費用 + 時間 + 狀態追溯</td></tr>
+<tr><td>L1 Gateway</td><td>收到「企劃：新增黃金鯊魚 Boss，10000x 倍率，限時 30 秒」</td><td>路由到 pm-agent</td></tr>
+<tr><td>L4 Collaboration</td><td>pm 拆解任務</td><td>designer 設計外觀 + coder 實作機制 + qa 測試爆率</td></tr>
+<tr><td>L2 Runtime</td><td>designer 產出設計稿</td><td>黃金鯊魚外觀 + 出場動畫 + 受擊特效</td></tr>
+<tr><td>L2 Runtime</td><td>coder 實作遊戲邏輯</td><td>血量公式 + 倍率計算 + 限時機制</td></tr>
+<tr><td>L2 Runtime</td><td>qa 測試驗收</td><td>模擬 1000 局，確認爆率在 ±2% 內</td></tr>
+<tr><td>L3 Knowledge</td><td>記錄設計決策</td><td>寫入 wiki：黃金鯊魚設計規格 → 下次新增 Boss 可參考</td></tr>
+<tr><td>L5 Operations</td><td>audit log</td><td>耗時 12 min / 費用 $0.08 / 3 Agent 協作完成</td></tr>
 </table>
 
 </div>
