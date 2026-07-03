@@ -3,14 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Workshop 02：Agent Team（50 min）</title>
+<title>課程 B：AI Agent Team 實戰（2 堂）</title>
 <style>
-:root { --bg: #0f172a; --card: #1e293b; --text: #e2e8f0; --muted: #94a3b8; --accent: #22d3ee; --border: #334155; }
+:root { --bg: #0f172a; --card: #1e293b; --text: #e2e8f0; --muted: #94a3b8; --accent: #22d3ee; --border: #334155; --green: #4ade80; --yellow: #fbbf24; --purple: #a78bfa; --orange: #fb923c; }
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: -apple-system, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; padding: 2rem; max-width: 900px; margin: 0 auto; }
+body { font-family: -apple-system, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; padding: 2rem; max-width: 960px; margin: 0 auto; }
 h1 { color: var(--accent); font-size: 2rem; margin: 1.5rem 0 1rem; border-bottom: 2px solid var(--border); padding-bottom: 0.5rem; }
 h2 { color: var(--accent); font-size: 1.5rem; margin: 2rem 0 0.8rem; }
 h3 { color: #f1f5f9; font-size: 1.2rem; margin: 1.5rem 0 0.5rem; }
+h4 { color: var(--muted); font-size: 1rem; margin: 1rem 0 0.3rem; }
 p { margin: 0.5rem 0; }
 code { background: var(--card); padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.9em; color: var(--accent); }
 pre { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; overflow-x: auto; margin: 1rem 0; }
@@ -19,695 +20,264 @@ table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
 th, td { border: 1px solid var(--border); padding: 0.5rem 0.8rem; text-align: left; }
 th { background: var(--card); color: var(--accent); }
 tr:nth-child(even) { background: rgba(30,41,59,0.5); }
-blockquote { border-left: 3px solid var(--accent); padding-left: 1rem; color: var(--muted); margin: 1rem 0; }
+blockquote { border-left: 3px solid var(--accent); padding-left: 1rem; color: var(--muted); margin: 1rem 0; font-style: italic; }
 ul, ol { padding-left: 1.5rem; margin: 0.5rem 0; }
 li { margin: 0.3rem 0; }
-a { color: var(--accent); }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
 hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
+.hero { background: linear-gradient(135deg, #1e293b, #0f172a); border: 1px solid var(--border); border-radius: 12px; padding: 2rem; margin: 1.5rem 0; }
+.hero h2 { margin-top: 0; color: var(--green); }
+.badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.8em; font-weight: bold; margin-right: 0.3rem; }
+.badge-kiro { background: #1e40af; color: #93c5fd; }
+.badge-tg { background: #064e3b; color: #6ee7b7; }
+.badge-term { background: #4c1d95; color: #c4b5fd; }
+.badge-curl { background: #78350f; color: #fde68a; }
+.step-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 1.2rem; margin: 1rem 0; }
+.step-card h3 { margin-top: 0; }
+.loop-diagram { background: var(--card); border: 2px solid var(--orange); border-radius: 12px; padding: 1.5rem; margin: 1rem 0; text-align: center; }
 </style>
 </head>
-<body><h1>🚀 Agent Team Workshop — 快速上手指南</h1>
-<blockquote>
-<p>用 AI 團隊協作開發，50 分鐘建立你的第一支 Agent 艦隊。</p>
-</blockquote>
-<p><strong>作者：</strong> paddyyang
-<strong>更新：</strong> 2026-06-17</p>
-<hr />
-<h2>🎯 上課目標（50 分鐘）</h2>
-<h3>時間分配</h3>
+<body>
+
+<h1>🎓 課程 B：AI Agent Team 實戰</h1>
+
+<div class="hero">
+<h2>🎯 體驗目的</h2>
+<p>從「一個 Agent」跨越到「一群 Agent 合作」。<br>
+你只需要描述目標，<strong>pm-agent（leader）自動拆解任務、選人、排序、執行</strong>。</p>
+<p style="margin-top: 1rem;">兩堂課的遞進：</p>
 <table>
-<thead>
-<tr>
-<th>時間</th>
-<th>動作</th>
-<th>你做什麼</th>
-<th>Script 做什麼</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>0-10 min</td>
-<td>環境確認</td>
-<td>clone skills + <code>kiro-cli --version</code></td>
-<td>ark-env-doctor 自動檢查</td>
-</tr>
-<tr>
-<td>10-20 min</td>
-<td>建團隊</td>
-<td>執行 <code>build_team.py</code></td>
-<td>一次產出完整平台（110 項）</td>
-</tr>
-<tr>
-<td>20-30 min</td>
-<td>配角色</td>
-<td>執行 <code>build_kiro.py</code></td>
-<td>批次產出所有 agent .kiro/</td>
-</tr>
-<tr>
-<td>30-40 min</td>
-<td>設定 TG</td>
-<td>venv + pip install + 填 .env + 對 Bot 發訊取 user_id</td>
-<td>（唯一手動步驟）</td>
-</tr>
-<tr>
-<td>40-45 min</td>
-<td>啟動</td>
-<td><code>python start.py</code></td>
-<td>一鍵啟動 5 服務</td>
-</tr>
-<tr>
-<td>45-50 min</td>
-<td>派工</td>
-<td>TG 發一句話給 leader</td>
-<td>agent 執行 + TG 回覆</td>
-</tr>
-</tbody>
+<tr><th>堂</th><th>學什麼</th><th>帶走什麼</th></tr>
+<tr><td>04</td><td>手動派工 → 團隊能合作</td><td>改 team.yaml = 改組織</td></tr>
+<tr><td>05</td><td>自動運作 → 正式上線</td><td>排程 + 費控 + 監控</td></tr>
 </table>
-<h3>完成度分級</h3>
-<pre><code>🏆 快速組（50 min 內全完成）
-   → TG /assign 派工 → 收到 agent 回覆 + /costs 有費用記錄
+</div>
 
-✅ 標準組（大多數人）
-   → 團隊啟動 + Telegram /start 收到歡迎訊息
+<div class="hero" style="border-color: var(--orange);">
+<h2 style="color: var(--orange);">🔄 迴圈工程（Loop Engineering）</h2>
+<p>課程 A 教的是「線性流程」：輸入 → 處理 → 輸出。<br>
+課程 B 教的是「迴圈系統」：<strong>輸出會回饋成下次的輸入，系統自動進化。</strong></p>
 
-🎯 保底組（至少完成這個）
-   → team.yaml 產出 + 目錄結構正確（validate 通過）
-</code></pre>
-<h3>回家自我練習</h3>
-<ul>
-<li>自訂角色（改 SOUL.md 八段式定義）</li>
-<li>新增 agent（加 instance + 重跑 build_kiro.py）</li>
-<li>Web Dashboard（<code>cd apps/web &amp;&amp; npm run dev</code>）</li>
-<li>Docker 部署（<code>docker compose -f docker-compose.prod.yml up</code>）</li>
-</ul>
-<hr />
-<h2>你需要準備的東西</h2>
+<div class="loop-diagram">
+<pre><code>        ┌─────────────────────────────────────┐
+        │                                     ▼
+  派工 → 執行 → 產出 → 記憶 → 知識成長 → 下次更準
+        ▲                                     │
+        └─────────────────────────────────────┘
+
+  排程觸發 → 自動派工 → 自動執行 → 自動累積 = 無人值守的成長迴圈</code></pre>
+</div>
+
 <table>
-<thead>
-<tr>
-<th>項目</th>
-<th>說明</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>電腦</td>
-<td>Windows / Mac / Linux</td>
-</tr>
-<tr>
-<td>Kiro CLI</td>
-<td><code>kiro-cli --version</code>（2.7+）</td>
-</tr>
-<tr>
-<td>Python 3.12+</td>
-<td>https://python.org</td>
-</tr>
-<tr>
-<td>Git</td>
-<td>https://git-scm.com</td>
-</tr>
-<tr>
-<td>Telegram 帳號</td>
-<td>建立 Bot 用</td>
-</tr>
-<tr>
-<td>Telegram Bot Token</td>
-<td>@BotFather 取得</td>
-</tr>
-</tbody>
+<tr><th>線性（課程 A）</th><th>迴圈（課程 B）</th></tr>
+<tr><td>你 /assign → Agent 做一次</td><td>排程自動觸發 → Agent 每天做</td></tr>
+<tr><td>你加知識 → Agent 能回答</td><td>Agent 自己累積記憶 → 越來越準</td></tr>
+<tr><td>一個 Agent 做一件事</td><td>一群 Agent 分工 → 結果互相依賴</td></tr>
+<tr><td>Demo 等級</td><td>生產等級</td></tr>
 </table>
-<hr />
-<h2>Step 0：環境安裝</h2>
-<h3>確認工具已安裝</h3>
-<pre><code class="language-bash">kiro-cli --version    # 需要 2.7+
-python3 --version     # 需要 3.12+
-git --version
-</code></pre>
-<h3>取得 Skills</h3>
-<pre><code class="language-bash">git clone https://github.com/igs-paddyyang-tw/ark-agent-skills .kiro/skills/
-</code></pre>
-<h3>確認環境（選用）</h3>
-<p>在 Kiro 聊天框輸入：</p>
-<pre><code>檢查我的開發環境
-</code></pre>
-<hr />
-<h2>Step 1：建立完整專案</h2>
-<h3>Script 直接產出（推薦）</h3>
-<pre><code class="language-bash"># 產出完整平台（110 項：Backend API + TG Bot + Agent Daemon + Docker）
-python3 .kiro/skills/ark-agent-team-builder/scripts/build_team.py my-team
+<p style="margin-top: 1rem;">核心心法：<strong>設計迴圈，不是設計步驟。讓系統自己跑、自己學、自己成長。</strong></p>
+</div>
 
-# 驗證結構
-python3 .kiro/skills/ark-agent-team-builder/scripts/build_team.py --validate my-team
-</code></pre>
-<h3>產出內容</h3>
-<pre><code>my-team/
-├── start.py                 ← 一鍵啟動全平台
-├── team.yaml                ← 5 人團隊配置
-├── src/
-│   ├── gateway/             ← 入口層（API + Telegram + Gemini Chat）
-│   ├── coordinator/         ← 協調層（A2A + DB + Events + Services）
-│   ├── runtime/             ← 執行層（spawn kiro-cli）
-│   ├── business/            ← 業務技能（news + web_search）
-│   └── bootstrap.py         ← 啟動邏輯
-├── agents/                  ← 5 個 Agent 工作目錄
-├── apps/web/                ← Web Dashboard（Next.js）
-├── Dockerfile               ← 容器化部署
-└── tests/                   ← 測試
-</code></pre>
-<h3>AI 觸發（自動呼叫 script）</h3>
-<p>在 Kiro 聊天框輸入：</p>
-<pre><code>建立 5 人 AI 團隊，角色：admin + leader + ai-dev + coder + qa
-</code></pre>
-<hr />
-<h2>Step 2：配置所有 Agent 的 .kiro/</h2>
-<pre><code class="language-bash"># 批次產出所有 agent 的 .kiro/（一次完成）
-python3 .kiro/skills/ark-kiro-init/scripts/build_kiro.py my-team/team.yaml my-team
+<hr>
 
-# clone 共用 Skills
-python3 .kiro/skills/ark-kiro-init/scripts/build_kiro.py --clone-skills my-team
+<h2>📚 兩堂課總覽</h2>
+<table>
+<tr><th>#</th><th>主題</th><th>一句話</th><th>用到的 Skill</th></tr>
+<tr><td>04</td><td>Agent Team</td><td>一句話派工，leader 自動分工</td><td>ark-agent-team-builder + ark-kiro-init</td></tr>
+<tr><td>05</td><td>營運落地</td><td>排程 + 費控 = 自動運作</td><td>—（平台設定）</td></tr>
+</table>
 
-# 驗證
-python3 .kiro/skills/ark-kiro-init/scripts/build_kiro.py --validate my-team
-</code></pre>
-<hr />
-<h2>Step 3：設定 Telegram（唯一手動步驟）</h2>
-<h3>⚠️ 重要：先建 venv</h3>
-<pre><code class="language-bash">cd my-team
-python3 -m venv .venv
-source .venv/bin/activate    # Linux/Mac
-# .venv\Scripts\activate     # Windows
+<hr>
+
+<!-- ═══════════════════════════════════════════ 04 ═══════════════════════════════════════════ -->
+
+<h1>🚀 第四堂：Agent Team — 它們能「合作」</h1>
+
+<h3>🎯 課堂目標</h3>
+<ol>
+<li>用 Kiro 自然語言建立 + 修改團隊配置</li>
+<li>理解 team.yaml 如何控制「誰做什麼」</li>
+<li>在 Telegram 驗證團隊派工 + 分工 = 可上線</li>
+<li>動手擴展團隊（加新 Agent）</li>
+</ol>
+
+<h3>前半段：Kiro IDE 開發</h3>
+
+<div class="step-card">
+<h3>Step 1：啟動團隊平台（0-5 min）</h3>
+<p><span class="badge badge-term">💻 終端</span></p>
+<pre><code>cd samples/ai-team-agent
+python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-</code></pre>
-<blockquote>
-<p><strong>為什麼需要 venv？</strong> Ubuntu 22.04+ 啟用 PEP 668，直接 <code>pip install</code> 會被拒絕。</p>
-</blockquote>
-<h3>建立 Bot</h3>
-<ol>
-<li>Telegram 找 <code>@BotFather</code> → <code>/newbot</code></li>
-<li>設定名稱 → 取得 <strong>Bot Token</strong></li>
-</ol>
-<h3>建立 .env</h3>
-<pre><code class="language-bash">cp .env.example .env
-</code></pre>
-<p>編輯 <code>.env</code>：</p>
-<pre><code>TELEGRAM_BOT_TOKEN=你的token
-</code></pre>
-<h3>取得你的 User ID</h3>
-<ol>
-<li><strong>先對 Bot 私訊一則任意訊息</strong>（如 "hello"）</li>
-<li>然後執行：</li>
-</ol>
-<pre><code class="language-bash">curl -s &quot;https://api.telegram.org/bot你的TOKEN/getUpdates&quot; | python3 -m json.tool
-</code></pre>
-<ol>
-<li>找到 <code>"from": {"id": 123456789}</code> 的數字</li>
-<li>填入 <code>team.yaml</code> 的 <code>allowed_users</code> 和 <code>admin-agent</code> 的 <code>private_chat</code></li>
-</ol>
-<h3>純私聊模式 vs Group Topics</h3>
-<table>
-<thead>
-<tr>
-<th>模式</th>
-<th>設定</th>
-<th>用法</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>純私聊（推薦新手）</td>
-<td>team.yaml 不設 <code>group_id</code></td>
-<td>直接對 Bot 發訊</td>
-</tr>
-<tr>
-<td>Group Topics</td>
-<td>設定 <code>group_id</code> + <code>topic_id</code></td>
-<td>每 agent 一個 topic</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2>Step 4：啟動團隊</h2>
-<pre><code class="language-bash"># 確保在 venv 中
-source .venv/bin/activate
+cp .env.example .env
+python start.py</code></pre>
+<p>✅ 預期：「5 Agents ready」+「Telegram Bot 已啟動」</p>
+</div>
 
-# 一鍵啟動全平台
-python start.py
-</code></pre>
-<p>啟動後會看到：</p>
-<pre><code>✅ Ark Agent Platform 全部服務已啟動
-├── Backend API :33333
-├── 5 Agents ready
-├── Telegram Bot 已啟動
-├── Scheduler started
-└── NotificationService 已訂閱 6 種事件
-</code></pre>
-<h3>驗證啟動</h3>
-<pre><code class="language-bash">curl http://127.0.0.1:33333/api/health
-# → {&quot;status&quot;: &quot;ok&quot;}
+<div class="step-card">
+<h3>Step 2：理解團隊配置（5-15 min）</h3>
+<p><span class="badge badge-kiro">📝 Kiro</span></p>
+<pre><code>打開 team.yaml，用表格列出每個 Agent 的 role、description</code></pre>
+<pre><code>比較 team-ops.yaml 和 team-dev.yaml 的差異</code></pre>
+<p>✅ 理解：team.yaml = 組織圖。改這個就改了分工。</p>
+</div>
 
-curl http://127.0.0.1:33333/api/agents
-# → Agent 列表
-</code></pre>
-<h3>⚠️ 常見問題</h3>
-<table>
-<thead>
-<tr>
-<th>錯誤</th>
-<th>原因</th>
-<th>解法</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>Conflict: terminated by other getUpdates</code></td>
-<td>多個 Bot instance</td>
-<td><code>pkill -f start.py</code> 只留一個</td>
-</tr>
-<tr>
-<td><code>Address already in use :33333</code></td>
-<td>port 被佔</td>
-<td><code>fuser -k 33333/tcp</code></td>
-</tr>
-<tr>
-<td><code>No module named 'fastapi'</code></td>
-<td>沒在 venv 中</td>
-<td><code>source .venv/bin/activate</code></td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2>Step 5：實戰派工</h2>
-<h3>Telegram 指令</h3>
-<table>
-<thead>
-<tr>
-<th>指令</th>
-<th>功能</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>/start</code></td>
-<td>歡迎訊息</td>
-</tr>
-<tr>
-<td><code>/status</code></td>
-<td>團隊即時狀態</td>
-</tr>
-<tr>
-<td><code>/agents</code></td>
-<td>Agent 列表</td>
-</tr>
-<tr>
-<td><code>/assign 描述</code></td>
-<td>建立任務並派工</td>
-</tr>
-<tr>
-<td><code>/board</code></td>
-<td>看板摘要</td>
-</tr>
-<tr>
-<td><code>/costs</code></td>
-<td>費用報告</td>
-</tr>
-<tr>
-<td><code>/queue</code></td>
-<td>待處理佇列</td>
-</tr>
-</tbody>
-</table>
-<h3>自然語言派工</h3>
-<p>直接對 Bot 發訊（自動路由到 leader）：</p>
-<pre><code>規劃一個 Todo App，拆解任務分派給團隊
-</code></pre>
-<p>指定 agent：</p>
-<pre><code>@coder 建立 Express.js REST API
-</code></pre>
-<h3>HTTP API 派工（不用 Telegram）</h3>
-<pre><code class="language-bash"># 建立任務
-curl -X POST http://127.0.0.1:33333/api/issues \
-  -H &quot;Content-Type: application/json&quot; \
-  -d '{&quot;title&quot;: &quot;建立 REST API&quot;, &quot;assignee&quot;: &quot;coder-agent&quot;}'
+<div class="step-card">
+<h3>Step 3：加新 Agent（15-25 min）⭐</h3>
+<p><span class="badge badge-kiro">📝 Kiro</span></p>
+<pre><code>在 team.yaml 加入新 Agent：
+- id: designer-agent
+- description: "🎮 遊戲設計師 — 遊戲 UI、視覺風格、玩法體驗分析"
+- role: worker
+- working_directory: agents/designer-agent</code></pre>
+<pre><code>用 ark-kiro-init 幫 designer-agent 初始化完整 .kiro/ 配置：
+- SOUL：遊戲設計師，熟悉手遊 UI 設計、玩法機制
+- knowledge/raw/ 放一份「手遊設計原則」作為種子知識</code></pre>
+<p>✅ 預期產出完整結構：<code>.kiro/steering/SOUL.md</code> + <code>MEMORY.md</code> + <code>USER.md</code> + <code>knowledge/raw/</code></p>
+</div>
 
-# 查看狀態
-curl http://127.0.0.1:33333/api/admin/dashboard/stats
-</code></pre>
-<hr />
-<h2>進階功能</h2>
-<h3>Web Dashboard（回家做）</h3>
-<pre><code class="language-bash">cd apps/web
-npm install
-npm run dev
-# → http://localhost:3000/admin/dashboard
-</code></pre>
-<h3>Docker 部署</h3>
-<pre><code class="language-bash">docker compose -f docker-compose.prod.yml up -d
-</code></pre>
-<h3>費用追蹤</h3>
-<p>每次 Agent 執行自動記錄費用：</p>
-<pre><code class="language-bash">curl http://127.0.0.1:33333/api/admin/costs
-</code></pre>
-<h3>審計日誌</h3>
-<p>所有操作自動記錄：</p>
-<pre><code class="language-bash">curl http://127.0.0.1:33333/api/admin/audit
-</code></pre>
-<hr />
-<h2>團隊配置（team.yaml）</h2>
-<pre><code class="language-yaml">instances:
-  admin-agent:    ⚙️ 服務監控、重啟、成本控制
-  pm-agent:       🧠 需求分析、派工、驗收（leader）
-  ai-dev-agent:   🤖 AI 架構、Prompt 工程（worker）
-  coder-agent:    💻 全端開發、API 實作（worker）
-  qa-agent:       🧪 測試、品質保證（worker）
-</code></pre>
-<h3>上下文壓縮建議</h3>
+<h3>後半段：Telegram 上線驗證</h3>
+
+<div class="step-card">
+<h3>Step 4：派工驗證（25-40 min）</h3>
+<p>💻 重啟 → <span class="badge badge-tg">📱 Telegram</span></p>
+
+<h4>4.1 指令式派工</h4>
+<pre><code>/agents → 看到 6 個 Agent
+/assign 規劃科技日報：market 抓新聞、data 做分析、report 產出 HTML 日報
+/board → 看任務狀態</code></pre>
+
+<h4>4.2 自然語言派工（同一任務）</h4>
+<pre><code>@pm 規劃科技日報：market 抓新聞、data 做分析、report 產出 HTML 日報</code></pre>
+
 <table>
-<thead>
-<tr>
-<th>Agent</th>
-<th>觸發點</th>
-<th>理由</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>pm-agent</td>
-<td>70%</td>
-<td>派工決策鏈珍貴，早壓縮保留摘要</td>
-</tr>
-<tr>
-<td>worker agents</td>
-<td>75%</td>
-<td>保留當前任務，完成的可丟</td>
-</tr>
-<tr>
-<td>admin-agent</td>
-<td>85%</td>
-<td>短指令為主</td>
-</tr>
-</tbody>
+<tr><th></th><th><code>/assign</code></th><th><code>@pm</code></th></tr>
+<tr><td>方式</td><td>指令式</td><td>自然對話</td></tr>
+<tr><td>結果</td><td>相同</td><td>相同</td></tr>
+<tr><td>適合</td><td>明確派工</td><td>像跟人說話</td></tr>
 </table>
-<hr />
-<h2>教材包檔案說明</h2>
-<pre><code>agent-team-workshop/
-├── QUICKSTART.md          ← 本文件（快速上手）
-├── agent-team-build-guide.md ← 完整教學
-├── team.example.yaml      ← team.yaml 範例
-├── troubleshooting.md     ← 故障排除
-└── structured-example.json
-</code></pre>
-<hr />
-<p><em>作者：paddyyang ｜ 更新：2026-06-17</em></p></body>
-</html><hr style="margin:3rem 0;border-color:#334155">
-<body><h1>Workshop 03：Platform — 進階平台功能（50 分鐘）</h1>
-<blockquote>
-<p><strong>前提</strong>：已完成 Workshop 02，擁有運行中的 <code>my-team</code> 專案。
-本次不需重新安裝，直接在現有專案上探索平台能力。</p>
-</blockquote>
-<hr />
-<h2>🎯 學習目標</h2>
-<table>
-<thead>
-<tr>
-<th>#</th>
-<th>主題</th>
-<th>你會學到</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>1</td>
-<td>Backend API</td>
-<td>21 個 REST 端點、curl 測試、管理面板</td>
-</tr>
-<tr>
-<td>2</td>
-<td>Web Dashboard</td>
-<td>Next.js 前端、即時狀態監控</td>
-</tr>
-<tr>
-<td>3</td>
-<td>A2A 協作</td>
-<td>TaskGraph 依賴、Agent Discovery 自動匹配</td>
-</tr>
-<tr>
-<td>4</td>
-<td>四層架構</td>
-<td>入口→協調→執行→知識 的設計哲學</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2>📐 四層架構概念</h2>
-<p>在動手之前，理解平台的設計哲學：</p>
-<pre><code>┌─────────────────────────────────────────────┐
-│ Layer 1：入口層（Entry）                      │
-│   Telegram Bot / Web UI / REST API           │
-├─────────────────────────────────────────────┤
-│ Layer 2：協調層（Orchestration）              │
-│   TaskGraph / A2A Discovery / 排程引擎       │
-├─────────────────────────────────────────────┤
-│ Layer 3：執行層（Execution）                  │
-│   Agent Skills / LLM Adapters / Tools        │
-├─────────────────────────────────────────────┤
-│ Layer 4：知識層（Knowledge）                  │
-│   Wiki Engine / Memory / Session / FTS5      │
-└─────────────────────────────────────────────┘
-</code></pre>
+</div>
+
+<div class="step-card">
+<h3>Step 5：驗證新 Agent — 捕魚機競品分析（40-50 min）</h3>
+<p><span class="badge badge-tg">📱 Telegram</span></p>
+<pre><code>/assign 捕魚機遊戲競品分析與設計報告：market 蒐集市面捕魚機遊戲資料、designer 分析遊戲 UI 風格和玩法設計、report 產出競品分析報告</code></pre>
+<p>✅ 預期：designer-agent 接到任務 → 3 Agent 協作 → 產出報告</p>
+<p><span class="badge badge-tg">📱 加碼</span></p>
+<pre><code>@pm 根據剛才的競品分析報告，產出一份新捕魚機遊戲的專案提案書</code></pre>
+<p>💡 <strong>你加的 Agent 馬上能跟團隊合作。加人 = 改 yaml + 初始化 .kiro/</strong></p>
+</div>
+
+<hr>
+
+<!-- ═══════════════════════════════════════════ 05 ═══════════════════════════════════════════ -->
+
+<h1>🚀 第五堂：營運落地 — 它能「自己跑」</h1>
+
+<h3>🎯 課堂目標</h3>
+<ol>
+<li>設定排程讓科技日報每天自動產出（不用手動 /assign）</li>
+<li>設定費用上限避免 AI 燒錢（cost_guard）</li>
+<li>用後台 API 看任務執行狀況</li>
+<li>理解「Demo → 正式上線」需要什麼</li>
+</ol>
+
+<h3>前半段：Kiro IDE 設定</h3>
+
+<div class="step-card">
+<h3>Step 1：設定排程（0-10 min）⭐</h3>
+<p><span class="badge badge-kiro">📝 Kiro</span></p>
+<pre><code>打開 scheduler.yaml，加入排程：
+- id: daily-tech-news
+- 時間: 每天早上 09:00（Asia/Taipei）
+- 任務: market 蒐集新聞、report 產出日報
+- 指派: pm-agent</code></pre>
+<pre><code>加入第二個排程：
+- id: weekly-competitor-report
+- 時間: 每週一 10:00
+- 任務: market + designer + report 產出捕魚機競品週報</code></pre>
+<p>✅ 預期：scheduler.yaml 有 2 個排程</p>
+</div>
+
+<div class="step-card">
+<h3>Step 2：設定費用控管（10-20 min）</h3>
+<p><span class="badge badge-kiro">📝 Kiro</span></p>
+<pre><code>打開 team.yaml 的 cost_guard，把 daily_limit_usd 改成 5.0，
+解釋超過上限會發生什麼</code></pre>
+<p>✅ 理解：超過 → 新任務被拒 + 通知 admin</p>
+</div>
+
+<div class="step-card">
+<h3>Step 3：重啟確認（20-25 min）</h3>
+<p><span class="badge badge-term">💻 終端</span></p>
+<pre><code>python start.py</code></pre>
+<p><span class="badge badge-curl">🌐 curl</span></p>
+<pre><code>curl http://localhost:33333/api/admin/schedules</code></pre>
+<p>✅ 列出 2 個排程 + 下次觸發時間</p>
+</div>
+
+<h3>後半段：驗證自動運作</h3>
+
+<div class="step-card">
+<h3>Step 4：手動觸發 + 看結果（25-40 min）</h3>
+<p><span class="badge badge-curl">🌐 curl</span> 手動觸發排程：</p>
+<pre><code>curl -X POST http://localhost:33333/api/admin/schedules/daily-tech-news/trigger</code></pre>
+<p><span class="badge badge-tg">📱 Telegram</span></p>
 <ul>
-<li><strong>入口層</strong>：使用者從哪裡進來（TG、Web、API）</li>
-<li><strong>協調層</strong>：決定「誰做什麼」（任務分配、依賴解析）</li>
-<li><strong>執行層</strong>：真正做事的 Agent 和 Skill</li>
-<li><strong>知識層</strong>：持久化記憶、搜尋、學習</li>
+<li>觀察 pm-agent 自動拆解 → market 抓新聞 → report 產日報</li>
+<li><code>/board</code> 看排程觸發的任務</li>
+<li><code>/costs</code> 看費用消耗</li>
 </ul>
-<p>本次 Workshop 聚焦 Layer 1（API + Web）和 Layer 2（A2A 協作）。</p>
-<hr />
-<h2>1️⃣ Backend API（20 分鐘）</h2>
-<h3>確認服務啟動</h3>
-<pre><code class="language-bash">cd my-team
-source .venv/bin/activate
-uvicorn src.server.main:app --reload --port 8000
-</code></pre>
-<h3>21 個端點總覽</h3>
+<p><span class="badge badge-curl">🌐 curl</span> 後台統計：</p>
+<pre><code>curl http://localhost:33333/api/admin/dashboard/stats</code></pre>
+<p>✅ 預期：agents_online: 6, tasks_today: 3, cost_today_usd: 0.12</p>
+</div>
+
+<div class="step-card">
+<h3>Step 5：上線 Checklist（40-50 min）</h3>
+<p><span class="badge badge-kiro">📝 Kiro</span></p>
+<pre><code>幫我列出這個 Agent Team 正式上線前的 Checklist：
+排程、費用、監控、告警、備份、部署</code></pre>
+<p>✅ 產出清單：</p>
 <table>
-<thead>
-<tr>
-<th>類別</th>
-<th>端點範例</th>
-<th>數量</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Health</td>
-<td><code>/api/v1/health</code></td>
-<td>1</td>
-</tr>
-<tr>
-<td>Skills</td>
-<td><code>/api/v1/skills</code>, <code>/api/v1/skills/invoke</code></td>
-<td>2</td>
-</tr>
-<tr>
-<td>Chat</td>
-<td><code>/api/v1/chat</code></td>
-<td>1</td>
-</tr>
-<tr>
-<td>Wiki</td>
-<td><code>/api/v1/wiki/query</code>, <code>ingest</code>, <code>lint</code></td>
-<td>3</td>
-</tr>
-<tr>
-<td>Workflows</td>
-<td><code>/api/v1/workflows</code>, <code>run</code>, <code>status</code></td>
-<td>3</td>
-</tr>
-<tr>
-<td>Schedules</td>
-<td><code>/api/v1/schedules</code>, <code>toggle</code></td>
-<td>2</td>
-</tr>
-<tr>
-<td>Admin</td>
-<td><code>/api/admin/dashboard/stats</code>, <code>agents</code>, <code>tasks</code>, <code>audit</code>, <code>config</code></td>
-<td>8</td>
-</tr>
-<tr>
-<td>Files</td>
-<td><code>/api/files</code></td>
-<td>1</td>
-</tr>
-</tbody>
+<tr><th>類別</th><th>項目</th><th>狀態</th></tr>
+<tr><td>排程</td><td>scheduler.yaml 完成</td><td>✅</td></tr>
+<tr><td>費控</td><td>daily_limit_usd 設定</td><td>✅</td></tr>
+<tr><td>監控</td><td>/board + /costs 能看</td><td>✅</td></tr>
+<tr><td>部署</td><td>docker-compose.prod.yml</td><td>🔲</td></tr>
+<tr><td>備份</td><td>knowledge/ 定期備份</td><td>🔲</td></tr>
+<tr><td>告警</td><td>失敗時通知 admin</td><td>🔲</td></tr>
 </table>
-<h3>🔨 動手：curl 測試</h3>
-<pre><code class="language-bash"># 系統狀態
-curl -s http://localhost:8000/api/v1/health | python -m json.tool
+<p>💡 <strong>你已經有一個能自動運作的 AI 團隊了。剩下的只是部署和維運。</strong></p>
+</div>
 
-# 管理面板統計（重點！）
-curl -s http://localhost:8000/api/admin/dashboard/stats | python -m json.tool
+<hr>
 
-# 查看已註冊的 Skills
-curl -s http://localhost:8000/api/v1/skills | python -m json.tool
-
-# 審計日誌
-curl -s http://localhost:8000/api/admin/audit | python -m json.tool
-</code></pre>
-<p>✅ <strong>檢查點</strong>：<code>dashboard/stats</code> 回傳 JSON 含 <code>agents_online</code>、<code>tasks_today</code>、<code>skill_count</code>。</p>
-<hr />
-<h2>2️⃣ Web Dashboard（25 分鐘）</h2>
-<h3>安裝與啟動前端</h3>
-<pre><code class="language-bash">cd my-team/web          # 前端目錄
-npm install             # 安裝依賴（首次約 30 秒）
-npm run dev             # 啟動 dev server
-</code></pre>
-<p>開啟瀏覽器：<strong>http://localhost:3000</strong></p>
-<h3>Dashboard 功能</h3>
+<h2>📊 兩堂完成度總覽</h2>
 <table>
-<thead>
-<tr>
-<th>頁面</th>
-<th>功能</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Overview</td>
-<td>KPI 卡片 + 即時 Agent 狀態</td>
-</tr>
-<tr>
-<td>Agents</td>
-<td>Agent 列表、能力標籤、在線狀態</td>
-</tr>
-<tr>
-<td>Tasks</td>
-<td>任務清單、狀態追蹤、依賴圖</td>
-</tr>
-<tr>
-<td>Audit</td>
-<td>操作審計日誌（誰在什麼時候做了什麼）</td>
-</tr>
-<tr>
-<td>Settings</td>
-<td>系統設定、LLM 模型切換</td>
-</tr>
-</tbody>
+<tr><th>堂</th><th>🎯 保底</th><th>✅ 標準</th><th>🏆 快速</th></tr>
+<tr><td>04</td><td>平台啟動 + /agents</td><td>加 Agent + 派工正確</td><td>捕魚機競品 3 Agent 協作</td></tr>
+<tr><td>05</td><td>排程設定完成</td><td>觸發 + TG 收到結果</td><td>完整上線 Checklist</td></tr>
 </table>
-<h3>🔨 動手：探索 Dashboard</h3>
-<ol>
-<li>Overview → 確認 KPI 數字與 curl 結果一致</li>
-<li>Agents → 看到你的 Bot Agent 在線</li>
-<li>Tasks → 目前應為空（等下會有任務）</li>
-<li>Audit → 看到剛才的 API 呼叫記錄</li>
-</ol>
-<p>✅ <strong>檢查點</strong>：Dashboard 正常顯示，無 CORS 錯誤。</p>
-<hr />
-<h2>3️⃣ A2A 協作（30 分鐘）</h2>
-<h3>核心概念</h3>
-<p><strong>A2A（Agent-to-Agent）</strong> 讓多個 Agent 自動協作：</p>
-<pre><code>使用者 /assign &quot;分析上週數據並產出報表&quot;
-         │
-         ▼
-┌─ TaskGraph 拆解 ──────────────────┐
-│  Task 1: 查詢數據（db_query）      │
-│  Task 2: 分析趨勢（llm_analyze）   │  ← 依賴 Task 1
-│  Task 3: 產出報表（report_template）│  ← 依賴 Task 2
-└───────────────────────────────────┘
-         │
-         ▼
-┌─ Discovery 匹配 ──────────────────┐
-│  Task 1 → DataAgent（有 db 能力）  │
-│  Task 2 → AnalystAgent（有 LLM）   │
-│  Task 3 → ReportAgent（有模板）    │
-└───────────────────────────────────┘
-</code></pre>
-<ul>
-<li><strong>TaskGraph</strong>：自動拆解複合任務，建立依賴關係</li>
-<li><strong>Discovery</strong>：根據 Agent 能力標籤自動匹配最適合的執行者</li>
-<li><strong>依賴執行</strong>：Task 2 等 Task 1 完成才啟動（DAG 拓撲排序）</li>
-</ul>
-<h3>🔨 動手：觸發 A2A 協作</h3>
-<p>在 Telegram Bot 中：</p>
-<pre><code>/assign 查詢今日 Skills 執行統計並產出摘要
-</code></pre>
-<p>觀察 Dashboard：Tasks 頁面出現新任務（含子任務），依序從 pending → running → completed，最終 Bot 回覆結果摘要。</p>
-<h3>驗證 A2A 路由</h3>
-<pre><code class="language-bash">curl -s http://localhost:8000/api/admin/tasks | python -m json.tool
-curl -s http://localhost:8000/api/admin/audit | python -m json.tool
-</code></pre>
-<p>✅ <strong>檢查點</strong>：Tasks API 回傳含 <code>subtasks</code> 陣列，每個 subtask 有 <code>assigned_agent</code>。</p>
-<hr />
-<h2>4️⃣ 整合驗證（15 分鐘）</h2>
-<h3>端到端流程</h3>
-<pre><code>TG /assign → API → TaskGraph 拆解 → Discovery 匹配 → Agent 執行 → Dashboard 更新 → TG 通知
-</code></pre>
-<h3>🔨 最終動手</h3>
-<ol>
-<li>TG 發送：<code>/assign 列出所有 Skill 並統計各類別數量</code></li>
-<li>同時觀察 Dashboard Tasks 頁面</li>
-<li>完成後：<code>curl -s http://localhost:8000/api/admin/audit?limit=20 | python -m json.tool</code></li>
-</ol>
-<hr />
-<h2>🏆 完成度分級</h2>
+
+<hr>
+
+<h2>🔄 五堂課完整遞進</h2>
 <table>
-<thead>
-<tr>
-<th>等級</th>
-<th>條件</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>⭐ 基礎</td>
-<td>curl 測試 API 成功、Dashboard 正常開啟</td>
-</tr>
-<tr>
-<td>⭐⭐ 進階</td>
-<td>A2A 任務成功執行、Dashboard 即時更新</td>
-</tr>
-<tr>
-<td>⭐⭐⭐ 精通</td>
-<td>理解四層架構、能解釋 TaskGraph 拆解邏輯</td>
-</tr>
-<tr>
-<td>🌟 超越</td>
-<td>自訂 Agent 能力標籤、影響 Discovery 匹配結果</td>
-</tr>
-</tbody>
+<tr><th>堂</th><th>學會</th><th>從→到</th></tr>
+<tr><td>01</td><td>控制 AI 說什麼</td><td>Echo Bot → 有人格的 Agent</td></tr>
+<tr><td>02</td><td>保證做得好</td><td>憑感覺 → Spec-Driven</td></tr>
+<tr><td>03</td><td>越用越聰明</td><td>幻覺 → 有依據（RAG）</td></tr>
+<tr><td>04</td><td>一群 AI 協作</td><td>一個人做 → 團隊分工</td></tr>
+<tr><td>05</td><td>自動運作</td><td>手動 Demo → 無人值守</td></tr>
 </table>
-<hr />
-<h2>❓ 常見問題</h2>
-<h3>Node.js 版本不對</h3>
-<pre><code class="language-bash">node --version  # 需要 v20+
 
-# 使用 nvm 切換
-nvm install 20
-nvm use 20
-</code></pre>
-<h3>CORS 錯誤（Dashboard 無法呼叫 API）</h3>
-<p>確認 Backend 的 CORS 設定：</p>
-<pre><code class="language-python"># src/server/main.py 中應有
-from fastapi.middleware.cors import CORSMiddleware
-app.add_middleware(CORSMiddleware, allow_origins=[&quot;http://localhost:3000&quot;], ...)
-</code></pre>
-<p>如果沒有，加入後重啟 Backend。</p>
-<h3>Port 衝突</h3>
-<pre><code class="language-bash"># 檢查 port 佔用
-lsof -i :8000  # Backend
-lsof -i :3000  # Frontend
+<hr>
+<p style="text-align: center; color: var(--muted);">
+課程 B 完成 → 你有一個能自動運作、有費控、可監控的 AI 團隊平台。<br>
+帶走 samples/ → 改 SOUL、改 team.yaml → 直接用在你的業務。
+</p>
 
-# 殺掉佔用的 process
-kill -9 &lt;PID&gt;
-
-# 或改用其他 port
-uvicorn src.server.main:app --port 8001
-PORT=3001 npm run dev
-</code></pre>
-<h3>Dashboard 顯示空白</h3>
-<p>確認 Backend 運行中 → 確認 <code>.env</code> 有 <code>NEXT_PUBLIC_API_URL=http://localhost:8000</code> → 清快取 <code>rm -rf web/.next &amp;&amp; npm run dev</code>。</p>
-<h3>A2A 任務沒有被拆解</h3>
-<p>簡單任務不會拆解；確認 <code>config/agents.yaml</code> 有正確能力標籤，且至少 Bot Agent 在線。</p>
-<hr />
-<h2>⏭️ 下一步</h2>
-<p>Workshop 03 完成！你已掌握 21 個 API 端點、Web Dashboard 監控、A2A 協作機制、四層架構哲學。</p>
-<p><strong>進階探索</strong>：自訂 Agent 能力標籤影響 Discovery、建立含條件分支的 TaskGraph、整合外部 API 資料來源。</p></body>
+</body>
+</html>
