@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Workshop — 五堂課建立自演化 AI 團隊</title>
+<style>
+:root { --bg: #030712; --surface: #0f172a; --card: #1e293b; --text: #e2e8f0; --muted: #94a3b8; --accent: #22d3ee; --border: #334155; --green: #4ade80; --yellow: #fbbf24; --purple: #a78bfa; --orange: #fb923c; --blue: #3b82f6; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; }
+.container { max-width: 960px; margin: 0 auto; padding: 0 2rem 2rem; }
+
+/* Tabs */
+.tab-bar { position: sticky; top: 0; z-index: 100; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; gap: 0; overflow-x: auto; }
+.tab-btn { padding: 1rem 1.5rem; border: none; background: transparent; color: var(--muted); font-size: 0.95rem; font-weight: 500; cursor: pointer; white-space: nowrap; border-bottom: 3px solid transparent; transition: all 0.2s; }
+.tab-btn:hover { color: var(--text); background: rgba(34,211,238,0.05); }
+.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* Typography */
+h1 { color: var(--accent); font-size: 2rem; margin: 2rem 0 1rem; border-bottom: 2px solid var(--border); padding-bottom: 0.5rem; }
+h2 { color: var(--accent); font-size: 1.5rem; margin: 2rem 0 0.8rem; }
+h3 { color: #f1f5f9; font-size: 1.2rem; margin: 1.5rem 0 0.5rem; }
+h4 { color: var(--muted); font-size: 1rem; margin: 1rem 0 0.3rem; }
+p { margin: 0.5rem 0; }
+code { background: var(--card); padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.9em; color: var(--accent); }
+pre { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; overflow-x: auto; margin: 1rem 0; }
+pre code { background: none; padding: 0; color: var(--text); }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+th, td { border: 1px solid var(--border); padding: 0.5rem 0.8rem; text-align: left; }
+th { background: var(--card); color: var(--accent); }
+tr:nth-child(even) { background: rgba(30,41,59,0.5); }
+ul, ol { padding-left: 1.5rem; margin: 0.5rem 0; }
+li { margin: 0.3rem 0; }
+hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
+
+/* Components */
+.hero { background: linear-gradient(135deg, var(--surface), var(--bg)); border: 1px solid var(--border); border-radius: 12px; padding: 2rem; margin: 1.5rem 0; }
+.hero-title { font-size: 2.5rem; color: white; margin-bottom: 0.5rem; background: linear-gradient(135deg, #22d3ee, #3b82f6, #4ade80); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.8em; font-weight: bold; margin-right: 0.3rem; }
+.badge-kiro { background: #1e40af; color: #93c5fd; }
+.badge-tg { background: #064e3b; color: #6ee7b7; }
+.badge-term { background: #4c1d95; color: #c4b5fd; }
+.badge-curl { background: #78350f; color: #fde68a; }
+.step-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 1.2rem; margin: 1rem 0; }
+.step-card h3 { margin-top: 0; }
+.layer-row { display: grid; grid-template-columns: 60px 1fr 1fr; gap: 0.5rem; align-items: center; padding: 0.8rem; border-radius: 8px; margin: 0.5rem 0; }
+.nav-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin: 0.8rem 0; cursor: pointer; transition: all 0.2s; }
+.nav-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════ TAB BAR ═══════════════════ -->
+<div class="tab-bar">
+<button class="tab-btn active" onclick="showTab('home')">🏠 首頁</button>
+<button class="tab-btn" onclick="showTab('course-a')">📗 課程 A：AI Bot</button>
+<button class="tab-btn" onclick="showTab('course-b')">📘 課程 B：Agent Team</button>
+<button class="tab-btn" onclick="showTab('advanced')">🔬 進階架構</button>
+</div>
+
+<!-- ═══════════════════ TAB 1: 首頁 ═══════════════════ -->
+<div id="tab-home" class="tab-content active">
+<div class="container">
+
+<div class="hero">
+<div class="hero-title">AI Workshop</div>
+<p style="font-size: 1.3rem; color: white; margin-bottom: 1rem;">五堂課建立自演化 AI 團隊</p>
+<p>用 <strong>Kiro IDE vibe coding</strong>（打字告訴 AI 你要什麼）+ <strong>Telegram 即時驗證</strong>，<br>
+從一個會說話的 Bot → 一個能自動運作的 AI 團隊平台。</p>
+<p style="margin-top: 1rem; color: var(--green);"><strong>你不需要寫程式。你只需要設計方向、驗證結果。</strong></p>
+</div>
+
+<h2>🚀 快速導航 — 你從哪開始？</h2>
+
+<div class="nav-card" onclick="showTab('course-a')">
+<h3 style="color: var(--green);">📗 課程 A：AI Agent 開發入門（3 堂）</h3>
+<p>適合：想了解 AI Agent 能做什麼、怎麼控制它</p>
+<p>學會：說話（SOUL）→ 做事（Skill）→ 記住（Wiki）</p>
+<p><code>samples/ai-bot/</code> — 帶走一個完整的個體 Agent</p>
+</div>
+
+<div class="nav-card" onclick="showTab('course-b')">
+<h3 style="color: var(--blue);">📘 課程 B：AI Agent Team 實戰（2 堂）</h3>
+<p>適合：想讓多個 Agent 協作、自動運作</p>
+<p>學會：合作（Team）→ 自己跑（排程+費控）</p>
+<p><code>samples/ai-team-agent/</code> — 帶走一個完整的團隊平台</p>
+</div>
+
+<div class="nav-card" onclick="showTab('advanced')">
+<h3 style="color: var(--purple);">🔬 進階：五層架構深入</h3>
+<p>適合：想理解底層設計、企業級架構、自演化機制</p>
+</div>
+
+<hr>
+
+<h2>📊 五堂課能力遞進</h2>
+<table>
+<tr><th>堂</th><th>主題</th><th>一句話</th><th>帶走的能力</th></tr>
+<tr><td>01</td><td>🗣️ Agent 初始</td><td>改 SOUL → Bot 行為變</td><td>為任何場景設計 AI 人格</td></tr>
+<tr><td>02</td><td>⚡ Skills 開發</td><td>拷問 → Spec → 實作 → 驗證</td><td>Spec-Driven 開發方法</td></tr>
+<tr><td>03</td><td>🧠 LLM Wiki</td><td>加知識 → 回答有依據</td><td>建立個人/公司知識庫</td></tr>
+<tr><td>04</td><td>🤝 Agent Team</td><td>一句話派工 → 自動分工</td><td>建立 AI 團隊、加人即用</td></tr>
+<tr><td>05</td><td>🏭 營運落地</td><td>排程 + 費控 = 自動運作</td><td>從 Demo 到正式上線</td></tr>
+</table>
+
+<hr>
+
+<h2>🏗️ 五層架構總覽</h2>
+<p>每堂課對應架構中的一層：</p>
+
+<div class="layer-row" style="background: rgba(245,158,11,0.1); border-left: 4px solid #f59e0b;">
+<span style="font-size: 1.5rem;">L1</span>
+<div><strong style="color: #f59e0b;">Gateway（入口）</strong><br><span style="color: var(--muted);">Telegram Bot → 接收指令</span></div>
+<div><code>01 啟動 Bot</code></div>
+</div>
+
+<div class="layer-row" style="background: rgba(168,85,247,0.1); border-left: 4px solid #a855f7;">
+<span style="font-size: 1.5rem;">L2</span>
+<div><strong style="color: #a855f7;">Runtime（執行）</strong><br><span style="color: var(--muted);">Kiro CLI + Gemini → 執行任務</span></div>
+<div><code>01-02 SOUL + Skill</code></div>
+</div>
+
+<div class="layer-row" style="background: rgba(16,185,129,0.1); border-left: 4px solid #10b981;">
+<span style="font-size: 1.5rem;">L3</span>
+<div><strong style="color: #10b981;">Knowledge（知識）</strong><br><span style="color: var(--muted);">Wiki + RAG → 有依據的回答</span></div>
+<div><code>03 LLM Wiki</code></div>
+</div>
+
+<div class="layer-row" style="background: rgba(59,130,246,0.1); border-left: 4px solid #3b82f6;">
+<span style="font-size: 1.5rem;">L4</span>
+<div><strong style="color: #3b82f6;">Collaboration（協作）</strong><br><span style="color: var(--muted);">TaskGraph + Discovery → 多 Agent 分工</span></div>
+<div><code>04 Agent Team</code></div>
+</div>
+
+<div class="layer-row" style="background: rgba(251,146,60,0.1); border-left: 4px solid #fb923c;">
+<span style="font-size: 1.5rem;">L5</span>
+<div><strong style="color: #fb923c;">Operations（營運）</strong><br><span style="color: var(--muted);">排程 + 費控 + 監控 → 自動運作</span></div>
+<div><code>05 營運落地</code></div>
+</div>
+
+<hr>
+
+<h2>🎁 帶走什麼</h2>
+<pre><code>samples/
+├── ai-bot/              ← 課程 A 產出（改 SOUL 直接用）
+│   ├── agents/          ← 8 個 Agent（各有 .kiro/ 配置）
+│   ├── knowledge/raw/   ← 遊戲競品分析（種子知識）
+│   └── start.py         ← 一鍵啟動
+│
+└── ai-team-agent/       ← 課程 B 產出（選配置直接跑）
+    ├── team-ops.yaml    ← 營運團隊
+    ├── team-dev.yaml    ← 研發團隊
+    ├── scheduler.yaml   ← 排程設定
+    └── start.py         ← 一鍵啟動</code></pre>
+
+</div>
+</div>
+
+<!-- ═══════════════════ TAB 2: 課程 A ═══════════════════ -->
+<div id="tab-course-a" class="tab-content">
+<div class="container">
+
+<h1>📗 課程 A：AI Agent 開發入門</h1>
+
+<div class="hero" style="border-color: var(--purple);">
+<h2 style="color: var(--purple); margin-top: 0;">🏗️ 駕馭工程（Steering Engineering）</h2>
+<p>傳統開發：你寫每一行程式碼。<br>
+駕馭工程：你<strong>設計方向</strong>，AI 執行細節。</p>
+<table>
+<tr><th>你做的事</th><th>AI 做的事</th></tr>
+<tr><td>設計 SOUL（人格方向）</td><td>產出符合人格的回應</td></tr>
+<tr><td>拷問需求、確認 Spec</td><td>依 Spec 產出程式碼</td></tr>
+<tr><td>丟入知識素材</td><td>建立 RAG 索引、有依據的回答</td></tr>
+</table>
+<p style="margin-top: 1rem;"><strong>你是方向盤，AI 是引擎。駕馭 ≠ 放手，駕馭 = 你決定去哪。</strong></p>
+</div>
+
+<table>
+<tr><th>#</th><th>主題</th><th>Skill</th><th>核心體驗</th></tr>
+<tr><td>01</td><td>Agent 初始</td><td>—</td><td>改 SOUL → 風格即時變</td></tr>
+<tr><td>02</td><td>Skills 開發</td><td>grill-me + superpowers + skill-creator + validator</td><td>Spec-Driven 完整迴圈</td></tr>
+<tr><td>03</td><td>LLM Wiki</td><td>ark-wiki-engine</td><td>加知識前 vs 後的差異</td></tr>
+</table>
+
+<hr>
+
+<!-- 01 -->
+<h1>🚀 第一堂：Agent 初始 — 它能「說話」</h1>
+
+<div class="step-card">
+<h3>Step 1：啟動 Bot（0-5 min）</h3>
+<p><span class="badge badge-term">💻 終端</span></p>
+<pre><code>cd samples/ai-bot
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt && cp .env.example .env
+python start.py</code></pre>
+</div>
+
+<div class="step-card">
+<h3>Step 2：切換 Agent 體驗（5-15 min）</h3>
+<p><span class="badge badge-tg">📱 Telegram</span> <code>/agents</code> → 8 個按鈕 → 問同一個問題，觀察 4 種不同回答</p>
+</div>
+
+<div class="step-card">
+<h3>Step 3：修改 SOUL（15-30 min）⭐</h3>
+<p><span class="badge badge-kiro">📝 Kiro</span></p>
+<pre><code>把 admin-agent 的 SOUL 改成「幽默搞笑」風格</code></pre>
+<p>📱 驗證 → 再改成「資深技術顧問」→ 📱 再驗證</p>
+<p>💡 <strong>改幾行字 → Bot 完全變一個人</strong></p>
+</div>
+
+<div class="step-card">
+<h3>Step 4：為多 Agent 設計 SOUL（30-40 min）</h3>
+<p><span class="badge badge-kiro">📝 Kiro</span> 設計 market-agent 為「新聞主播」、qa-agent 為「嚴格審查員」</p>
+</div>
+
+<div class="step-card">
+<h3>Step 5：設計真實場景（40-50 min）</h3>
+<p><span class="badge badge-kiro">📝 Kiro</span> 設計「公司客服 Bot」或「日報助手」的 SOUL</p>
+</div>
+
+<hr>
+
+<!-- 02 -->
+<h1>🚀 第二堂：Skills 開發 — 它能「做事」</h1>
+
+<h3>🔧 Spec-Driven 迴圈</h3>
+<pre><code>ark-grill-me → ark-superpowers → ark-skill-creator → ark-code-spec-validator
+ （想清楚）       （寫規格）         （依規格做）          （驗證一致）</code></pre>
+
+<div class="step-card">
+<h3>Step 1：為什麼需要 Skill（0-5 min）</h3>
+<p><span class="badge badge-tg">📱 TG</span> 問 Admin 做超出能力的事 → 回答很泛 → 需要 Skill 擴充</p>
+</div>
+
+<div class="step-card">
+<h3>Step 2：拷問設計（5-20 min）⭐</h3>
+<p><span class="badge badge-kiro">📝 Kiro</span></p>
+<pre><code>拷問我的設計：為 market-agent 開發新聞爬蟲 Skill</code></pre>
+<p>⚠️ <strong>不要全部回 OK</strong> — 質疑、補充、控制範疇</p>
+</div>
+
+<div class="step-card">
+<h3>Step 3：產出 Spec（20-35 min）</h3>
+<p><span class="badge badge-kiro">📝 Kiro</span> <code>根據決策摘要，幫我寫 spec</code></p>
+<p>✅ 產出 <code>docs/specs/news-scraper-spec.md</code>（含可量化驗收條件）</p>
+</div>
+
+<div class="step-card">
+<h3>Step 4：依 Spec 產出 Skill（35-45 min）</h3>
+<p><span class="badge badge-kiro">📝 Kiro</span> <code>建立新 Skill，根據 spec 實作</code></p>
+</div>
+
+<div class="step-card">
+<h3>Step 5：驗證一致性（45-50 min）</h3>
+<p><span class="badge badge-kiro">📝 Kiro</span> <code>驗證 code 跟 spec 一致嗎</code> → Score ≥ 90 可上線</p>
+</div>
+
+<hr>
+
+<!-- 03 -->
+<h1>🚀 第三堂：LLM Wiki — 它能「記住」</h1>
+
+<h3>📂 知識庫案例：遊戲競品分析</h3>
+<table>
+<tr><th>檔案</th><th>內容</th></tr>
+<tr><td>ocean-king-analysis.md</td><td>Ocean King 2/3/4 捕魚機系列</td></tr>
+<tr><td>super-ace-analysis.md</td><td>Super Ace 老虎機 Golden Card</td></tr>
+<tr><td>fishing-vs-slot-comparison.md</td><td>捕魚機 vs 老虎機定位比較</td></tr>
+</table>
+
+<h4>前半段：Kiro IDE 開發驗證</h4>
+
+<div class="step-card">
+<h3>Step 1：建立基準（0-5 min）</h3>
+<p><span class="badge badge-kiro">📝 Kiro</span> <code>查詢 Wiki「Ocean King 系列差異」</code></p>
+<p>✅ 查不到（raw/ 有素材但 wiki/ 是空的 → 還沒 ingest）</p>
+</div>
+
+<div class="step-card">
+<h3>Step 2：匯入 + 驗證 RAG（5-20 min）⭐</h3>
+<p><span class="badge badge-kiro">📝 Kiro</span></p>
+<pre><code>匯入 knowledge/raw/ 的所有文件到 Wiki</code></pre>
+<pre><code>再查一次「Ocean King 系列跟競品的差異」</code></pre>
+<p>✅ 找到具體差異 — <strong>RAG 生效！</strong></p>
+</div>
+
+<div class="step-card">
+<h3>Step 3：建新知識（20-35 min）</h3>
+<p><span class="badge badge-kiro">📝 Kiro</span> 建立 <code>slot-market-trends.md</code>（東南亞市場趨勢）→ 匯入 → 驗證能查到</p>
+</div>
+
+<h4>後半段：Telegram 上線驗證</h4>
+
+<div class="step-card">
+<h3>Step 4：使用者也能拿到答案（35-45 min）</h3>
+<p><span class="badge badge-tg">📱 TG</span> 問「Ocean King 3 vs 2？」→ 有引用 ✅ / 問沒有的 → 坦白說 ❌</p>
+</div>
+
+<div class="step-card">
+<h3>Step 5：自演化（45-50 min）</h3>
+<p><span class="badge badge-kiro">📝 Kiro</span> 看 memory 自動記錄 → 理解成長循環</p>
+</div>
+
+</div>
+</div>
+
+<!-- ═══════════════════ TAB 3: 課程 B ═══════════════════ -->
+<div id="tab-course-b" class="tab-content">
+<div class="container">
+
+<h1>📘 課程 B：AI Agent Team 實戰</h1>
+
+<div class="hero" style="border-color: var(--orange);">
+<h2 style="color: var(--orange); margin-top: 0;">🔄 迴圈工程（Loop Engineering）</h2>
+<p>課程 A 教「線性流程」：輸入 → 處理 → 輸出。<br>
+課程 B 教「迴圈系統」：<strong>輸出回饋成下次的輸入，系統自動進化。</strong></p>
+<pre><code>  派工 → 執行 → 產出 → 記憶 → 知識成長 → 下次更準
+   ▲                                              │
+   └──────────── 排程自動觸發 ◀────────────────────┘</code></pre>
+<table>
+<tr><th>線性（課程 A）</th><th>迴圈（課程 B）</th></tr>
+<tr><td>你 /assign → 做一次</td><td>排程自動觸發 → 每天做</td></tr>
+<tr><td>你加知識 → 能回答</td><td>Agent 自己累積 → 越來越準</td></tr>
+<tr><td>一個 Agent 做一件事</td><td>一群 Agent 分工</td></tr>
+</table>
+<p style="margin-top: 1rem;"><strong>設計迴圈，不是設計步驟。讓系統自己跑、自己學、自己成長。</strong></p>
+</div>
+
+<table>
+<tr><th>#</th><th>主題</th><th>Skill</th><th>核心體驗</th></tr>
+<tr><td>04</td><td>Agent Team</td><td>ark-agent-team-builder + ark-kiro-init</td><td>一句話派工 → 自動分工</td></tr>
+<tr><td>05</td><td>營運落地</td><td>—（平台設定）</td><td>排程 + 費控 = 自動運作</td></tr>
+</table>
+
+<hr>
+
+<!-- 04 -->
+<h1>🚀 第四堂：Agent Team — 它們能「合作」</h1>
+
+<h4>前半段：Kiro IDE 開發</h4>
+
+<div class="step-card">
+<h3>Step 1：啟動團隊（0-5 min）</h3>
+<p><span class="badge badge-term">💻 終端</span></p>
+<pre><code>cd samples/ai-team-agent
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt && cp .env.example .env
+python start.py</code></pre>
+</div>
+
+<div class="step-card">
+<h3>Step 2：理解配置（5-15 min）</h3>
+<p><span class="badge badge-kiro">📝 Kiro</span></p>
+<pre><code>打開 team.yaml，列出每個 Agent 的 role 和 description</code></pre>
+<pre><code>比較 team-ops.yaml 和 team-dev.yaml 的差異</code></pre>
+</div>
+
+<div class="step-card">
+<h3>Step 3：加新 Agent（15-25 min）⭐</h3>
+<p><span class="badge badge-kiro">📝 Kiro</span></p>
+<pre><code>在 team.yaml 加入 designer-agent（🎮 遊戲設計師）</code></pre>
+<pre><code>用 ark-kiro-init 初始化完整 .kiro/ 配置</code></pre>
+<p>✅ 產出：SOUL.md + MEMORY.md + USER.md + knowledge/raw/ 種子知識</p>
+</div>
+
+<h4>後半段：Telegram 上線驗證</h4>
+
+<div class="step-card">
+<h3>Step 4：派工驗證（25-40 min）</h3>
+<p><span class="badge badge-tg">📱 TG</span></p>
+<pre><code>/assign 規劃科技日報：market 抓新聞、report 產出日報</code></pre>
+<pre><code>@pm 規劃科技日報：market 抓新聞、report 產出日報</code></pre>
+<p>兩種方式結果相同：<code>/assign</code> 精確 / <code>@pm</code> 自然對話</p>
+</div>
+
+<div class="step-card">
+<h3>Step 5：捕魚機競品分析（40-50 min）</h3>
+<p><span class="badge badge-tg">📱 TG</span></p>
+<pre><code>/assign 捕魚機遊戲競品分析：market 蒐集資料、designer 分析 UI、report 產出報告</code></pre>
+<p>✅ 新加的 designer-agent 能跟團隊合作 → 3 Agent 協作產出報告</p>
+<p>加碼：<code>@pm 根據報告，產出專案提案書</code></p>
+</div>
+
+<hr>
+
+<!-- 05 -->
+<h1>🚀 第五堂：營運落地 — 它能「自己跑」</h1>
+
+<h4>前半段：Kiro IDE 設定</h4>
+
+<div class="step-card">
+<h3>Step 1：設定排程（0-10 min）⭐</h3>
+<p><span class="badge badge-kiro">📝 Kiro</span></p>
+<pre><code>在 scheduler.yaml 加入：
+- daily-tech-news：每天 09:00 自動產出科技日報
+- weekly-competitor-report：每週一 10:00 競品週報</code></pre>
+</div>
+
+<div class="step-card">
+<h3>Step 2：費用控管（10-20 min）</h3>
+<p><span class="badge badge-kiro">📝 Kiro</span></p>
+<pre><code>把 cost_guard 的 daily_limit_usd 改成 5.0，解釋超過會怎樣</code></pre>
+<p>✅ 超過 → 新任務被拒 + 通知 admin</p>
+</div>
+
+<div class="step-card">
+<h3>Step 3：重啟確認（20-25 min）</h3>
+<p><span class="badge badge-term">💻 終端</span> <code>python start.py</code></p>
+<p><span class="badge badge-curl">🌐 curl</span> <code>curl http://localhost:33333/api/admin/schedules</code></p>
+</div>
+
+<h4>後半段：驗證自動運作</h4>
+
+<div class="step-card">
+<h3>Step 4：手動觸發 + 看結果（25-40 min）</h3>
+<p><span class="badge badge-curl">🌐 curl</span></p>
+<pre><code>curl -X POST http://localhost:33333/api/admin/schedules/daily-tech-news/trigger</code></pre>
+<p><span class="badge badge-tg">📱 TG</span> 觀察自動執行 → <code>/board</code> 看狀態 → <code>/costs</code> 看費用</p>
+</div>
+
+<div class="step-card">
+<h3>Step 5：上線 Checklist（40-50 min）</h3>
+<p><span class="badge badge-kiro">📝 Kiro</span> <code>列出正式上線前的 Checklist</code></p>
+<table>
+<tr><td>✅ 排程設定</td><td>✅ 費用控管</td><td>✅ 監控看板</td></tr>
+<tr><td>🔲 Docker 部署</td><td>🔲 備份策略</td><td>🔲 失敗告警</td></tr>
+</table>
+</div>
+
+</div>
+</div>
+
+<!-- ═══════════════════ TAB 4: 進階 ═══════════════════ -->
+<div id="tab-advanced" class="tab-content">
+<div class="container">
+
+<h1>🔬 進階：五層架構深入</h1>
+
+<h2>五核心定位對比表（The Matrix）</h2>
+<table>
+<tr><th>維度</th><th>L1 Gateway</th><th>L2 Runtime</th><th>L3 Knowledge</th><th>L4 Collaboration</th><th>L5 Operations</th></tr>
+<tr><td>職責</td><td>接收指令</td><td>執行任務</td><td>存取知識</td><td>多 Agent 協作</td><td>排程+監控</td></tr>
+<tr><td>技術</td><td>Telegram Bot API</td><td>Kiro CLI + Gemini</td><td>RAG + Wiki</td><td>TaskGraph + A2A</td><td>Scheduler + Dashboard</td></tr>
+<tr><td>對應課堂</td><td>01</td><td>01-02</td><td>03</td><td>04</td><td>05</td></tr>
+<tr><td>失敗影響</td><td>收不到訊息</td><td>做不了事</td><td>回答幻覺</td><td>分工失敗</td><td>系統停擺</td></tr>
+</table>
+
+<hr>
+
+<h2>CrewAI 企業級階層模型</h2>
+<pre><code>Organization（公司）
+├── Department: 營運部
+│   ├── admin-agent (admin)
+│   ├── pm-agent (leader)
+│   ├── market-agent (worker)
+│   ├── data-agent (worker)
+│   └── report-agent (worker)
+│
+└── Department: 研發部
+    ├── admin-agent (admin)
+    ├── pm-agent (leader)
+    ├── ai-dev-agent (worker)
+    ├── coder-agent (worker)
+    └── qa-agent (worker)</code></pre>
+<p>切換 <code>team-ops.yaml</code> / <code>team-dev.yaml</code> = 切換部門。</p>
+
+<hr>
+
+<h2>自演化機制（Self-Evolution）</h2>
+
+<h3>知識層自演化</h3>
+<pre><code>對話 → memory.py 自動寫入 knowledge/raw/
+    → 定期 ingest → knowledge/wiki/ 成長
+    → RAG 查詢更精準
+    → Agent 回答越來越好</code></pre>
+
+<h3>Skill 層自演化</h3>
+<pre><code>使用 Skill → 觀察效果
+    → ark-grill-me 拷問改進點
+    → ark-superpowers 重寫 Spec
+    → ark-code-spec-validator 驗證
+    → Skill 品質持續提升</code></pre>
+
+<hr>
+
+<h2>事件驅動生命週期案例：修復魚群碰撞 Bug</h2>
+<table>
+<tr><th>Layer</th><th>事件</th><th>動作</th></tr>
+<tr><td>L1 Gateway</td><td>收到「魚群碰撞有 Bug」</td><td>路由到 pm-agent</td></tr>
+<tr><td>L4 Collaboration</td><td>pm 拆解任務</td><td>分配 coder 修復 + qa 測試</td></tr>
+<tr><td>L2 Runtime</td><td>coder 執行修復</td><td>產出 PR</td></tr>
+<tr><td>L2 Runtime</td><td>qa 執行測試</td><td>產出測試報告</td></tr>
+<tr><td>L3 Knowledge</td><td>記錄修復方案</td><td>寫入 wiki → 下次類似問題秒解</td></tr>
+<tr><td>L5 Operations</td><td>audit log 記錄</td><td>費用 + 時間 + 狀態追溯</td></tr>
+</table>
+
+</div>
+</div>
+
+<!-- ═══════════════════ JavaScript ═══════════════════ -->
+<script>
+function showTab(name) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  // find matching button
+  const btns = document.querySelectorAll('.tab-btn');
+  const map = {'home': 0, 'course-a': 1, 'course-b': 2, 'advanced': 3};
+  if (map[name] !== undefined) btns[map[name]].classList.add('active');
+  window.scrollTo(0, 0);
+}
+</script>
+
+</body>
+</html>
