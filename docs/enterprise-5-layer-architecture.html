@@ -364,56 +364,55 @@
                         我們打破了過往「人工手寫單行提示詞」或「過度僵硬的 YAML 格式」舊思維。在五層架構中，採用 <strong>Markdown 宣告（Skill as Markdown）</strong>，並託管於 GitHub，其自演化治理邏輯如下：
                     </p>
                     <div class="bg-[#030712] p-4 rounded-lg font-mono text-xs text-slate-400 space-y-2">
-                        <div class="text-purple-400">1. Hermes A (Coding) 成功修復 Redis 斷線 Bug</div>
-                        <div class="text-slate-600 pl-4">↓ 自我提煉 (Reflection) 出排錯流程與執行語境</div>
-                        <div class="text-purple-400">2. Hermes 撰寫全新 skill.md 規格說明檔</div>
-                        <div class="text-slate-600 pl-4">↓ 透過 Git 送出新技能 PR 至 Skill Wiki 倉庫</div>
-                        <div class="text-cyan-400 font-bold">3. Multica OS 攔截 PR，進行系統相容性自動測試</div>
-                        <div class="text-slate-600 pl-4">↓ 自動 Merge 並 Push 到 GitHub Release 分支</div>
-                        <div class="text-emerald-400">4. 技能發布至全域 Skill LLM Wiki 供全體 Agent 隨插即用</div>
+                        <div class="text-purple-400">1. designer-agent 完成黃金鯊魚外觀設計</div>
+                        <div class="text-slate-600 pl-4">↓ 自動記錄設計決策到 knowledge/raw/</div>
+                        <div class="text-purple-400">2. coder-agent 實作遊戲邏輯並通過 qa 驗收</div>
+                        <div class="text-slate-600 pl-4">↓ 實作經驗寫入 SKILL.md（倍率公式+限時機制）</div>
+                        <div class="text-cyan-400 font-bold">3. ingest 自動匯入 → Wiki 知識成長</div>
+                        <div class="text-slate-600 pl-4">↓ 下次類似需求能引用本次經驗</div>
+                        <div class="text-emerald-400">4. 全團隊解鎖「新增 Boss」的標準流程與參考規格</div>
                     </div>
                 </div>
 
                 <div class="layer-card p-6">
                     <h3 class="text-lg font-bold text-white mb-3 flex items-center gap-2">
-                        <i class="fa-regular fa-file-code text-cyan-400"></i> skill.md 宣告式規格範例（符合 Claude 開發實踐）
+                        <i class="fa-regular fa-file-code text-cyan-400"></i> SKILL.md 宣告式規格範例（Boss 設計技能）
                     </h3>
                     <p class="text-xs text-slate-400 mb-4">
-                        採用 Front-matter 結構結合結構化 Markdown，方便 LLM 做 Prompt-caching 與語意解析：
+                        採用 Front-matter 結構結合結構化 Markdown，方便 LLM 做語意解析與自動觸發：
                     </p>
                     <pre class="bg-[#030712] p-4 rounded-lg text-[11px] text-emerald-400 overflow-x-auto font-mono leading-normal">
 ---
-name: "redis_cluster_failover_patch"
-version: "1.2.0"
-author: "Hermes-Worker-A"
+name: "ark-boss-designer"
+version: "1.0.0"
+author: "designer-agent"
 dependencies:
-  - "kiro-cli >= 1.4.2"
-  - "python-redis-client"
-review_status: "approved_by_multica_os"
-tags: ["infrastructure", "database"]
+  - "kiro-cli >= 2.7"
+  - "gemini-api"
+review_status: "approved"
+tags: ["game-design", "fishing-game", "boss"]
 ---
 
-# 技能：Redis 叢集故障轉移自動修復 (redis_cluster_failover_patch)
+# 技能：捕魚機 Boss 設計 (ark-boss-designer)
 
-## 1. 觸發情境與特徵 (Triggers & Signatures)
-* **日誌特徵**：出現 `redis-timeout` 關鍵字
-* **系統錯誤碼**：拋出 `ERR_CONN_LIMIT` 網路極限錯誤
+## 1. 觸發情境 (Triggers)
+* **關鍵字**：「新增 Boss」「設計魚種」「Boss 規格」
+* **輸入格式**：Boss 名稱 + 倍率 + 出場條件
 
-## 2. 核心診斷工具與執行步驟
-請在偵測到故障時，呼叫底層 Kiro CLI 並執行以下指令：
+## 2. 執行步驟
+1. 分析現有 Boss 列表（避免重複風格）
+2. 設計外觀：配色、體型、特效、動畫
+3. 設計機制：血量公式、倍率、限時、特殊技能
+4. 產出規格文件（含美術參考和數值表）
 
-```bash
-kiro-cli run check-nodes --auto-heal
-```
+## 3. 驗收條件
+* **美術**：風格與現有 Boss 一致但可辨識
+* **數值**：模擬 1000 局爆率偏差 ≤ ±2%
+* **體驗**：限時機制不超過 60 秒
 
-## 3. 自我反思與評估機制 (Reflection Loop)
-* **反思信心分數門檻**：`0.85`
-* **驗證指標**：
-  1. 修復後，執行 `kiro-cli ping` 延遲需低於 `5ms`
-  2. 叢集主從狀態 (Master/Slave) 恢復正常拓樸
-  
-## 4. 人類反饋與邊界條件 (Few-shot Examples)
-如果遇到 `ReadOnlyError`，請在執行修復前主動重新配置 `sentinel` 的主節點，切勿直接進行強行 Heal 寫入。</pre>
+## 4. 參考案例
+- 黃金鯊魚：10000x / 30 秒 / 金光出場特效
+- Ocean King 3 Flaming Dragon：7 波龍浪攻擊</pre>
                 </div>
             </div>
         </section>
@@ -422,7 +421,7 @@ kiro-cli run check-nodes --auto-heal
         <section id="lifecycle" class="mb-12 scroll-mt-24">
             <div class="flex items-center gap-3 mb-8">
                 <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-slate-800 text-slate-300 font-bold border border-slate-700">5</span>
-                <h2 class="text-2xl font-bold text-white">五層事件驅動生命週期：修復魚群碰撞 Bug</h2>
+                <h2 class="text-2xl font-bold text-white">五層事件驅動生命週期：開發新魚種「黃金鯊魚 Boss」</h2>
             </div>
 
             <div class="bg-surface border border-bordercolor rounded-2xl p-6 lg:p-8 relative">
@@ -434,9 +433,9 @@ kiro-cli run check-nodes --auto-heal
                     <div class="flex gap-6">
                         <div class="w-10 h-10 rounded-full bg-gateway flex items-center justify-center text-white font-bold flex-shrink-0 z-10 border-4 border-surface"><i class="fa-solid fa-input">1</i></div>
                         <div>
-                            <h4 class="text-base font-bold text-white mb-1"><span class="text-gateway">L1 入口層 (OpenClaw)</span> 監聽並標準化事件</h4>
+                            <h4 class="text-base font-bold text-white mb-1"><span class="text-gateway">L1 入口層 (Telegram Gateway)</span> 接收需求</h4>
                             <p class="text-xs text-slate-400">
-                                專案看板 Plane 上建立一個 Issue <code>BUG-103 修正魚群碰撞邏輯</code>。OpenClaw 擷取此 Webhook 請求，並標準化為 Unified Event 格式轉發。
+                                企劃在 Telegram 輸入 <code>/assign 新增黃金鯊魚 Boss：10000x 倍率、限時 30 秒出現、需要專屬出場動畫和受擊特效</code>。Gateway 接收並轉發給 pm-agent。
                             </p>
                         </div>
                     </div>
@@ -445,9 +444,9 @@ kiro-cli run check-nodes --auto-heal
                     <div class="flex gap-6">
                         <div class="w-10 h-10 rounded-full bg-os flex items-center justify-center text-slate-950 font-bold flex-shrink-0 z-10 border-4 border-surface"><i class="fa-solid fa-gears">2</i></div>
                         <div>
-                            <h4 class="text-base font-bold text-white mb-1"><span class="text-os">L2 作業系統層 (Multica)</span> 資源分派與狀態管理</h4>
+                            <h4 class="text-base font-bold text-white mb-1"><span class="text-os">L2 協作層 (TaskGraph)</span> 任務拆解與分派</h4>
                             <p class="text-xs text-slate-400">
-                                Multica 讀取事件，根據標籤匹配，透過 Event Bus 通知並分配該 Issue 給 <strong>Game Dev Crew (L3)</strong>，同時於控制面板將任務標記為 Busy。
+                                pm-agent 分析需求複雜度，拆解為三個子任務：「外觀設計」指派 designer-agent、「遊戲邏輯實作」指派 coder-agent、「爆率測試驗收」指派 qa-agent。TaskGraph 標記依賴：coder 等 designer 完成後開始，qa 等 coder 完成後開始。
                             </p>
                         </div>
                     </div>
@@ -456,9 +455,9 @@ kiro-cli run check-nodes --auto-heal
                     <div class="flex gap-6">
                         <div class="w-10 h-10 rounded-full bg-collab flex items-center justify-center text-white font-bold flex-shrink-0 z-10 border-4 border-surface"><i class="fa-solid fa-users-viewfinder">3</i></div>
                         <div>
-                            <h4 class="text-base font-bold text-white mb-1"><span class="text-collab">L3 協作層 (CrewAI)</span> 任務細分與成果合併</h4>
+                            <h4 class="text-base font-bold text-white mb-1"><span class="text-collab">L3 執行層 (Agent Runtime)</span> 各 Agent 執行任務</h4>
                             <p class="text-xs text-slate-400">
-                                Game Dev Crew 內部的 <strong>Dev Leader Agent</strong> 收到任務，利用 LLM 將魚群碰撞拆解為「前端物理引擎修正」與「後端碰撞判定驗證」。分別分派給各自對應的 Worker。
+                                <strong>designer-agent</strong> 產出黃金鯊魚外觀設計稿：金色鱗片、紅色眼睛、出場時全屏金光特效、受擊時碎裂粒子動畫。產出格式化的設計規格文件。
                             </p>
                         </div>
                     </div>
@@ -467,9 +466,9 @@ kiro-cli run check-nodes --auto-heal
                     <div class="flex gap-6">
                         <div class="w-10 h-10 rounded-full bg-runtime flex items-center justify-center text-white font-bold flex-shrink-0 z-10 border-4 border-surface"><i class="fa-solid fa-terminal">4</i></div>
                         <div>
-                            <h4 class="text-base font-bold text-white mb-1"><span class="text-runtime">L4 執行層 (Hermes / Kiro CLI)</span> 執行思考、反思與編碼</h4>
+                            <h4 class="text-base font-bold text-white mb-1"><span class="text-runtime">L4 執行層 (Kiro CLI + Gemini)</span> 編碼與測試</h4>
                             <p class="text-xs text-slate-400">
-                                Worker 綁定的 <strong>Hermes Engine</strong> 進入 Think-Code-Reflect 循環。利用 Kiro CLI 呼叫測試集確保修復正確。完成後，將修正後的程式碼與反思總結之新技能描述檔（skill.md）上報。
+                                <strong>coder-agent</strong> 根據設計稿實作遊戲邏輯：血量公式 <code>HP = base × level_factor</code>、10000x 倍率計算、30 秒限時計時器。<strong>qa-agent</strong> 接手後模擬 1000 局射擊，驗證爆率偏差在 ±2% 以內，輸出測試報告。
                             </p>
                         </div>
                     </div>
@@ -478,9 +477,9 @@ kiro-cli run check-nodes --auto-heal
                     <div class="flex gap-6">
                         <div class="w-10 h-10 rounded-full bg-knowledge flex items-center justify-center text-slate-950 font-bold flex-shrink-0 z-10 border-4 border-surface"><i class="fa-solid fa-dna">5</i></div>
                         <div>
-                            <h4 class="text-base font-bold text-white mb-1"><span class="text-knowledge">L5 知識層 (Skill LLM Wiki & GitHub)</span> 技能審核與全域沈澱</h4>
+                            <h4 class="text-base font-bold text-white mb-1"><span class="text-knowledge">L5 知識層 (Wiki + Memory)</span> 知識沈澱與自演化</h4>
                             <p class="text-xs text-slate-400">
-                                Hermes 送出的 <code>New Skill PR (包含 skill.md)</code> 透過 Event Bus 到達 Multica。Multica 完成架構與語法驗證後，自動將新技能 Commit 並 Push 提交至 GitHub 背後的 Skill Wiki，從此，其他 Crew 的所有 Agent 均解鎖了該問題的自動化處理技能。
+                                任務完成後，設計規格、實作邏輯、測試報告自動寫入 <code>knowledge/raw/golden-shark-boss.md</code>。下次 ingest 後進入 Wiki。往後企劃再提「新增 Boss」需求時，Agent 能引用本次經驗：倍率公式、限時機制、測試方法，品質越來越穩定。<strong>耗時 12 min / 費用 $0.08 / 3 Agent 協作。</strong>
                             </p>
                         </div>
                     </div>
