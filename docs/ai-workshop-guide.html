@@ -415,19 +415,23 @@ python start.py</code></pre>
 <h4>後半段：驗證自動運作</h4>
 
 <div class="step-card">
-<h3>Step 4：手動觸發 + 看結果（25-40 min）</h3>
-<p><span class="badge badge-curl">🌐 curl</span></p>
-<pre><code>curl -X POST http://localhost:33333/api/admin/schedules/daily-tech-news/trigger</code></pre>
-<p><span class="badge badge-tg">📱 TG</span> 觀察自動執行 → <code>/board</code> 看狀態 → <code>/costs</code> 看費用</p>
+<h3>Step 4：手動觸發 + 看迴圈效果（25-40 min）</h3>
+<p><span class="badge badge-curl">🌐 curl</span> 觸發週競品排程：</p>
+<pre><code>curl -X POST http://localhost:33333/api/admin/schedules/weekly-competitor-report/trigger</code></pre>
+<p><span class="badge badge-tg">📱 TG</span> market + designer + report 協作 → <code>/board</code> 看狀態 → <code>/costs</code> 看費用</p>
+<p><span class="badge badge-kiro">📝 Kiro</span> 確認產出寫入 knowledge/raw/ → ingest 後 Wiki 成長</p>
+<p>💡 <strong>迴圈：排程 → 產出 → 知識 → 更準 → ♻️</strong></p>
 </div>
 
 <div class="step-card">
-<h3>Step 5：上線 Checklist（40-50 min）</h3>
-<p><span class="badge badge-kiro">📝 Kiro</span> <code>列出正式上線前的 Checklist</code></p>
+<h3>Step 5：遊戲部門上線 Checklist（40-50 min）</h3>
+<p><span class="badge badge-kiro">📝 Kiro</span> <code>列出遊戲部門 AI 團隊正式上線 Checklist</code></p>
 <table>
-<tr><td>✅ 排程設定</td><td>✅ 費用控管</td><td>✅ 監控看板</td></tr>
+<tr><td>✅ 每日科技日報</td><td>✅ 每週競品分析</td><td>🔲 每月趨勢</td></tr>
+<tr><td>✅ 產出→raw/</td><td>🔲 每日 ingest</td><td>✅ 費用控管</td></tr>
 <tr><td>🔲 Docker 部署</td><td>🔲 備份策略</td><td>🔲 失敗告警</td></tr>
 </table>
+<p>💡 <strong>排程產出 = 知識成長 = 自演化</strong></p>
 </div>
 
 </div>

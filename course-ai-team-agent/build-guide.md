@@ -8,7 +8,7 @@ language: zh-TW
 # 課程 B — AI Agent Team 建置完整指南
 
 > 一個平台，兩堂課（Phase 1-2），Step 0-8。
-> 從個體升級為「5 Agent 並行 + 平台管理」的完整團隊。
+> 從個體升級為「5 Agent 並行 + 營運落地」的完整團隊。
 
 **操作位置圖示：**
 - 📝 = AI IDE 聊天框（Kiro CLI）
@@ -56,7 +56,7 @@ Step 2: ark-kiro-init → 批次產出所有 Agent .kiro/
 Step 3: 設定 Telegram + .env
 Step 4: 啟動團隊 + 實戰派工
 
-── Phase 2：平台管理（第五堂）─────────────────
+── Phase 2：營運落地（第五堂）─────────────────
 Step 5: Backend API 探索（21+ 端點）
 Step 6: Web Dashboard
 Step 7: A2A 協作 + TaskGraph 程式碼閱讀
@@ -184,7 +184,7 @@ python start.py
 
 ---
 
-# Phase 2：平台管理（第五堂）
+# Phase 2：營運落地（第五堂）
 
 > 目標：理解架構 + 掌控全平台（API + Dashboard + 費用 + 監控）。
 
@@ -307,7 +307,7 @@ hang_detector:
   timeout_minutes: 60
 ```
 
-> 🎉 Phase 2 完成！你能掌控全平台。
+> 🎉 Phase 2 完成！排程 + 費控 + 知識累積 = 自動運作的 AI 團隊。
 
 ---
 

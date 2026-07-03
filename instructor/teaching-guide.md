@@ -92,25 +92,26 @@
 - `/assign 寫 REST API` → 觀察 leader 派給 coder
 - 同時 `/assign 抓新聞` → 觀察並行執行
 
-### 第五堂：平台管理（Phase 2, Step 5-8）
+### 第五堂：營運落地 — 它能「自己跑」
 
 | 時間 | 動作 | 講師做什麼 |
 |------|------|-----------|
-| 0-10 | API 探索 | 帶學員 curl 各端點 |
-| 10-20 | Web Dashboard | 展示 KPI + Agent Grid |
-| 20-35 | ⭐ 程式碼閱讀 | 打開 task_graph + discovery，對照派工行為 |
-| 35-45 | 費用 + 排程 + 監控 | 展示 costs API、scheduler.yaml |
-| 45-50 | 全系列回顧 + Q&A | 五堂課旅程總結 |
+| 0-10 | ⭐ 設定排程 | 帶學員用 Kiro 加 scheduler.yaml（日報+週報） |
+| 10-20 | 設定費控 | 帶學員改 cost_guard，解釋超額機制 |
+| 20-25 | 重啟確認 | curl schedules API 確認排程已註冊 |
+| 25-40 | ⭐ 手動觸發 + 看結果 | 觸發週競品排程 → TG 看產出 → 確認寫入 raw/ |
+| 40-50 | 上線 Checklist + 迴圈 | 遊戲部門 Checklist + 知識累積迴圈總結 |
 
 **教學重點**：
-- 理解「背後在做什麼」比「會操作」更重要
-- 四層架構：入口 → 協調 → 執行 → 知識
-- 費用控管是生產環境必備
+- 04 手動派工 → 05 排程自動 = Demo → 正式上線
+- 排程產出自動進 knowledge/raw/ → ingest → Wiki 成長 → 迴圈
+- 費用控管是生產環境必備（daily_limit_usd）
+- 迴圈工程收尾：排程 → 產出 → 知識 → 更準 → ♻️
 
 **收尾**：
 - 學員帶走 `samples/ai-team-agent/`
-- 選擇 team-ops 或 team-dev
-- 鼓勵回家改 SOUL.md 自訂角色
+- 改 team.yaml + scheduler.yaml 直接用在業務
+- 所有排程產出自動累積成知識 = 系統自己在成長
 
 ---
 

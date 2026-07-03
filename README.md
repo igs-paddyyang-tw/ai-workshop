@@ -76,7 +76,7 @@ python start.py
 | 02 | 開發新聞爬蟲 Skill（Spec-Driven） |
 | 03 | 匯入 Ocean King / Super Ace 競品分析到 Wiki |
 | 04 | market + designer + report 三 Agent 協作產出報告 |
-| 05 | 排程每天自動產出科技日報 + 每週競品週報 |
+| 05 | 排程每天自動產出科技日報 + 每週競品週報 → 產出自動累積成知識 |
 
 ## 目錄結構
 
