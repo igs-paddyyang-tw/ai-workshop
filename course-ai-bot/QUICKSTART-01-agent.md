@@ -236,6 +236,18 @@ knowledge/wiki/               → RAG 用的結構化知識
 
 # TG 上線驗證
 
+💻 **上線前先在 IDE 確認**：
+
+📝 Kiro IDE 輸入：
+```
+分別讀取 market-agent、qa-agent、pm-agent、data-agent 的 SOUL.md，
+用各自的人格回答「用一句話介紹你自己」
+```
+
+✅ 確認：4 個回答風格各不同 → OK，可以上線
+
+💻 重啟：Ctrl+C → `python start.py`
+
 ## Step 6：TG 上線驗證（40-50 min）
 
 **做什麼**：重啟 Bot，在 Telegram 確認所有改動生效  

@@ -149,6 +149,17 @@ agents/admin-agent/knowledge/       ← 私有（只有 admin 能查到）
 
 # TG 上線驗證
 
+💻 **上線前先在 IDE 確認**：
+
+📝 Kiro IDE 輸入：
+```
+查詢 Wiki「Ocean King 3 跟 Ocean King 2 有什麼差別」
+```
+
+✅ 確認：有找到結果 + 有具體差異描述 → OK，可以上線
+
+💻 重啟：Ctrl+C → `python start.py`
+
 ## Step 4：Telegram 驗證 — 使用者能拿到答案（35-45 min）
 
 **做什麼**：切到 Telegram，確認「真實使用者」也能拿到有引用的答案  

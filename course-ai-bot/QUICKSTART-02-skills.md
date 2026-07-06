@@ -199,6 +199,19 @@ ark-grill-me → ark-superpowers → ark-skill-creator → ark-code-spec-validat
 
 # TG 上線驗證
 
+💻 **上線前先在 IDE 確認**：
+
+📝 Kiro IDE 輸入：
+```
+讀取 agents/market-agent/.kiro/steering/SOUL.md 和
+agents/market-agent/skills/ark-competitor-brief/SKILL.md，
+用這個人格和 Skill 回答：「幫我做 Ocean King 3 的 SWOT 分析」
+```
+
+✅ 確認：有 SWOT 四象限 + 有引用來源 + 有建議行動 → OK，可以上線
+
+💻 重啟：Ctrl+C → `python start.py`
+
 ## Step 6：TG 驗證 — Skill 有用（50-55 min）
 
 **做什麼**：重啟 Bot，在 TG 問同一個問題，觀察回答品質提升  
