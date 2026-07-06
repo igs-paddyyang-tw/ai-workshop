@@ -60,22 +60,26 @@ ark-grill-me → ark-superpowers → ark-skill-creator → ark-code-spec-validat
 ```
 拷問我的設計：我想為 market-agent 開發一個「競品簡報」Skill，功能是：
 - 從 knowledge/wiki/ 搜尋目標產品的相關知識
-- 整理成 SWOT 四象限（強項/弱項/機會/威脅）
+- 整理成 SWOT 四象限（強項/弱項/機會/威脅）+ 建議行動
 - 每一點附上引用來源
-- 產出 Markdown 格式簡報
+- 產出兩種格式：
+  - .md 檔案（給 AI 看 / 給 Wiki ingest 用）
+  - .html 檔案（給人看 / 遊戲博弈賭場風格 / 金色+深色+霓虹光效）
+- TG 回覆時用 send_document 傳送 HTML 檔案
 ```
 
 → AI 開始一次問一個問題（共 8-15 題）
 
 📱 你的角色（重要！）：
 - ❌ 不要全部回「好」「OK」
-- ✅ 質疑：「為什麼只做 SWOT？能不能加上建議行動？」
+- ✅ 質疑：「HTML 需要多複雜？要有圖表嗎？」
 - ✅ 控制範疇：「先不做自動排程，手動觸發就好」
-- ✅ 補充：「我希望每個象限至少 2 點，不要只有 1 點」
+- ✅ 補充：「我希望每個象限至少 2 點」
+- ✅ 決定風格：「HTML 要像高級賭場 VIP 報告，金色主色」
 
 ✅ 預期結果：
 - 拷問結束後產出「決策摘要」表格
-- 包含：分析框架、最少條目數、引用格式、觸發詞、輸出模板等 6-10 個決策
+- 包含：分析框架、輸出格式（.md + .html）、HTML 風格、TG 傳送方式、觸發詞等 6-10 個決策
 
 ⚠️ AI 沒開始拷問 → 確認 .kiro/skills/ 有 ark-grill-me 目錄
 
@@ -97,7 +101,7 @@ ark-grill-me → ark-superpowers → ark-skill-creator → ark-code-spec-validat
 ```
 打開產出的 spec，檢查：
 1. 有沒有「驗收條件」段落？
-2. 驗收條件是否可驗證（有數字、有明確判斷標準）？
+2. 驗收條件是否涵蓋 .md + .html + TG 傳送？
 3. 有沒有「非目標」？
 ```
 
@@ -105,84 +109,53 @@ ark-grill-me → ark-superpowers → ark-skill-creator → ark-code-spec-validat
 - 檔案出現在 docs/specs/
 - 包含：目標、非目標、功能需求、驗收條件（可量化）
 - 驗收條件例如：
-  - 「輸出含 SWOT 四個段落」
-  - 「每象限 ≥ 2 點」
+  - 「產出 .md 和 .html 兩個檔案」
+  - 「SWOT 四象限各 ≥ 2 點」
   - 「每點附 📚 引用來源（wiki 檔名）」
-  - 「輸出為合法 Markdown」
+  - 「.md 為合法 Markdown」
+  - 「.html 含完整 CSS 可獨立瀏覽器開啟」
+  - 「HTML 風格：遊戲博弈賭場（金色+深色）」
+  - 「TG 以 send_document 傳送 HTML」
 
-⚠️ Spec 太簡略 → 📝「幫我擴充驗收條件，加入格式和引用的具體要求」
+⚠️ Spec 缺少 HTML 或 TG 驗收 → 📝「幫我加入 HTML 風格和 TG 傳送的驗收條件」
 
 ---
 
 ## Step 4：依 Spec 產出 Skill（35-45 min）
 
 **做什麼**：用自然語言觸發 ark-skill-creator，依 Spec 產出 Skill  
-**為什麼**：Spec 驅動實作 = 產出跟規格一致
+**為什麼**：Spec 驅動實作 = 產出跟規格一致（不需要重複描述需求）
 
 📝 Kiro IDE 輸入：
 ```
 建立新 Skill：競品簡報，
 根據 docs/specs/competitor-brief-spec.md 的規格實作，
 放在 agents/market-agent/skills/ark-competitor-brief/
-
-產出流程：
-1. 從 knowledge/wiki/ 搜尋目標產品的 SWOT 資料
-2. 產出 Markdown 報告 → 存到 agents/market-agent/output/{date}_competitor-brief.md
-   （給 AI 看 / 給 Wiki ingest 用）
-3. 將 Markdown 轉為 HTML 報告 → 存到 agents/market-agent/output/{date}_competitor-brief.html
-   （給人看 / 遊戲博弈賭場風格 / 金色+深色+霓虹光效）
-4. TG 回覆時傳送 HTML 檔案（send_document）讓使用者可下載
-
-觸發詞：「競品簡報」「SWOT」「競品分析報告」
-
-輸出格式（Markdown）：
-## 🎯 競品簡報：{產品名}
-📅 {日期}
-
-### 💪 強項 (Strengths)
-- {內容}（📚 {引用來源}）
-
-### ⚠️ 弱項 (Weaknesses)
-- {內容}（📚 {引用來源}）
-
-### 💡 機會 (Opportunities)
-- {內容}（📚 {引用來源}）
-
-### 🔥 威脅 (Threats)
-- {內容}（📚 {引用來源}）
-
-### 📋 建議行動
-1. {行動項目}
-
-HTML 風格：遊戲博弈賭場風格
-- 背景：深色漸層（#1a0a2e → #0d0d0d）
-- 主色：金色（#ffd700）+ 霓虹紫（#a855f7）
-- 邊框：金色光暈邊框
-- 標題：帶金色光效
-- 表格：賭桌綠絨質感
-- 整體感覺：像高級賭場的 VIP 報告
-
-驗收條件：
-- 產出 .md 和 .html 兩個檔案
-- SWOT 四象限各 ≥ 2 點
-- 每點附 📚 引用來源
-- HTML 有完整 CSS（可獨立瀏覽器開啟）
-- TG 以 send_document 傳送 HTML
 ```
 
-→ 產出 SKILL.md
+→ 產出 SKILL.md（依照 Spec 的驗收條件自動包含多格式產出）
 
 📝 確認產出：
 ```
 打開 agents/market-agent/skills/ark-competitor-brief/SKILL.md，
-確認包含：多格式產出流程 + 觸發詞 + HTML 風格描述
+確認步驟跟 Spec 的驗收條件一一對應
 ```
 
 ✅ 預期結果：
 - `ark-competitor-brief/SKILL.md` 出現
-- 步驟含 5 段：搜尋 → SWOT 整理 → 產 .md → 產 .html → TG 傳檔
-- description 包含觸發詞
-- 有 HTML 風格說明（賭場風格）
+- 步驟含完整流程：
+  1. 確認目標產品 + 觸發詞匹配
+  2. 搜尋 knowledge/wiki/ 相關內容
+  3. 整理為 SWOT 四象限 + 建議行動
+  4. 產出 .md → `agents/market-agent/output/`
+  5. 轉為 .html（遊戲博弈賭場風格）
+  6. TG send_document 傳送 HTML
+- frontmatter 觸發詞：「競品簡報」「SWOT」「競品分析報告」
+
+💡 **注意：Step 4 不需要重新寫需求**
+- 所有需求已經在 Spec 裡定義好了
+- ark-skill-creator 會讀 Spec → 自動產出對應步驟
+- 如果 SKILL.md 缺少 Spec 裡的驗收項 → Step 5 會抓到
 
 💡 **SKILL.md = 能力宣告**
 - 告訴 Gemini「遇到競品分析需求時，要按這個 SOP 做」
