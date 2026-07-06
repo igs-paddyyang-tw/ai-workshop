@@ -155,9 +155,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     user_id = update.effective_user.id
     session = session_manager.get_or_create(user_id)
     current_agent = session.current_agent
+    agent_info = AVAILABLE_AGENTS[current_agent]
 
     # 記錄 user 這輪
     session.add_turn("user", text)
+
+    # ── Reaction: 👀 收到 ──
+    await _set_reaction(update.message, "👀")
 
     # ── 1. 關鍵字快速路由 ──
     if any(kw in text for kw in ["新聞", "news", "今天新聞"]):
@@ -165,8 +169,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         if reply:
             session.add_turn("agent", reply)
             await save_memory(current_agent, user_id, text, reply)
-            await update.message.reply_text(reply, parse_mode="Markdown", disable_web_page_preview=True)
+            await _set_reaction(update.message, "👍")
+            header = f"{agent_info['emoji']} [{current_agent}-agent]\n"
+            await update.message.reply_text(header + reply, parse_mode="Markdown", disable_web_page_preview=True)
             return
+
+    # ── Reaction: 🔥 處理中 ──
+    await _set_reaction(update.message, "🔥")
 
     # ── 2. Wiki RAG 查詢（先查知識庫，有結果就用）──
     reply: str | None = None
@@ -181,7 +190,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
     # ── 3. Agent CLI 模式 ──
     if not reply and is_cli_available():
-        await update.message.reply_text("🧠 思考中...")
         reply = await agent_cli_chat(text, agent_id=current_agent)
 
     # ── 4. Gemini API fallback ──
@@ -203,11 +211,27 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 "💡 開啟 AI：填入 GEMINI_API_KEY 或安裝 kiro-cli"
             )
 
-    # ── 5. 回覆 + 記憶 ──
+    # ── 5. 回覆 + 記憶 + Reaction ──
     if reply:
         session.add_turn("agent", reply)
         await save_memory(current_agent, user_id, text, reply)
-        await update.message.reply_text(reply)
+        await _set_reaction(update.message, "👍")
+        header = f"{agent_info['emoji']} [{current_agent}-agent]\n"
+        await update.message.reply_text(header + reply)
+    else:
+        await _set_reaction(update.message, "💔")
+
+
+# ── Reaction Helper ───────────────────────────────────────
+
+
+async def _set_reaction(message, emoji: str) -> None:
+    """設定訊息 Reaction（靜默失敗）。"""
+    try:
+        from telegram import ReactionTypeEmoji
+        await message.set_reaction([ReactionTypeEmoji(emoji=emoji)])
+    except Exception:
+        pass  # Reaction API 不可用時靜默跳過
 
 
 # ── Skill 處理 ───────────────────────────────────────────
