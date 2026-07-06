@@ -205,3 +205,66 @@ Chat 收到訊息後的 Wiki 操作判斷：
 - 不確定內容用 `(?)` 標記
 - 禁止自行解決矛盾，只能標記
 - 禁止刪除 `log.md` 舊記錄（append-only）
+
+---
+
+## 使用現有 Wiki（操作層）
+
+> 當專案已有 knowledge/ 目錄和 FastAPI server 在跑時，用以下方式操作（不是建新系統）。
+
+### 觸發條件（使用層）
+
+- 「匯入知識」「ingest」「把 raw 匯入 wiki」
+- 「查詢 Wiki」「搜尋知識庫」「Wiki 有沒有 XXX」
+- 「檢查 Wiki」「Wiki 健康度」「lint」
+
+### 操作方式
+
+**確認 server 在跑**（port 8000）後，用終端執行：
+
+#### Ingest（匯入 raw/ → wiki/）
+```bash
+curl -X POST http://localhost:8000/api/v1/wiki/ingest
+```
+✅ 回傳：`{"ingested": ["file1.md", "file2.md"], "count": 2}`
+
+#### Query（查詢）
+```bash
+curl -X POST http://localhost:8000/api/v1/wiki/query \
+  -H "Content-Type: application/json" \
+  -d '{"q": "搜尋關鍵字"}'
+```
+✅ 回傳：`{"results": [...], "answer": "..."}`
+
+#### Lint（健康檢查）
+```bash
+curl http://localhost:8000/api/v1/wiki/lint
+```
+✅ 回傳：`{"issues": [], "healthy": true}`
+
+### 不跑 server 時的替代方式
+
+```python
+# 直接用 Python 執行
+import asyncio
+from src.wiki.engine import WikiEngine
+engine = WikiEngine()
+
+# Ingest
+engine.ingest()
+
+# Query
+result = asyncio.run(engine.query("Ocean King", use_rag=True))
+print(result)
+
+# Lint
+issues = engine.lint()
+print(issues)
+```
+
+### 判斷規則
+
+| 使用者說的 | 要做什麼 |
+|-----------|---------|
+| 「建立 Wiki 系統」「產出 Wiki 引擎」 | → 走上面的「產出指引」（建新系統） |
+| 「匯入知識」「查 Wiki」「lint」 | → 走這段「使用層」（操作現有系統） |
