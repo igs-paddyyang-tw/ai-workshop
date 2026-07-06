@@ -5,6 +5,7 @@
 """
 from __future__ import annotations
 
+import asyncio
 import os
 import re
 from pathlib import Path
@@ -215,83 +216,101 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         # Wiki 查詢優先
         pass  # 繼續到下面的 Wiki RAG 段落
 
-    # ── Reaction: 🔥 處理中 ──
+    # ── Reaction: 🔥 處理中 + 持續 typing ──
     await _set_reaction(update.message, "🔥")
-    await update.message.chat.send_action("typing")
+    done = asyncio.Event()
+    timer_task = asyncio.create_task(
+        _keep_action_alive(update.message.chat_id, "typing", done, context.bot)
+    )
 
-    # ── L4: CLI → Wiki RAG → Gemini fallback ──
-    reply: str | None = None
-    memory_context: str | None = None
+    try:
+        # ── L4: CLI → Wiki RAG → Gemini fallback ──
+        reply: str | None = None
+        memory_context: str | None = None
 
-    # 4a. Agent CLI（優先 — 有裝 kiro-cli 時用完整 .kiro/ 配置）
-    if is_cli_available():
-        log.debug("  → trying Agent CLI...")
-        try:
-            reply = await agent_cli_chat(text, agent_id=current_agent)
-            if reply:
-                log.info("  ✅ CLI reply (%d chars)", len(reply))
-        except Exception as e:
-            log.error("  ❌ CLI error: %s", e)
-            reply = None
-
-    # 4b. Wiki RAG（CLI 沒回或沒裝時）
-    if not reply:
-        log.debug("  → trying Wiki RAG...")
-        try:
-            from src.wiki.engine import WikiEngine
-            engine = WikiEngine(agent_id=current_agent)
-            wiki_result = await engine.query(text, use_rag=True)
-            if wiki_result.get("answer"):
-                reply = wiki_result["answer"]
-                log.info("  ✅ Wiki RAG reply (%d chars, sources=%s)", len(reply), wiki_result.get("sources", []))
-        except Exception as e:
-            log.error("  ❌ Wiki error: %s", e)
-
-    # 4c. Memory Search（引用歷史記憶，注入 Gemini context）
-    if not reply:
-        try:
-            memory_context = _search_memory(current_agent, text)
-        except Exception:
-            memory_context = None
-
-    # 4d. Gemini API fallback
-    if not reply:
-        gemini_key = os.getenv("GEMINI_API_KEY", "")
-        if gemini_key:
-            log.debug("  → trying Gemini API...")
+        # 4a. Agent CLI（優先 — 有裝 kiro-cli 時用完整 .kiro/ 配置）
+        if is_cli_available():
+            log.debug("  → trying Agent CLI...")
             try:
-                from src.llm.gemini_chat import gemini_chat
-                soul = _load_soul(current_agent)
-                context_str = session.get_context()
-                # 注入記憶（如果有）
-                memory_str = f"\n\n## 相關歷史記憶\n{memory_context}" if memory_context else ""
-                full_system = f"{soul}{memory_str}\n\n{context_str}" if context_str else f"{soul}{memory_str}"
-                reply = await gemini_chat(text, system=full_system)
+                reply = await agent_cli_chat(text, agent_id=current_agent)
                 if reply:
-                    log.info("  ✅ Gemini reply (%d chars)", len(reply))
+                    log.info("  ✅ CLI reply (%d chars)", len(reply))
             except Exception as e:
-                log.error("  ❌ Gemini error: %s", e)
-                reply = f"⚠️ 錯誤: {e}"
-        else:
-            reply = (
-                f"🔄 echo: {text}\n\n"
-                "💡 開啟 AI：填入 GEMINI_API_KEY 或安裝 kiro-cli"
-            )
+                log.error("  ❌ CLI error: %s", e)
+                reply = None
 
-    # ── 回覆 + 記憶 + Reaction ──
-    if reply:
-        reply = _clean_output(reply)
-        session.add_turn("agent", reply)
-        await save_memory(current_agent, user_id, text, reply)
-        await _set_reaction(update.message, "👍")
-        header = f"{agent_info['emoji']} [{current_agent}-agent]\n"
-        await update.message.reply_text(header + reply)
-        log.info("  📤 sent reply to user=%s (%d chars)", user_id, len(reply))
-    else:
+        # 4b. Wiki RAG（CLI 沒回或沒裝時）
+        if not reply:
+            log.debug("  → trying Wiki RAG...")
+            try:
+                from src.wiki.engine import WikiEngine
+                engine = WikiEngine(agent_id=current_agent)
+                wiki_result = await engine.query(text, use_rag=True)
+                if wiki_result.get("answer"):
+                    reply = wiki_result["answer"]
+                    log.info("  ✅ Wiki RAG reply (%d chars, sources=%s)", len(reply), wiki_result.get("sources", []))
+            except Exception as e:
+                log.error("  ❌ Wiki error: %s", e)
+
+        # 4c. Memory Search（引用歷史記憶，注入 Gemini context）
+        if not reply:
+            try:
+                memory_context = _search_memory(current_agent, text)
+            except Exception:
+                memory_context = None
+
+        # 4d. Gemini API fallback
+        if not reply:
+            gemini_key = os.getenv("GEMINI_API_KEY", "")
+            if gemini_key:
+                log.debug("  → trying Gemini API...")
+                try:
+                    from src.llm.gemini_chat import gemini_chat
+                    soul = _load_soul(current_agent)
+                    context_str = session.get_context()
+                    # 注入記憶（如果有）
+                    memory_str = f"\n\n## 相關歷史記憶\n{memory_context}" if memory_context else ""
+                    full_system = f"{soul}{memory_str}\n\n{context_str}" if context_str else f"{soul}{memory_str}"
+                    reply = await gemini_chat(text, system=full_system)
+                    if reply:
+                        log.info("  ✅ Gemini reply (%d chars)", len(reply))
+                except Exception as e:
+                    log.error("  ❌ Gemini error: %s", e)
+                    reply = f"⚠️ 錯誤: {e}"
+            else:
+                reply = (
+                    f"🔄 echo: {text}\n\n"
+                    "💡 開啟 AI：填入 GEMINI_API_KEY 或安裝 kiro-cli"
+                )
+
+        # ── 回覆 + 記憶 + Reaction ──
+        if reply:
+            reply = _clean_output(reply)
+            # 長度截斷（避免 TG 洗版）
+            if len(reply) > 3000:
+                reply = reply[-3000:]
+            session.add_turn("agent", reply)
+            await save_memory(current_agent, user_id, text, reply)
+            await _set_reaction(update.message, "👍")
+            header = f"{agent_info['emoji']} [{current_agent}-agent]\n"
+            # 分段發送（TG 單則上限 4096）
+            full_text = header + reply
+            for i in range(0, len(full_text), 4000):
+                await update.message.reply_text(full_text[i:i+4000])
+            log.info("  📤 sent reply to user=%s (%d chars)", user_id, len(reply))
+        else:
+            await _set_reaction(update.message, "💔")
+            header = f"{agent_info['emoji']} [{current_agent}-agent]\n"
+            await update.message.reply_text(header + "⚠️ 抱歉，我暫時無法回應，請稍後再試。")
+            log.error("  💔 no reply for user=%s msg=%s", user_id, text[:100])
+
+    except Exception as e:
+        log.error("handle_message error: %s", e)
         await _set_reaction(update.message, "💔")
-        header = f"{agent_info['emoji']} [{current_agent}-agent]\n"
-        await update.message.reply_text(header + "⚠️ 抱歉，我暫時無法回應，請稍後再試。")
-        log.error("  💔 no reply for user=%s msg=%s", user_id, text[:100])
+        await update.message.reply_text(f"⚠️ 處理失敗：{type(e).__name__}")
+    finally:
+        done.set()
+        timer_task.cancel()
 
 
 # ── Output 清理（對齊 ai-team-agent）─────────────────────
@@ -509,6 +528,19 @@ async def _set_reaction(message, emoji: str) -> None:
         await message.set_reaction([ReactionTypeEmoji(emoji=emoji)])
     except Exception:
         pass  # Reaction API 不可用時靜默跳過
+
+
+async def _keep_action_alive(chat_id: int, action: str, done: asyncio.Event, bot) -> None:
+    """持續送 chat action 直到 done 被 set（每 4 秒一次）。"""
+    try:
+        while not done.is_set():
+            await bot.send_chat_action(chat_id=chat_id, action=action)
+            try:
+                await asyncio.wait_for(done.wait(), timeout=4.0)
+            except asyncio.TimeoutError:
+                pass
+    except (asyncio.CancelledError, Exception):
+        pass
 
 
 # ── Skill 處理 ───────────────────────────────────────────
