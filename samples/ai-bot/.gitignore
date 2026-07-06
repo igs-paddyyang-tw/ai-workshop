@@ -4,3 +4,5 @@ __pycache__/
 .env
 knowledge/wiki/*.md
 !knowledge/wiki/.gitkeep
+logs/*.log
+bot.pid

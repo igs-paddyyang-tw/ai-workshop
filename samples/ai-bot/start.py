@@ -12,6 +12,10 @@ def main() -> None:
     from dotenv import load_dotenv
     load_dotenv()
 
+    # Logging
+    from src.logging_config import setup_logging
+    setup_logging()
+
     tg_token = os.getenv("TELEGRAM_BOT_TOKEN", "")
     gemini_key = os.getenv("GEMINI_API_KEY", "")
 

@@ -16,6 +16,8 @@ from src.agent.session import session_manager
 from src.agent.memory import save_memory
 from src.agent.cli import AVAILABLE_AGENTS, is_cli_available, agent_cli_chat
 
+log = __import__("logging").getLogger("bot.handlers")
+
 # ── 載入 SOUL（fallback 模式用）──
 _SOUL_DIR = Path("agents/admin-agent/.kiro/steering")
 
@@ -167,6 +169,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
     # 記錄 user 這輪
     session.add_turn("user", text)
+    log.info("📨 user=%s agent=%s msg=%s", user_id, current_agent, text[:100])
 
     # ── Reaction: 👀 收到 ──
     await _set_reaction(update.message, "👀")
@@ -220,21 +223,27 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
     # 4a. Agent CLI（優先 — 有裝 kiro-cli 時用完整 .kiro/ 配置）
     if is_cli_available():
+        log.debug("  → trying Agent CLI...")
         try:
             reply = await agent_cli_chat(text, agent_id=current_agent)
-        except Exception:
+            if reply:
+                log.info("  ✅ CLI reply (%d chars)", len(reply))
+        except Exception as e:
+            log.error("  ❌ CLI error: %s", e)
             reply = None
 
     # 4b. Wiki RAG（CLI 沒回或沒裝時）
     if not reply:
+        log.debug("  → trying Wiki RAG...")
         try:
             from src.wiki.engine import WikiEngine
             engine = WikiEngine(agent_id=current_agent)
             wiki_result = await engine.query(text, use_rag=True)
             if wiki_result.get("answer"):
                 reply = wiki_result["answer"]
-        except Exception:
-            pass
+                log.info("  ✅ Wiki RAG reply (%d chars, sources=%s)", len(reply), wiki_result.get("sources", []))
+        except Exception as e:
+            log.error("  ❌ Wiki error: %s", e)
 
     # 4c. Memory Search（引用歷史記憶，注入 Gemini context）
     if not reply:
@@ -247,6 +256,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     if not reply:
         gemini_key = os.getenv("GEMINI_API_KEY", "")
         if gemini_key:
+            log.debug("  → trying Gemini API...")
             try:
                 from src.llm.gemini_chat import gemini_chat
                 soul = _load_soul(current_agent)
@@ -255,7 +265,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 memory_str = f"\n\n## 相關歷史記憶\n{memory_context}" if memory_context else ""
                 full_system = f"{soul}{memory_str}\n\n{context_str}" if context_str else f"{soul}{memory_str}"
                 reply = await gemini_chat(text, system=full_system)
+                if reply:
+                    log.info("  ✅ Gemini reply (%d chars)", len(reply))
             except Exception as e:
+                log.error("  ❌ Gemini error: %s", e)
                 reply = f"⚠️ 錯誤: {e}"
         else:
             reply = (
@@ -271,10 +284,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         await _set_reaction(update.message, "👍")
         header = f"{agent_info['emoji']} [{current_agent}-agent]\n"
         await update.message.reply_text(header + reply)
+        log.info("  📤 sent reply to user=%s (%d chars)", user_id, len(reply))
     else:
         await _set_reaction(update.message, "💔")
         header = f"{agent_info['emoji']} [{current_agent}-agent]\n"
         await update.message.reply_text(header + "⚠️ 抱歉，我暫時無法回應，請稍後再試。")
+        log.error("  💔 no reply for user=%s msg=%s", user_id, text[:100])
 
 
 # ── Output 清理（對齊 ai-team-agent）─────────────────────
