@@ -1,8 +1,9 @@
-"""Telegram Bot 入口 — 含 Inline Button 回調。"""
+"""Telegram Bot 入口 — 含 Inline Button 回調 + 指令選單。"""
 from __future__ import annotations
 
 import os
 
+from telegram import BotCommand
 from telegram.ext import (
     ApplicationBuilder,
     CallbackQueryHandler,
@@ -21,13 +22,27 @@ from src.bot.handlers import (
     handle_message,
 )
 
+# Bot 指令選單（TG 左下角 / 按鈕）
+BOT_COMMANDS = [
+    BotCommand("start", "啟動 Bot"),
+    BotCommand("agents", "切換 Agent"),
+    BotCommand("mode", "查看模式"),
+    BotCommand("history", "對話歷史"),
+    BotCommand("help", "指令說明"),
+]
+
+
+async def _post_init(application) -> None:
+    """Bot 啟動後設定指令選單。"""
+    await application.bot.set_my_commands(BOT_COMMANDS)
+
 
 def create_app():
     token = os.getenv("TELEGRAM_BOT_TOKEN", "")
     if not token:
         raise ValueError("TELEGRAM_BOT_TOKEN 未設定")
 
-    app = ApplicationBuilder().token(token).build()
+    app = ApplicationBuilder().token(token).post_init(_post_init).build()
 
     # 指令
     app.add_handler(CommandHandler("start", cmd_start))
