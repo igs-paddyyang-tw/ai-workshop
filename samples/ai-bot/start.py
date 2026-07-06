@@ -60,7 +60,12 @@ def main() -> None:
 
         def run_bot():
             import asyncio
-            asyncio.run(bot_app.run_polling(drop_pending_updates=True))
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            loop.run_until_complete(bot_app.initialize())
+            loop.run_until_complete(bot_app.updater.start_polling(drop_pending_updates=True))
+            loop.run_until_complete(bot_app.start())
+            loop.run_forever()
 
         t = threading.Thread(target=run_bot, daemon=True)
         t.start()
@@ -69,7 +74,8 @@ def main() -> None:
         if not os.getenv("TELEGRAM_BOT_TOKEN", ""):
             print(f"  ⚠️  無 TG Token → 僅 API 模式")
 
-    print(f"\n  🚀 http://localhost:8000")
+    print(f"\n  🚀 API:  http://localhost:8000")
+    print(f"  📖 Docs: http://localhost:8000/docs")
     print()
 
     import uvicorn

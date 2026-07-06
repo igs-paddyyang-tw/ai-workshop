@@ -4,12 +4,48 @@
 
 ## 快速啟動
 
+### macOS / Linux
 ```bash
-python3 -m venv .venv && source .venv/bin/activate
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env   # 填入 Token
+cp .env.example .env   # 編輯填入 Token
 python start.py
 ```
+
+### Windows (PowerShell)
+```powershell
+py -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+copy .env.example .env   # 編輯填入 Token
+python start.py
+```
+
+### 啟動成功畫面
+```
+══════════════════════════════════════════════════
+  🤖 課程 A — 個體 Agent
+══════════════════════════════════════════════════
+  Tier 0: ✅ Skills + Wiki + API（永遠可用）
+  Tier 1: ✅ Telegram Bot
+  Tier 2: ✅ Gemini AI + RAG
+══════════════════════════════════════════════════
+
+  📦 Skills: 5 個
+  📚 知識庫: 3 篇
+  🧠 SOUL: ✅ 已載入
+  🤖 Bot: @your_bot_name 已連線
+  🤖 Bot: polling 啟動
+
+  🚀 API:  http://localhost:8000
+  📖 Docs: http://localhost:8000/docs
+```
+
+### 確認成功
+1. 終端 3 個 ✅ + @bot_name 已連線
+2. 📱 Telegram 點 Start → 收到「🤖 AI Agent 已就緒！」
+3. 瀏覽器開 http://localhost:8000 → 看到 JSON
 
 ## 8 個 Agent
 

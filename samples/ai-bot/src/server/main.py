@@ -4,8 +4,31 @@ from src.skills.registry import SkillRegistry
 from src.wiki.engine import WikiEngine
 from pydantic import BaseModel
 
-app = FastAPI(title="a-agent")
+app = FastAPI(title="AI Bot — 個體 Agent API")
 engine = WikiEngine()
+
+
+@app.get("/")
+def root():
+    """首頁 — 確認服務正常 + 端點導航。"""
+    return {
+        "name": "🤖 個體 Agent",
+        "status": "running",
+        "docs": "/docs",
+        "endpoints": {
+            "health": "/health",
+            "skills": "/api/v1/skills",
+            "wiki_query": "POST /api/v1/wiki/query",
+            "wiki_ingest": "POST /api/v1/wiki/ingest",
+            "wiki_lint": "/api/v1/wiki/lint",
+        },
+    }
+
+
+@app.get("/health")
+def health_root():
+    """健康檢查（短路徑）。"""
+    return {"status": "ok"}
 
 
 @app.get("/api/v1/health")
