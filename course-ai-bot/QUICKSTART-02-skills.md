@@ -26,28 +26,28 @@ ark-grill-me → ark-superpowers → ark-skill-creator → ark-code-spec-validat
 
 ## Step 1：觀察能力不足（0-5 min）
 
-**做什麼**：在 IDE 確認 Agent 目前的能力有限  
+**做什麼**：在 IDE 確認 Agent 目前缺少「結構化競品分析」能力  
 **為什麼**：先知道「缺什麼」，再去「補什麼」
 
 📝 Kiro IDE 輸入：
 ```
 讀取 agents/market-agent/.kiro/steering/SOUL.md，
-用 market-agent 的人格回答：「分析 Ocean King 3 跟 Super Ace 的市場表現差異」
+用 market-agent 的人格回答：「幫我做 Ocean King 3 的 SWOT 分析」
 ```
 
 ✅ 預期結果：
-- 回答很泛（靠 LLM 通用知識）
-- 沒有結構化數據（下載量、評分、更新頻率）
-- **缺少「去抓真實資料」的能力**
+- 回答沒有固定格式（不是 SWOT 四象限）
+- 沒有引用 knowledge/ 的資料
+- 內容靠 LLM 通用知識推測
 
 📝 Kiro IDE 輸入：
 ```
 列出 agents/market-agent/skills/ 目前有什麼 SKILL.md
 ```
 
-✅ 預期：只有 `ark-market-research`（通用市場研究 SOP，沒有爬蟲能力）
+✅ 預期：只有 `ark-market-research`（通用研究 SOP，沒有「競品簡報」能力）
 
-💡 **引出問題：Agent 有 SOUL（知道自己是誰）但缺少具體能力（不會抓資料）→ 需要開發新 Skill。**
+💡 **引出問題：Agent 不會「讀 Wiki 產出結構化簡報」→ 需要開發新 Skill。**
 
 ---
 
@@ -58,24 +58,24 @@ ark-grill-me → ark-superpowers → ark-skill-creator → ark-code-spec-validat
 
 📝 Kiro IDE 輸入：
 ```
-拷問我的設計：我想為 market-agent 開發一個「競品資料爬蟲」Skill，
-能從 Google Play 和 App Store 抓取捕魚機和老虎機遊戲的：
-- 評分、下載量、最近更新日期
-- 支援多款遊戲併發抓取
-- 輸出結構化 JSON
+拷問我的設計：我想為 market-agent 開發一個「競品簡報」Skill，功能是：
+- 從 knowledge/wiki/ 搜尋目標產品的相關知識
+- 整理成 SWOT 四象限（強項/弱項/機會/威脅）
+- 每一點附上引用來源
+- 產出 Markdown 格式簡報
 ```
 
 → AI 開始一次問一個問題（共 8-15 題）
 
 📱 你的角色（重要！）：
 - ❌ 不要全部回「好」「OK」
-- ✅ 質疑：「為什麼要爬 Google Play？有 API 嗎？」
-- ✅ 控制範疇：「先只做 3 款遊戲就好，不要做全部」
-- ✅ 補充：「我還想加入 App Store 的評論數量」
+- ✅ 質疑：「為什麼只做 SWOT？能不能加上建議行動？」
+- ✅ 控制範疇：「先不做自動排程，手動觸發就好」
+- ✅ 補充：「我希望每個象限至少 2 點，不要只有 1 點」
 
 ✅ 預期結果：
 - 拷問結束後產出「決策摘要」表格
-- 包含：資料來源、目標遊戲清單、輸出格式、更新頻率、失敗處理等 6-10 個決策
+- 包含：分析框架、最少條目數、引用格式、觸發詞、輸出模板等 6-10 個決策
 
 ⚠️ AI 沒開始拷問 → 確認 .kiro/skills/ 有 ark-grill-me 目錄
 
@@ -91,7 +91,7 @@ ark-grill-me → ark-superpowers → ark-skill-creator → ark-code-spec-validat
 根據以上決策摘要，幫我寫 spec
 ```
 
-→ 產出 `docs/specs/competitor-scraper-spec.md`
+→ 產出 `docs/specs/competitor-brief-spec.md`
 
 📝 確認品質（重要！）：
 ```
@@ -105,11 +105,12 @@ ark-grill-me → ark-superpowers → ark-skill-creator → ark-code-spec-validat
 - 檔案出現在 docs/specs/
 - 包含：目標、非目標、功能需求、驗收條件（可量化）
 - 驗收條件例如：
-  - 「爬取 3 款遊戲 < 10 秒」
-  - 「輸出 JSON 含 rating / downloads / last_update」
-  - 「單款失敗不影響其他（故障隔離）」
+  - 「輸出含 SWOT 四個段落」
+  - 「每象限 ≥ 2 點」
+  - 「每點附 📚 引用來源（wiki 檔名）」
+  - 「輸出為合法 Markdown」
 
-⚠️ Spec 太簡略 → 📝「幫我擴充驗收條件，加入數值指標」
+⚠️ Spec 太簡略 → 📝「幫我擴充驗收條件，加入格式和引用的具體要求」
 
 ---
 
@@ -120,29 +121,34 @@ ark-grill-me → ark-superpowers → ark-skill-creator → ark-code-spec-validat
 
 📝 Kiro IDE 輸入：
 ```
-建立新 Skill：競品資料爬蟲，
-根據 docs/specs/competitor-scraper-spec.md 的規格實作，
-放在 agents/market-agent/skills/ark-competitor-scraper/
+建立新 Skill：競品簡報，
+根據 docs/specs/competitor-brief-spec.md 的規格實作，
+放在 agents/market-agent/skills/ark-competitor-brief/
 ```
 
-→ 產出 SKILL.md（可能附帶 scripts/）
+→ 產出 SKILL.md
 
 📝 確認產出：
 ```
-打開 agents/market-agent/skills/ark-competitor-scraper/SKILL.md，
+打開 agents/market-agent/skills/ark-competitor-brief/SKILL.md，
 確認 frontmatter 和步驟跟 Spec 一致
 ```
 
 ✅ 預期結果：
-- `ark-competitor-scraper/SKILL.md` 出現
-- frontmatter：`name: ark-competitor-scraper`
-- description 包含觸發詞（「競品」「市場數據」「下載量」）
-- 步驟：確認目標遊戲 → 爬取 → 結構化 → 輸出 JSON
+- `ark-competitor-brief/SKILL.md` 出現
+- frontmatter：`name: ark-competitor-brief`
+- description 包含觸發詞（「競品簡報」「SWOT」「競品分析」）
+- 步驟：
+  1. 確認目標產品
+  2. 搜尋 knowledge/wiki/ 相關內容
+  3. 整理為 SWOT 四象限
+  4. 附引用來源
+  5. 產出 Markdown 簡報
 
-💡 **SKILL.md = 能力宣告（說明 Agent「會什麼」）**
-- 讓 pm-agent（課程 B）知道可以把競品分析任務分配給 market
-- 讓 Gemini 回答時按這個 SOP 結構化輸出
-- 實際爬蟲執行邏輯在 scripts/ 中（進階）
+💡 **SKILL.md = 能力宣告**
+- 告訴 Gemini「遇到競品分析需求時，要按這個 SOP 做」
+- 讓回答從「泛泛推測」→「結構化 + 有引用」
+- 跟 03 的 Wiki 知識庫串接（讀 wiki/ 的資料產出簡報）
 
 ---
 
@@ -183,16 +189,20 @@ ark-grill-me → ark-superpowers → ark-skill-creator → ark-code-spec-validat
 💻 重啟：Ctrl+C → `python start.py`
 
 📱 Telegram：
-1. `/agents` → Market → 問「分析 Ocean King 3 跟 Super Ace 的市場表現差異」
+1. `/agents` → Market → 問「幫我做 Ocean King 3 的 SWOT 分析」
 
 ✅ 預期（對比 Step 1）：
-- Step 1（沒 Skill）：泛泛回答、沒結構
-- Step 6（有 Skill）：按 SKILL.md 的格式回答、有結構化段落、提到要抓的指標
 
-💡 **Gemini 讀了新 SKILL.md → 回答更結構化 = Skill 已生效**
+| | Step 1（沒 Skill） | Step 6（有 Skill） |
+|---|---|---|
+| 格式 | 自由文字 | SWOT 四象限 |
+| 引用 | 沒有 | 有 📚 參考 |
+| 內容 | LLM 推測 | 基於 Wiki 知識 |
+| 可信度 | 低 | 高 |
 
-📱 加碼：問「幫我抓 Ocean King 系列的競品資料」
-- 觀察觸發詞（「競品」）是否讓回答更聚焦
+💡 **Gemini 讀了新 SKILL.md → 知道要「查 Wiki + SWOT 格式 + 附引用」= 行為升級**
+
+📱 加碼：問「Super Ace 的競品簡報」→ 觀察同樣的結構化輸出
 
 🌐 也可用 Web Chat 驗證：http://localhost:8000 → Market → 同一問題
 
@@ -208,12 +218,12 @@ ark-grill-me → ark-superpowers → ark-skill-creator → ark-code-spec-validat
 
 ## 🏠 回家練習
 
-1. 📝 Kiro：「拷問我的設計：為 data-agent 做一個『爆率分析』Skill」
+1. 📝 Kiro：「拷問我的設計：為 data-agent 做一個『爆率平衡分析』Skill」
 2. 📝 Kiro：「幫我產出 spec，然後建立 Skill，最後驗證」
-3. 📝 Kiro：「為 qa-agent 做一個『遊戲測試報告產出器』Skill」
+3. 📝 Kiro：「為 qa-agent 做一個『遊戲測試報告』Skill（讀 Wiki 找已知 Bug）」
 4. 挑戰：讓所有自己開發的 Skill 都 Score ≥ 90
 
 ---
 
 *本堂重點：先想清楚（拷問）→ 寫規格（Spec）→ 依規格做（Skill）→ 驗證一致（Score）→ 上線確認（TG）。*
-*四個 Skill + 一個驗證，完整的 Spec-Driven Development。*
+*Skill 讀 Wiki 知識 → 產出結構化簡報 = 跟第三堂的知識庫串接。*
