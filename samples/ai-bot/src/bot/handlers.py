@@ -176,6 +176,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
     # ── Reaction: 🔥 處理中 ──
     await _set_reaction(update.message, "🔥")
+    await update.message.chat.send_action("typing")
 
     # ── 2. Wiki RAG 查詢（先查知識庫，有結果就用）──
     reply: str | None = None
