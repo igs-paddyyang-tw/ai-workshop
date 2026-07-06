@@ -1,6 +1,6 @@
 # ai-bot — 課程 A 產出（個體 Agent）
 
-> 8 個 Agent 可切換，Inline Button 選擇，每次對話自動記憶。
+> 8 Agent 切換 + Wiki RAG + Web UI + Telegram 互動。帶走就能用。
 
 ## 快速啟動
 
@@ -9,7 +9,7 @@
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env   # 編輯填入 Token
+cp .env.example .env   # 編輯填入 Token（有註解說明）
 python start.py
 ```
 
@@ -44,97 +44,141 @@ python start.py
 
 ### 確認成功
 1. 終端 3 個 ✅ + @bot_name 已連線
-2. 📱 Telegram 點 Start → 收到「🤖 AI Agent 已就緒！」
-3. 瀏覽器開 http://localhost:8000 → 看到 JSON
+2. 📱 Telegram 點 Start → 收到回覆 + 左下角出現 `/` 選單
+3. 🌐 瀏覽器開 http://localhost:8000 → 看到 Chat UI
+
+## Web UI（三個頁面）
+
+| URL | 頁面 | 功能 |
+|-----|------|------|
+| `/` | 💬 Chat | 聊天室窗 — 8 Agent 切換 + Wiki 查詢 |
+| `/admin` | ⚙️ Admin | 管理介面 — KPI + Agent 列表 + Ingest/Lint |
+| `/api-docs` | 📖 API | API 文件 — 暗黑風格 + Try 按鈕即時測試 |
+
+統一導航列：三頁頂部都有 💬 Chat | ⚙️ Admin | 📖 API
+
+## Telegram 互動
+
+### 指令選單（左下角 `/`）
+
+| 指令 | 功能 |
+|------|------|
+| `/start` | 啟動 + 清空歷史 |
+| `/agents` | Inline Button 選 Agent |
+| `/mode` | 查看執行模式 |
+| `/history` | 對話歷史 |
+| `/help` | 指令清單 |
+
+### 回覆標頭
+
+每次回覆帶 Agent 身份：
+```
+👑 [admin-agent]
+系統正常運行中。
+
+🗺️ [market-agent]
+今日科技新聞 5 則：...
+```
+
+### Reaction 動態
+
+訊息右下角即時顯示處理狀態：
+```
+你：幫我查 Ocean King    👀 ← 收到
+你：幫我查 Ocean King    🔥 ← 處理中
+你：幫我查 Ocean King    👍 ← 完成
+                         💔 ← 失敗（兜底回覆）
+```
+
+### 對話處理流程
+
+```
+使用者訊息 → 👀
+  → 1. 關鍵字路由（新聞 → news skill 秒回）
+  → 2. Wiki RAG（私有+全域知識庫查詢）
+  → 3. Agent CLI（kiro-cli 可用時）
+  → 4. Gemini API + SOUL（fallback）
+  → 5. 兜底回覆（全失敗時也有回應）
+  → 👍 or 💔
+```
 
 ## 8 個 Agent
 
-| 指令 | Agent | 職責 |
-|------|-------|------|
-| `/agents` | 👑 Admin | 管家 + 智能分流（預設） |
-| | 📋 PM | 專案經理 + 派工 |
-| | 🧠 AI Dev | AI 工程師 + Prompt 設計 |
-| | 💻 Coder | 全端開發 |
-| | 🧪 QA | 品質保證 + 測試 |
-| | 📊 Data | 數據分析（內部） |
-| | 🗺️ Market | 市場研究（外部） |
-| | 📝 Report | 報告產出（彙整） |
+| Agent | 職責 |
+|-------|------|
+| 👑 Admin | 管家（預設） |
+| 📋 PM | 專案經理 |
+| 🧠 AI Dev | AI 工程師 |
+| 💻 Coder | 全端開發 |
+| 🧪 QA | 品質保證 |
+| 📊 Data | 數據分析 |
+| 🗺️ Market | 市場研究 |
+| 📝 Report | 報告產出 |
 
-## 對話流程
+## 知識庫（兩層）
 
 ```
-/agents → Inline Button 選 Agent → 對話 → 自動寫 memory
+knowledge/                          ← 全域（所有 Agent 共用）
+├── raw/                            ← 丟文件的地方
+│   ├── ocean-king-analysis.md      ← 遊戲競品分析
+│   ├── super-ace-analysis.md
+│   └── fishing-vs-slot-comparison.md
+└── wiki/                           ← ingest 後 → TG + Web 能查到
+
+agents/{agent}/knowledge/           ← 私有（只有該 Agent 能查）
+├── raw/                            ← memory 自動寫入
+└── wiki/                           ← 私有 ingest 後
 ```
 
-- 一次只能跟一個 Agent 對話
-- 每個 user_id 獨立 session
-- 對話歷史保留最近 10 輪
-- 完成後自動寫入 `agents/{name}/knowledge/raw/`
-
-## 雙模式
-
-| 模式 | 條件 | 能力 |
-|------|------|------|
-| 🧠 Agent CLI | kiro-cli 已安裝 | .kiro/ 全生效（SOUL + Skills） |
-| ⚡ Gemini API | GEMINI_API_KEY | 直呼 API + SOUL 注入 |
-
-輸入 `/mode` 查看當前模式。
+查詢規則：先查私有 → 再查全域 → 合併結果
 
 ## 每個 Agent 的配置
 
 ```
 agents/{name}-agent/
 ├── .kiro/
-│   ├── steering/SOUL.md       ← 八段式人格
-│   ├── steering/KIRO.md       ← 行為規範
-│   ├── steering/MEMORY.md     ← 記憶規則
-│   ├── steering/USER.md       ← 使用者偏好
+│   ├── steering/SOUL.md        ← 人格（01 改這個）
+│   ├── steering/MEMORY.md      ← 記憶策略
+│   ├── steering/USER.md        ← 使用者偏好
 │   ├── settings/mcp.json
-│   ├── agents/{name}.json
 │   └── prompts/route-message.md
-├── skills/ark-{skill}/SKILL.md ← Ark Skill 格式
-├── knowledge/raw/              ← 知識種子 + memory 累積
-└── output/                     ← 產出結果
-```
-
-## Bot 指令
-
-| 指令 | 功能 |
-|------|------|
-| `/start` | 歡迎 + 當前 Agent |
-| `/agents` | Inline Button 選 Agent |
-| `/mode` | 查看執行模式 |
-| `/history` | 查看對話歷史 |
-| `/help` | 指令清單 |
-
-## Tier 分級
-
-```
-Tier 0 — 零設定：Skills + Wiki + API
-Tier 1 — TG Token：Bot + Inline Button + 8 Agent
-Tier 2 — Gemini Key：AI 對話 + RAG
+├── skills/ark-*/SKILL.md       ← 能力宣告（02 產出這個）
+├── knowledge/raw/              ← 私有知識（memory 自動寫入）
+└── output/
 ```
 
 ## 專案結構
 
 ```
 ai-bot/
-├── start.py                    ← 一鍵啟動
-├── .kiro/                      ← 根配置（預設 admin）
-├── agents/                     ← 8 個 Agent（各有完整 .kiro/）
+├── start.py                    ← 一鍵啟動（含 Token 驗證 + BotCommand 設定）
+├── .env.example                ← 環境變數（有註解）
+├── .kiro/                      ← 根配置（fallback SOUL）
+├── agents/                     ← 8 個 Agent
+├── knowledge/                  ← 全域知識庫
+├── templates/                  ← Web UI
+│   ├── index.html              ← 💬 Chat
+│   ├── admin.html              ← ⚙️ Admin
+│   └── api-docs.html           ← 📖 API
 ├── src/
-│   ├── agent/                  ← 核心（cli + session + memory + planner）
-│   ├── bot/                    ← Telegram（Inline Button + handlers）
-│   ├── skills/                 ← 共用 Skills（echo + news + summarize + translate + renderer）
-│   ├── wiki/                   ← WikiEngine
+│   ├── agent/                  ← 核心（session + memory + planner）
+│   ├── bot/                    ← Telegram（handlers + Reaction + 標頭）
+│   ├── skills/internal/        ← 實際執行工具（Python）
+│   ├── wiki/                   ← WikiEngine（兩層查詢）
 │   ├── llm/                    ← Gemini Chat
-│   └── server/                 ← FastAPI
-├── config/                     ← 配置（news_sources + llm_prompts）
-├── templates/                  ← HTML 模板
-├── knowledge/                  ← 共用知識庫
-└── docs/                       ← 設計文件
+│   └── server/                 ← FastAPI + Web UI 路由
+├── config/                     ← 配置
+└── tests/
 ```
+
+## Tier 分級
+
+| Tier | 條件 | 能力 |
+|------|------|------|
+| 0 | 零設定 | Skills + Wiki + API + Web UI |
+| 1 | + TG Token | Bot + Inline Button + Reaction + 8 Agent |
+| 2 | + Gemini Key | AI 對話 + RAG + SOUL 人格 |
 
 ---
 
-*課程 A 的完整產出。8 個 Agent，Inline Button 切換，自動記憶。*
+*課程 A 完整產出。改 SOUL 改風格、改 knowledge/ 改知識、帶走直接用。*
