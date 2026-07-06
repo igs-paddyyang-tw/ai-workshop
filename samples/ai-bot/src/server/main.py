@@ -1,29 +1,35 @@
-"""FastAPI — 課程 A 簡易 API。"""
-from fastapi import FastAPI
+"""FastAPI — 課程 A 簡易 API + Web UI。"""
+from pathlib import Path
+
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse
 from src.skills.registry import SkillRegistry
 from src.wiki.engine import WikiEngine
 from pydantic import BaseModel
+
+TEMPLATES_DIR = Path(__file__).resolve().parents[2] / "templates"
 
 app = FastAPI(title="AI Bot — 個體 Agent API")
 engine = WikiEngine()
 
 
-@app.get("/")
-def root():
-    """首頁 — 確認服務正常 + 端點導航。"""
-    return {
-        "name": "🤖 個體 Agent",
-        "status": "running",
-        "docs": "/docs",
-        "endpoints": {
-            "health": "/health",
-            "skills": "/api/v1/skills",
-            "wiki_query": "POST /api/v1/wiki/query",
-            "wiki_ingest": "POST /api/v1/wiki/ingest",
-            "wiki_lint": "/api/v1/wiki/lint",
-        },
-    }
+# ─── Web UI ──────────────────────────────────────────
 
+@app.get("/", response_class=HTMLResponse)
+def chat_page():
+    """聊天室首頁。"""
+    html = (TEMPLATES_DIR / "index.html").read_text(encoding="utf-8")
+    return HTMLResponse(content=html)
+
+
+@app.get("/admin", response_class=HTMLResponse)
+def admin_page():
+    """管理介面。"""
+    html = (TEMPLATES_DIR / "admin.html").read_text(encoding="utf-8")
+    return HTMLResponse(content=html)
+
+
+# ─── API ─────────────────────────────────────────────
 
 @app.get("/health")
 def health_root():
