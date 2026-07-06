@@ -124,6 +124,50 @@ ark-grill-me → ark-superpowers → ark-skill-creator → ark-code-spec-validat
 建立新 Skill：競品簡報，
 根據 docs/specs/competitor-brief-spec.md 的規格實作，
 放在 agents/market-agent/skills/ark-competitor-brief/
+
+產出流程：
+1. 從 knowledge/wiki/ 搜尋目標產品的 SWOT 資料
+2. 產出 Markdown 報告 → 存到 agents/market-agent/output/{date}_competitor-brief.md
+   （給 AI 看 / 給 Wiki ingest 用）
+3. 將 Markdown 轉為 HTML 報告 → 存到 agents/market-agent/output/{date}_competitor-brief.html
+   （給人看 / 遊戲博弈賭場風格 / 金色+深色+霓虹光效）
+4. TG 回覆時傳送 HTML 檔案（send_document）讓使用者可下載
+
+觸發詞：「競品簡報」「SWOT」「競品分析報告」
+
+輸出格式（Markdown）：
+## 🎯 競品簡報：{產品名}
+📅 {日期}
+
+### 💪 強項 (Strengths)
+- {內容}（📚 {引用來源}）
+
+### ⚠️ 弱項 (Weaknesses)
+- {內容}（📚 {引用來源}）
+
+### 💡 機會 (Opportunities)
+- {內容}（📚 {引用來源}）
+
+### 🔥 威脅 (Threats)
+- {內容}（📚 {引用來源}）
+
+### 📋 建議行動
+1. {行動項目}
+
+HTML 風格：遊戲博弈賭場風格
+- 背景：深色漸層（#1a0a2e → #0d0d0d）
+- 主色：金色（#ffd700）+ 霓虹紫（#a855f7）
+- 邊框：金色光暈邊框
+- 標題：帶金色光效
+- 表格：賭桌綠絨質感
+- 整體感覺：像高級賭場的 VIP 報告
+
+驗收條件：
+- 產出 .md 和 .html 兩個檔案
+- SWOT 四象限各 ≥ 2 點
+- 每點附 📚 引用來源
+- HTML 有完整 CSS（可獨立瀏覽器開啟）
+- TG 以 send_document 傳送 HTML
 ```
 
 → 產出 SKILL.md
@@ -131,19 +175,14 @@ ark-grill-me → ark-superpowers → ark-skill-creator → ark-code-spec-validat
 📝 確認產出：
 ```
 打開 agents/market-agent/skills/ark-competitor-brief/SKILL.md，
-確認 frontmatter 和步驟跟 Spec 一致
+確認包含：多格式產出流程 + 觸發詞 + HTML 風格描述
 ```
 
 ✅ 預期結果：
 - `ark-competitor-brief/SKILL.md` 出現
-- frontmatter：`name: ark-competitor-brief`
-- description 包含觸發詞（「競品簡報」「SWOT」「競品分析」）
-- 步驟：
-  1. 確認目標產品
-  2. 搜尋 knowledge/wiki/ 相關內容
-  3. 整理為 SWOT 四象限
-  4. 附引用來源
-  5. 產出 Markdown 簡報
+- 步驟含 5 段：搜尋 → SWOT 整理 → 產 .md → 產 .html → TG 傳檔
+- description 包含觸發詞
+- 有 HTML 風格說明（賭場風格）
 
 💡 **SKILL.md = 能力宣告**
 - 告訴 Gemini「遇到競品分析需求時，要按這個 SOP 做」
