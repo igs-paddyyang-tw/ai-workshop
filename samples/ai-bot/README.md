@@ -94,12 +94,12 @@ python start.py
 
 ```
 使用者訊息 → 👀
-  → 1. 關鍵字路由（新聞 → news skill 秒回）
-  → 2. Wiki RAG（私有+全域知識庫查詢）
-  → 3. Agent CLI（kiro-cli 可用時）
-  → 4. Gemini API + SOUL（fallback）
-  → 5. 兜底回覆（全失敗時也有回應）
-  → 👍 or 💔
+  → L1: /reset → 清空 session
+  → L2: /skill_id args → 直接執行（/news /wiki /summarize /translate /ingest）
+  → L3: keyword → Planner 路由
+  → L4: CLI（8 Agent 常駐）→ Wiki RAG → Memory → Gemini + SOUL
+  → _clean_output（ANSI + 工具噪音過濾 + 結論提取）
+  → 👍 + 回覆（標頭 + 分段 4000 字）
 ```
 
 ## 8 個 Agent
@@ -151,23 +151,35 @@ agents/{name}-agent/
 
 ```
 ai-bot/
-├── start.py                    ← 一鍵啟動（含 Token 驗證 + BotCommand 設定）
+├── start.py                    ← 一鍵啟動（Token 驗證 + 8 Agent 服務 + BotCommand）
+├── start_bot.bat               ← Windows 背景啟動
+├── stop_bot.bat                ← Windows 停止
+├── restart_bot.bat             ← Windows 重啟
 ├── .env.example                ← 環境變數（有註解）
-├── .kiro/                      ← 根配置（fallback SOUL）
-├── agents/                     ← 8 個 Agent
-├── knowledge/                  ← 全域知識庫
+├── .kiro/
+│   ├── steering/SOUL.md        ← 根 SOUL（fallback）
+│   └── skills/                 ← Kiro IDE Skills（教學用）
+│       ├── ark-grill-me/       ← 02 拷問
+│       ├── ark-superpowers/    ← 02 產 Spec
+│       ├── ark-skill-creator/  ← 02 產 SKILL.md
+│       ├── ark-code-spec-validator/ ← 02 驗證
+│       └── ark-wiki-engine/    ← 03 知識庫
+├── agents/                     ← 8 個 Agent（各有 .kiro/ + knowledge/）
+├── knowledge/                  ← 全域知識庫（所有 Agent 共用）
 ├── templates/                  ← Web UI
 │   ├── index.html              ← 💬 Chat
 │   ├── admin.html              ← ⚙️ Admin
 │   └── api-docs.html           ← 📖 API
 ├── src/
-│   ├── agent/                  ← 核心（session + memory + planner）
-│   ├── bot/                    ← Telegram（handlers + Reaction + 標頭）
+│   ├── agent/                  ← 核心（process + cli + session + memory + planner）
+│   ├── bot/                    ← Telegram（Planner L1-L4 + Reaction + 標頭）
 │   ├── skills/internal/        ← 實際執行工具（Python）
 │   ├── wiki/                   ← WikiEngine（兩層查詢）
-│   ├── llm/                    ← Gemini Chat
-│   └── server/                 ← FastAPI + Web UI 路由
-├── config/                     ← 配置
+│   ├── llm/                    ← Gemini Chat（含 logging）
+│   ├── server/                 ← FastAPI + /api/v1/chat
+│   └── logging_config.py       ← RotatingFileHandler
+├── logs/                       ← 執行日誌（自動產生）
+├── config/
 └── tests/
 ```
 
@@ -178,6 +190,7 @@ ai-bot/
 | 0 | 零設定 | Skills + Wiki + API + Web UI |
 | 1 | + TG Token | Bot + Inline Button + Reaction + 8 Agent |
 | 2 | + Gemini Key | AI 對話 + RAG + SOUL 人格 |
+| 3 | + kiro-cli | 8 Agent 常駐服務（完整 .kiro/ 配置） |
 
 ---
 
