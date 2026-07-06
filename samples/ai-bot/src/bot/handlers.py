@@ -190,7 +190,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
     # ── 3. Agent CLI 模式 ──
     if not reply and is_cli_available():
-        reply = await agent_cli_chat(text, agent_id=current_agent)
+        try:
+            reply = await agent_cli_chat(text, agent_id=current_agent)
+        except Exception:
+            reply = None  # CLI 失敗，fallback 到 Gemini
 
     # ── 4. Gemini API fallback ──
     if not reply:
@@ -220,6 +223,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         await update.message.reply_text(header + reply)
     else:
         await _set_reaction(update.message, "💔")
+        header = f"{agent_info['emoji']} [{current_agent}-agent]\n"
+        await update.message.reply_text(header + "⚠️ 抱歉，我暫時無法回應，請稍後再試。")
 
 
 # ── Reaction Helper ───────────────────────────────────────
