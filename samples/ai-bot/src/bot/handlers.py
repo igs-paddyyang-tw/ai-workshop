@@ -213,37 +213,34 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     await _set_reaction(update.message, "🔥")
     await update.message.chat.send_action("typing")
 
-    # ── L4: Wiki RAG → CLI → Gemini fallback ──
+    # ── L4: CLI → Wiki RAG → Gemini fallback ──
     reply: str | None = None
+    memory_context: str | None = None
 
-    # 4a. Wiki RAG
-    try:
-        from src.wiki.engine import WikiEngine
-        engine = WikiEngine(agent_id=current_agent)
-        wiki_result = await engine.query(text, use_rag=True)
-        if wiki_result.get("answer"):
-            reply = wiki_result["answer"]
-    except Exception:
-        pass
-
-    # 4b. Memory Search（引用歷史記憶）
-    if not reply:
-        try:
-            memory_context = _search_memory(current_agent, text)
-            if memory_context:
-                # 有相關記憶，注入到 Gemini context
-                pass  # memory_context 會在 Gemini 時使用
-        except Exception:
-            memory_context = None
-    else:
-        memory_context = None
-
-    # 4c. Agent CLI
-    if not reply and is_cli_available():
+    # 4a. Agent CLI（優先 — 有裝 kiro-cli 時用完整 .kiro/ 配置）
+    if is_cli_available():
         try:
             reply = await agent_cli_chat(text, agent_id=current_agent)
         except Exception:
             reply = None
+
+    # 4b. Wiki RAG（CLI 沒回或沒裝時）
+    if not reply:
+        try:
+            from src.wiki.engine import WikiEngine
+            engine = WikiEngine(agent_id=current_agent)
+            wiki_result = await engine.query(text, use_rag=True)
+            if wiki_result.get("answer"):
+                reply = wiki_result["answer"]
+        except Exception:
+            pass
+
+    # 4c. Memory Search（引用歷史記憶，注入 Gemini context）
+    if not reply:
+        try:
+            memory_context = _search_memory(current_agent, text)
+        except Exception:
+            memory_context = None
 
     # 4d. Gemini API fallback
     if not reply:
