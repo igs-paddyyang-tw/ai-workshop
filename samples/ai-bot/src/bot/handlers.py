@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import os
+import re
 from pathlib import Path
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
@@ -264,6 +265,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
     # ── 回覆 + 記憶 + Reaction ──
     if reply:
+        reply = _clean_output(reply)
         session.add_turn("agent", reply)
         await save_memory(current_agent, user_id, text, reply)
         await _set_reaction(update.message, "👍")
@@ -275,7 +277,101 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         await update.message.reply_text(header + "⚠️ 抱歉，我暫時無法回應，請稍後再試。")
 
 
-# ── Skill 執行 ────────────────────────────────────────────
+# ── Output 清理（對齊 ai-team-agent）─────────────────────
+
+_ANSI_RE = re.compile(r"\x1b\[[0-9;]*m|\x1b\[\?[0-9]*[hl]|\x1b\[[0-9]*[A-Z]")
+
+_TOOL_LINE_PREFIXES = (
+    "Searching the web", "Reading content from", "Fetching URL",
+    "Fetching ", "(using tool:", "✓ Found", "✓ Read",
+    "- Completed in", "- Found", "- Read",
+    "⏺ ", "┃ ", "│ ", "├ ", "└ ",
+    "Running ", "Executed ", "Created ", "Updated ",
+    "Tool call:", "Function:", "Calling tool",
+)
+_TOOL_LINE_RE = re.compile(
+    r"^\s*[✓✗●◉⏺]\s+(Found|Read|Completed|Fetched|Searching|Writing|Created)"
+    r"|^\s*━+\s*$"
+    r"|^\s*─+\s*$"
+    r"|^```"
+    r"|^\s*\d+\s*(file|match)"
+)
+
+
+def _clean_output(raw: str) -> str:
+    """從 kiro-cli 輸出提取最終結論，過濾工具過程 + ANSI codes。
+
+    策略：
+    1. 有 [DONE] 標記 → 用 summary
+    2. 有 reply() 工具輸出 → 提取 reply 內容
+    3. 否則從尾部反向掃描，找最後一段「非工具過程」的文字
+    """
+    # 清 ANSI
+    text = _ANSI_RE.sub("", raw)
+    # 清殘留 [0m 等
+    text = re.sub(r"\[(?:\d+;)*\d*m", "", text)
+
+    # 策略 1: [DONE] 標記
+    done_match = re.search(r"\[DONE\]\s*summary=(.+)", text)
+    if done_match:
+        return done_match.group(1).strip()
+
+    # 策略 2: reply() 工具呼叫
+    reply_matches = re.findall(
+        r'reply\s*\(\s*(?:text\s*=\s*)?["\'](.+?)["\']',
+        text, re.DOTALL
+    )
+    if reply_matches:
+        return reply_matches[-1].strip()
+
+    # 策略 3: 從尾部提取結論段落
+    lines = text.splitlines()
+    conclusion_lines: list[str] = []
+    found_content = False
+
+    for line in reversed(lines):
+        stripped = line.strip()
+        if not stripped and not found_content:
+            continue
+        is_tool_line = (
+            any(stripped.startswith(p) for p in _TOOL_LINE_PREFIXES)
+            or bool(_TOOL_LINE_RE.match(stripped))
+        )
+        if is_tool_line:
+            if found_content:
+                break
+            continue
+        found_content = True
+        # Strip '> ' prompt prefix
+        if line.startswith("> "):
+            line = line[2:]
+        conclusion_lines.append(line)
+
+    conclusion_lines.reverse()
+    result = "\n".join(conclusion_lines).strip()
+
+    # Fallback: 結果太短，做基礎清理取尾部
+    if len(result) < 20 and len(text.strip()) > 20:
+        cleaned_lines = []
+        for l in lines:
+            s = l.strip()
+            if not s:
+                cleaned_lines.append("")
+                continue
+            if any(s.startswith(p) for p in _TOOL_LINE_PREFIXES):
+                continue
+            if _TOOL_LINE_RE.match(s):
+                continue
+            if l.startswith("> "):
+                l = l[2:]
+            cleaned_lines.append(l)
+        result = "\n".join(cleaned_lines).strip()
+        if len(result) > 2000:
+            result = result[-2000:]
+
+    # 清理多餘空行
+    result = re.sub(r"\n{3,}", "\n\n", result)
+    return result
 
 
 async def _execute_skill_by_id(skill_id: str, args: str = "") -> str | None:
