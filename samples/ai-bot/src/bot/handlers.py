@@ -35,6 +35,7 @@ def _load_soul(agent_id: str) -> str:
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user_id = update.effective_user.id
     session = session_manager.get_or_create(user_id)
+    session.clear_history()  # 重新開始，清空舊對話
     agent = AVAILABLE_AGENTS[session.current_agent]
     mode = "🧠 Agent CLI" if is_cli_available() else "⚡ Gemini API"
     await update.message.reply_text(

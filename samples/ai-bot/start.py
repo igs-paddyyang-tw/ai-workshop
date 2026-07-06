@@ -60,9 +60,11 @@ def main() -> None:
 
         def run_bot():
             import asyncio
+            from src.bot.main import BOT_COMMANDS
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             loop.run_until_complete(bot_app.initialize())
+            loop.run_until_complete(bot_app.bot.set_my_commands(BOT_COMMANDS))
             loop.run_until_complete(bot_app.updater.start_polling(drop_pending_updates=True))
             loop.run_until_complete(bot_app.start())
             loop.run_forever()
