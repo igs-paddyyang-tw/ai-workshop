@@ -130,6 +130,18 @@ python start.py
 - SKILL.md → 需要彈性判斷的流程用自然語言描述（給 LLM 方法論）
 - **兩者互補，不是替代關係**
 
+⚠️ **目前 vs 未來（誠實說）**：
+
+| | 目前的 ai-bot（課程 A） | 課程 B 的 ai-team-agent |
+|---|---|---|
+| Agent 切換 | 使用者手動（/agents 按鈕） | pm-agent 自動判斷 |
+| Skill 觸發 | 關鍵字匹配（`"新聞" in text`） | LLM 語意匹配（Discovery） |
+| SOUL 有效 | ✅ 控制回答風格（這堂課焦點） | ✅ + 控制分工角色 |
+| 分流 | ❌ 沒有自動分流 | ✅ TaskGraph 自動拆解 |
+
+**本堂課學的是「零件」**：SOUL + SKILL.md + internal skill
+**課程 B 學的是「黏合劑」**：讓零件自動串起來（Agent orchestration）
+
 **接下來去 TG 看使用者體驗到什麼 ↓**
 
 ---
