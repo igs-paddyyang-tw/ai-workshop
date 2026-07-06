@@ -71,7 +71,7 @@
 
 ### 教學目標
 
-學員完成後能管理「5 Agent 並行 + Dashboard + 費用控管」的完整平台。
+學員完成後能管理「5 Agent 並行 + 排程 + 費控 + 知識迴圈」的完整平台。
 
 ### 第四堂：Agent Team（Phase 1, Step 0-4）
 
@@ -97,16 +97,17 @@
 | 時間 | 動作 | 講師做什麼 |
 |------|------|-----------|
 | 0-10 | ⭐ 設定排程 | 帶學員用 Kiro 加 scheduler.yaml（日報+週報） |
-| 10-20 | 設定費控 | 帶學員改 cost_guard，解釋超額機制 |
-| 20-25 | 重啟確認 | curl schedules API 確認排程已註冊 |
-| 25-40 | ⭐ 手動觸發 + 看結果 | 觸發週競品排程 → TG 看產出 → 確認寫入 raw/ |
-| 40-50 | 上線 Checklist + 迴圈 | 遊戲部門 Checklist + 知識累積迴圈總結 |
+| 10-18 | 設定費控 | 帶學員改 cost_guard 5.0，解釋超額機制 |
+| 18-22 | 重啟確認 | Kiro 確認排程已註冊 |
+| 22-32 | 觸發排程 | Kiro 手動觸發 → TG 看結果 → /board + /costs |
+| 32-42 | ⭐ 迴圈體驗 | 確認 raw/ → ingest → TG 問到引用 → 加 ingest 排程 |
+| 42-50 | 上線 Checklist | Kiro 產出遊戲部門 Checklist + 收尾 |
 
 **教學重點**：
 - 04 手動派工 → 05 排程自動 = Demo → 正式上線
-- 排程產出自動進 knowledge/raw/ → ingest → Wiki 成長 → 迴圈
-- 費用控管是生產環境必備（daily_limit_usd）
-- 迴圈工程收尾：排程 → 產出 → 知識 → 更準 → ♻️
+- Step 5 是迴圈體驗關鍵：學員要「動手 ingest + 問到引用」才算體驗到
+- 排程產出自動進 knowledge/raw/ → ingest → Wiki 成長 = 自演化
+- 最後加 ingest 排程 = 迴圈完全自動化
 
 **收尾**：
 - 學員帶走 `samples/ai-team-agent/`

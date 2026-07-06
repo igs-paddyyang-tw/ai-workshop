@@ -395,43 +395,50 @@ python start.py</code></pre>
 <h3>Step 1：設定排程（0-10 min）⭐</h3>
 <p><span class="badge badge-kiro">📝 Kiro</span></p>
 <pre><code>在 scheduler.yaml 加入：
-- daily-tech-news：每天 09:00 自動產出科技日報
+- daily-tech-news：每天 09:00 科技日報
 - weekly-competitor-report：每週一 10:00 競品週報</code></pre>
 </div>
 
 <div class="step-card">
-<h3>Step 2：費用控管（10-20 min）</h3>
+<h3>Step 2：費用控管（10-18 min）</h3>
 <p><span class="badge badge-kiro">📝 Kiro</span></p>
 <pre><code>把 cost_guard 的 daily_limit_usd 改成 5.0，解釋超過會怎樣</code></pre>
 <p>✅ 超過 → 新任務被拒 + 通知 admin</p>
 </div>
 
 <div class="step-card">
-<h3>Step 3：重啟確認（20-25 min）</h3>
+<h3>Step 3：重啟確認（18-22 min）</h3>
 <p><span class="badge badge-term">💻 終端</span> <code>python start.py</code></p>
-<p><span class="badge badge-curl">🌐 curl</span> <code>curl http://localhost:33333/api/admin/schedules</code></p>
+<p><span class="badge badge-kiro">📝 Kiro</span> <code>確認排程已註冊，列出下次觸發時間</code></p>
 </div>
 
-<h4>後半段：驗證自動運作</h4>
+<h4>後半段：觸發 + 體驗迴圈</h4>
 
 <div class="step-card">
-<h3>Step 4：手動觸發 + 看迴圈效果（25-40 min）</h3>
-<p><span class="badge badge-curl">🌐 curl</span> 觸發週競品排程：</p>
-<pre><code>curl -X POST http://localhost:33333/api/admin/schedules/weekly-competitor-report/trigger</code></pre>
+<h3>Step 4：觸發排程 + 驗證（22-32 min）</h3>
+<p><span class="badge badge-kiro">📝 Kiro</span> <code>手動觸發 weekly-competitor-report 排程</code></p>
 <p><span class="badge badge-tg">📱 TG</span> market + designer + report 協作 → <code>/board</code> 看狀態 → <code>/costs</code> 看費用</p>
-<p><span class="badge badge-kiro">📝 Kiro</span> 確認產出寫入 knowledge/raw/ → ingest 後 Wiki 成長</p>
-<p>💡 <strong>迴圈：排程 → 產出 → 知識 → 更準 → ♻️</strong></p>
 </div>
 
 <div class="step-card">
-<h3>Step 5：遊戲部門上線 Checklist（40-50 min）</h3>
+<h3>Step 5：體驗迴圈 — 產出變知識（32-42 min）⭐</h3>
+<p><span class="badge badge-kiro">📝 Kiro</span></p>
+<pre><code>列出 knowledge/raw/ 最新的檔案</code></pre>
+<pre><code>匯入 knowledge/raw/ 最新的檔案到 Wiki</code></pre>
+<p><span class="badge badge-tg">📱 TG</span> 問「最新的捕魚機競品動態」→ 看到引用今天的報告 ✅</p>
+<p><span class="badge badge-kiro">📝 Kiro</span> 加 ingest 排程（每天 23:00 自動匯入）→ 迴圈完全自動</p>
+<p>💡 <strong>排程產出 → raw/ → ingest → Wiki → 引用 → 更準 → ♻️</strong></p>
+</div>
+
+<div class="step-card">
+<h3>Step 6：上線 Checklist（42-50 min）</h3>
 <p><span class="badge badge-kiro">📝 Kiro</span> <code>列出遊戲部門 AI 團隊正式上線 Checklist</code></p>
 <table>
-<tr><td>✅ 每日科技日報</td><td>✅ 每週競品分析</td><td>🔲 每月趨勢</td></tr>
-<tr><td>✅ 產出→raw/</td><td>🔲 每日 ingest</td><td>✅ 費用控管</td></tr>
+<tr><td>✅ 每日科技日報</td><td>✅ 每週競品分析</td><td>✅ 每日 ingest</td></tr>
+<tr><td>✅ 產出→raw/→Wiki</td><td>✅ 費用控管 $5/天</td><td>✅ 迴圈已驗證</td></tr>
 <tr><td>🔲 Docker 部署</td><td>🔲 備份策略</td><td>🔲 失敗告警</td></tr>
 </table>
-<p>💡 <strong>排程產出 = 知識成長 = 自演化</strong></p>
+<p>💡 <strong>你設定好迴圈，剩下的它自己來 = 自演化</strong></p>
 </div>
 
 </div>

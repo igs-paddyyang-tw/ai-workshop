@@ -42,7 +42,7 @@ python start.py
 | Session（per user） | A2A Protocol（Agent 間通訊） |
 | memory.py 寫 raw/ | 每 Agent 獨立 knowledge/ + 共用 |
 | python start.py | CoreDaemon 多進程 + watchdog |
-| FastAPI health | 21+ 端點 + Dashboard |
+| FastAPI health | 21+ 端點 + 排程 + 費控 |
 
 ---
 
@@ -57,10 +57,10 @@ Step 3: 設定 Telegram + .env
 Step 4: 啟動團隊 + 實戰派工
 
 ── Phase 2：營運落地（第五堂）─────────────────
-Step 5: Backend API 探索（21+ 端點）
-Step 6: Web Dashboard
-Step 7: A2A 協作 + TaskGraph 程式碼閱讀
-Step 8: 費用追蹤 + 排程管理 + 監控
+Step 5: 排程設定（scheduler.yaml）
+Step 6: 費用控管（cost_guard）
+Step 7: 觸發排程 + 迴圈體驗（產出→raw→ingest→Wiki→引用）
+Step 8: 上線 Checklist + ingest 排程自動化
 ```
 
 | Phase | 核心 Skill | 學什麼 |
