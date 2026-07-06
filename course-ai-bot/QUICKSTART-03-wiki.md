@@ -153,6 +153,11 @@ agents/admin-agent/knowledge/       ← 私有（只有 admin 能查到）
 
 # TG 上線驗證
 
+💡 **為什麼要在 TG 再驗一次？**
+- IDE 問 = Kiro 自己回答（不經過你的 Agent 系統）
+- TG 問 = 真的走 Agent 運作（SOUL + Wiki RAG + Planner + Memory）
+- TG 有 📚 引用 = **你建的系統在用你的知識庫回答**，不是 AI 亂猜
+
 💻 重啟：Ctrl+C → `python start.py`
 
 ## Step 4：TG 驗證舊知識（35-42 min）
