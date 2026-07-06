@@ -217,6 +217,12 @@ agents/market-agent/skills/ark-competitor-brief/SKILL.md，
 **做什麼**：重啟 Bot，在 TG 問同一個問題，觀察回答品質提升  
 **為什麼**：IDE 開發完 = 能力宣告寫好了。TG 驗證 = Agent 行為真的變了。
 
+💡 **為什麼 TG 能引用知識？**
+- `knowledge/wiki/` 已預放 3 篇競品分析（clone 就有）
+- Bot 啟動時 WikiEngine 會搜尋 wiki/ 目錄
+- 你的 Skill 定義了「讀 Wiki → SWOT 格式」的 SOP
+- **第三堂會教你怎麼自己 ingest 新知識 — 現在先用預設的**
+
 💻 重啟：Ctrl+C → `python start.py`
 
 📱 Telegram：
