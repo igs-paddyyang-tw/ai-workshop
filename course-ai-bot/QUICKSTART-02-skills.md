@@ -26,8 +26,8 @@ ark-grill-me → ark-superpowers → ark-skill-creator → ark-code-spec-validat
 
 ## Step 1：觀察能力不足（0-5 min）
 
-**做什麼**：在 IDE 確認 Agent 目前缺少「結構化競品分析」能力  
-**為什麼**：先知道「缺什麼」，再去「補什麼」
+**做什麼**：在 IDE 確認 Agent 目前缺少「結構化競品分析」的 SOP  
+**為什麼**：Agent 能引用 Wiki，但沒有固定格式（SWOT 四象限）— 需要 Skill 定義 SOP
 
 📝 Kiro IDE 輸入：
 ```
@@ -36,18 +36,19 @@ ark-grill-me → ark-superpowers → ark-skill-creator → ark-code-spec-validat
 ```
 
 ✅ 預期結果：
-- 回答沒有固定格式（不是 SWOT 四象限）
-- 沒有引用 knowledge/ 的資料
-- 內容靠 LLM 通用知識推測
+- 可能有提到一些優缺點（因為 wiki/ 有預放資料）
+- 但**格式不固定**（不一定是 SWOT 四象限）
+- 沒有統一的引用格式
+- **缺少「按什麼 SOP 做」的指引**
 
 📝 Kiro IDE 輸入：
 ```
 列出 agents/market-agent/skills/ 目前有什麼 SKILL.md
 ```
 
-✅ 預期：只有 `ark-market-research`（通用研究 SOP，沒有「競品簡報」能力）
+✅ 預期：只有 `ark-market-research`（通用研究 SOP，沒有「SWOT 競品簡報」的專屬流程）
 
-💡 **引出問題：Agent 不會「讀 Wiki 產出結構化簡報」→ 需要開發新 Skill。**
+💡 **引出問題：Agent 有知識（wiki/ 有資料），但缺少「怎麼用」的 SOP → 需要 Skill 定義結構化產出流程。**
 
 ---
 
@@ -163,10 +164,10 @@ ark-grill-me → ark-superpowers → ark-skill-creator → ark-code-spec-validat
 - ark-skill-creator 會讀 Spec → 自動產出對應步驟
 - 如果 SKILL.md 缺少 Spec 裡的驗收項 → Step 5 會抓到
 
-💡 **SKILL.md = 能力宣告**
-- 告訴 Gemini「遇到競品分析需求時，要按這個 SOP 做」
-- 讓回答從「泛泛推測」→「結構化 + 有引用」
-- 跟 03 的 Wiki 知識庫串接（讀 wiki/ 的資料產出簡報）
+💡 **SKILL.md = SOP 定義（告訴 Agent「怎麼用知識」）**
+- Wiki 有資料 ≠ Agent 知道怎麼整理（沒 Skill 格式隨機）
+- 有 SKILL.md → Agent 按 SOP 做：搜尋 → 分類 → 格式化 → 附引用
+- 跟 03 的 Wiki 知識庫串接（Skill 讀 wiki/ 的資料產出 SWOT）
 
 ---
 
@@ -232,12 +233,14 @@ agents/market-agent/skills/ark-competitor-brief/SKILL.md，
 
 | | Step 1（沒 Skill） | Step 6（有 Skill） |
 |---|---|---|
-| 格式 | 自由文字 | SWOT 四象限 |
-| 引用 | 沒有 | 有 📚 參考 |
-| 內容 | LLM 推測 | 基於 Wiki 知識 |
-| 可信度 | 低 | 高 |
+| 格式 | 隨機（可能有提到但不固定） | SWOT 四象限（固定結構） |
+| 引用 | 可能有但格式不統一 | 每點附 📚 來源（統一格式） |
+| 內容 | 有 Wiki 知識但組織鬆散 | 按 SOP 結構化產出 |
+| 建議 | 不一定有 | 有「📋 建議行動」段落 |
 
-💡 **Gemini 讀了新 SKILL.md → 知道要「查 Wiki + SWOT 格式 + 附引用」= 行為升級**
+💡 **差異不是「能不能引用 Wiki」，而是「有沒有 SOP」**
+- 沒 Skill = 知道東西但不知道怎麼整理
+- 有 Skill = 按固定流程產出 = 品質可預期、可驗收
 
 📱 加碼：問「Super Ace 的競品簡報」→ 觀察同樣的結構化輸出
 
