@@ -13,6 +13,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 header h1 { font-size: 1.2rem; color: var(--accent); }
 header nav a { color: var(--muted); text-decoration: none; margin-left: 1rem; font-size: 0.9rem; }
 header nav a:hover { color: var(--accent); }
+header nav a.active { color: var(--accent); }
 
 .container { max-width: 1000px; margin: 0 auto; padding: 1.5rem; }
 h2 { color: var(--accent); font-size: 1.3rem; margin: 1.5rem 0 0.8rem; }
@@ -52,8 +53,8 @@ tr:nth-child(even) { background: rgba(30,41,59,0.5); }
   <h1>⚙️ AI Bot — Admin</h1>
   <nav>
     <a href="/">💬 Chat</a>
-    <a href="/admin">⚙️ Admin</a>
-    <a href="/docs">📖 API</a>
+    <a href="/admin" class="active">⚙️ Admin</a>
+    <a href="/api-docs">📖 API</a>
   </nav>
 </header>
 
