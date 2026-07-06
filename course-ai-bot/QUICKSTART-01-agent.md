@@ -48,10 +48,51 @@ python start.py
 
 ---
 
-## Step 2：切換 Agent 體驗（5-15 min）
+## Step 2：IDE 探索 — 看開發者視角（5-10 min）
+
+**做什麼**：在 Kiro IDE 看根目錄的 SOUL 和 Agent 結構  
+**為什麼**：先理解「開發者看到什麼」，再去 TG 看「使用者體驗到什麼」
+
+📝 Kiro IDE 輸入：
+```
+打開 .kiro/steering/SOUL.md，告訴我這是什麼
+```
+
+✅ 預期：Kiro 解釋這是根目錄的 fallback SOUL（預設人格）
+
+📝 Kiro IDE 輸入：
+```
+列出 agents/ 目錄下每個 Agent 的 SOUL.md 第一行（身份描述）
+```
+
+✅ 預期：看到 8 個 Agent 各有不同的身份定義
+
+📝 Kiro IDE 輸入：
+```
+列出 src/skills/internal/ 有哪些 Skill，
+以及 agents/ 下每個 Agent 的 skills/ 有什麼 SKILL.md
+```
+
+✅ 預期：
+- `src/skills/internal/`：echo、news、summarize、translate（Bot 實際能執行的）
+- `agents/*/skills/`：各 Agent 的能力宣告（SKILL.md）
+
+💡 **開發者視角**：
+```
+.kiro/steering/SOUL.md           ← 根目錄 SOUL（fallback）
+agents/admin-agent/.kiro/steering/SOUL.md  ← 各 Agent 獨立 SOUL
+agents/admin-agent/skills/       ← 能力宣告
+src/skills/internal/             ← 實際執行邏輯
+```
+
+**接下來去 TG 看使用者體驗到什麼 ↓**
+
+---
+
+## Step 3：切換 Agent 體驗（10-18 min）
 
 **做什麼**：用 Telegram 切換 Agent，觀察人格差異  
-**為什麼**：親身感受「同一系統，不同 SOUL = 不同人格」
+**為什麼**：使用者不知道有 SOUL.md，只會感受到「這個 Bot 風格不同」
 
 📱 Telegram：
 1. `/agents` → 出現 8 個按鈕
@@ -70,7 +111,7 @@ python start.py
 
 ---
 
-## Step 3：修改 SOUL 體驗變化（15-30 min）⭐ 核心
+## Step 4：修改 SOUL 體驗變化（18-30 min）⭐ 核心
 
 **做什麼**：用 Kiro 改 SOUL，觀察 Bot 風格即時變化  
 **為什麼**：證明 SOUL.md 是控制行為的唯一入口
@@ -108,7 +149,7 @@ python start.py
 
 ---
 
-## Step 4：為多 Agent 設計獨特 SOUL（30-40 min）
+## Step 5：為多 Agent 設計獨特 SOUL（30-40 min）
 
 **做什麼**：用 Kiro 為不同 Agent 設計專屬人格  
 **為什麼**：每個 Agent 有獨立 SOUL = 各有所長
@@ -145,7 +186,7 @@ python start.py
 
 ---
 
-## Step 5：設計真實應用場景的 SOUL（40-50 min）
+## Step 6：設計真實應用場景的 SOUL（40-50 min）
 
 **做什麼**：為真實業務場景設計 SOUL  
 **為什麼**：這才是帶走的核心能力 — 把 SOUL 用在工作中
