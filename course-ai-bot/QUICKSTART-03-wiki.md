@@ -10,7 +10,8 @@
 
 ## 📋 前置條件
 
-- samples/ai-bot 能跑 + GEMINI_API_KEY 已設定
+- 已完成第一堂（samples/ai-bot 能跑 + GEMINI_API_KEY 已設定）
+- Kiro IDE（含 .kiro/skills/ark-wiki-engine）
 
 ## 使用的功能
 
