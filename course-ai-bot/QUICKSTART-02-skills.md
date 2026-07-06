@@ -123,6 +123,11 @@ ark-grill-me → ark-superpowers → ark-skill-creator → ark-code-spec-validat
 - frontmatter：`name: ark-news-scraper` + description 包含觸發詞
 - 步驟跟 Spec 的功能需求一致
 
+💡 **SKILL.md = 能力宣告（說明這個 Agent「會什麼」）**
+- 讓 pm-agent 知道可以把什麼任務分配給它
+- 讓其他開發者知道這個 Skill 的輸入/輸出/驗收標準
+- 實際執行邏輯在 scripts/ 或 src/skills/ 中（進階）
+
 ---
 
 ## Step 5：驗證一致性（45-50 min）

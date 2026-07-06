@@ -12,11 +12,33 @@
 
 - samples/ai-bot 能跑 + GEMINI_API_KEY 已設定
 
-## 使用的 Skill
+## 使用的功能
 
-| Skill | 觸發方式 |
-|-------|---------|
-| `ark-wiki-engine` | 📝「匯入知識」「查知識」「Wiki 健康檢查」 |
+| 功能 | 觸發方式 | 位置 |
+|------|---------|------|
+| Wiki 匯入 | 📝「匯入知識到 Wiki」或 `curl /api/v1/wiki/ingest` | 全域 knowledge/ |
+| Wiki 查詢 | 📱 TG 直接問（自動查）或 `curl /api/v1/wiki/query` | 先私有再全域 |
+| Wiki 檢查 | 📝「檢查 Wiki 健康度」或 `curl /api/v1/wiki/lint` | 全域 knowledge/ |
+
+### 📂 知識庫架構（兩層）
+
+```
+knowledge/                          ← 全域（所有 Agent 共用）
+├── raw/                            ← 丟文件的地方
+│   ├── ocean-king-analysis.md
+│   ├── super-ace-analysis.md
+│   └── fishing-vs-slot-comparison.md
+└── wiki/                           ← ingest 後 → TG 能查到
+
+agents/admin-agent/knowledge/       ← 私有（只有 admin 能查到）
+├── raw/                            ← memory 自動寫入的對話記錄
+└── wiki/                           ← 私有 ingest 後
+```
+
+**規則**：
+- TG 問問題 → 先查私有 wiki → 再查全域 wiki → 合併回答
+- 全域 = 公司共用知識（競品分析、SOP）
+- 私有 = Agent 的對話記憶（越聊越懂你）
 
 ---
 
@@ -149,10 +171,10 @@
 
 ---
 
-## Step 5：自演化觀察（45-50 min）
+## Step 5：自演化觀察 — 私有記憶成長（45-50 min）
 
-**做什麼**：觀察 memory 自動記錄 + 理解成長循環  
-**為什麼**：不只是「丟文件進去」，Agent 會自己從對話中學習
+**做什麼**：觀察 memory 自動記錄到私有知識庫 + 理解兩層成長  
+**為什麼**：全域知識你手動加，私有知識 Agent 自動累積 — 雙線成長
 
 📝 Kiro IDE 輸入：
 ```
@@ -160,24 +182,28 @@
 ```
 
 ✅ 預期結果：
-- 看到今天對話的 memory 檔案
-- 打開看：記錄了 user_id + 問題 + Agent 的回答
+- 看到今天對話的 memory 檔案（如 `2026-07-06_1030_user123.md`）
+- 這是 Agent 自動記錄的（你沒手動丟，它自己寫的）
 
 📝 Kiro IDE 問：
 ```
-如果我把這些 memory 定期 ingest 到 Wiki，
-Agent 會越來越了解使用者常問什麼、偏好什麼。
-這個循環怎麼設定自動化？
+解釋兩層知識庫的成長循環：
+- 全域：我丟文件 → ingest → 所有 Agent 能引用
+- 私有：每次對話 → memory 自動記 → ingest 後只有該 Agent 能引用
+這兩層怎麼讓系統越用越聰明？
 ```
 
 ✅ 理解重點：
 ```
-使用者對話 → memory 自動記錄
-    → 定期 ingest → Wiki 成長
-    → 下次回答更精準
-    → Agent 越用越聰明 = 自演化
+全域知識（你手動加）：
+  丟文件 → knowledge/raw/ → ingest → wiki/ → 全 Agent 引用
 
-這就是「學完帶走後，系統會自己成長」的核心價值。
+私有記憶（Agent 自動累積）：
+  對話 → memory → agents/{agent}/knowledge/raw/
+      → ingest → agents/{agent}/knowledge/wiki/
+      → 只有該 Agent 引用（越聊越懂你）
+
+雙線成長 = 自演化
 ```
 
 ---
