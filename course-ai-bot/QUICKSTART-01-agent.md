@@ -53,17 +53,19 @@ python start.py
   📦 Skills: 5 個
   📚 知識庫: 3 篇
   🧠 SOUL: ✅ 已載入
+  🤖 Bot: @your_bot_name 已連線
   🤖 Bot: polling 啟動
 
   🚀 http://localhost:8000
 ```
 
-**確認 3 個 ✅**：
-- Tier 0 ✅ → Skills + Wiki + API 可用
-- Tier 1 ✅ → Telegram Bot 已連線
-- Tier 2 ✅ → Gemini AI 可用（有 RAG）
+**確認成功的 3 個關鍵**：
+- 3 個 Tier 都 ✅
+- 「@your_bot_name 已連線」→ Token 有效、TG 能通
+- 「🚀 http://localhost:8000」→ API 也能用
 
-⚠️ 如果 Tier 1 顯示 ⬚ → 確認 .env 的 TELEGRAM_BOT_TOKEN
+⚠️ 如果顯示「❌ Bot Token 無效」→ 確認 .env 的 TELEGRAM_BOT_TOKEN
+⚠️ 如果顯示「❌ Bot 連線失敗」→ 網路問題
 ⚠️ 如果 Tier 2 顯示 ⬚ → 確認 .env 的 GEMINI_API_KEY
 
 📱 Telegram 確認 Bot 活著：

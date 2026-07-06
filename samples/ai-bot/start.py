@@ -39,6 +39,22 @@ def main() -> None:
 
     # Bot
     if tg_token:
+        # 先驗證 Token 有效
+        import httpx
+        try:
+            resp = httpx.get(f"https://api.telegram.org/bot{tg_token}/getMe", timeout=10)
+            bot_info = resp.json()
+            if bot_info.get("ok"):
+                bot_name = bot_info["result"]["username"]
+                print(f"  🤖 Bot: @{bot_name} 已連線")
+            else:
+                print(f"  ❌ Bot Token 無效: {bot_info.get('description', '未知錯誤')}")
+                tg_token = ""  # 跳過啟動
+        except Exception as e:
+            print(f"  ❌ Bot 連線失敗: {e}")
+            tg_token = ""
+
+    if tg_token:
         from src.bot.main import create_app
         bot_app = create_app()
 
@@ -50,7 +66,8 @@ def main() -> None:
         t.start()
         print(f"  🤖 Bot: polling 啟動")
     else:
-        print(f"  ⚠️  無 TG Token → 僅 API 模式")
+        if not os.getenv("TELEGRAM_BOT_TOKEN", ""):
+            print(f"  ⚠️  無 TG Token → 僅 API 模式")
 
     print(f"\n  🚀 http://localhost:8000")
     print()
