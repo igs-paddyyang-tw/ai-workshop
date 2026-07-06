@@ -41,10 +41,30 @@ python start.py
 ```
 
 ✅ 預期結果：
-- 「📦 Skills: 5 個」
-- 「🤖 Bot: polling 啟動」
+```
+══════════════════════════════════════════════════
+  🤖 課程 A — 個體 Agent
+══════════════════════════════════════════════════
+  Tier 0: ✅ Skills + Wiki + API（永遠可用）
+  Tier 1: ✅ Telegram Bot
+  Tier 2: ✅ Gemini AI + RAG
+══════════════════════════════════════════════════
 
-⚠️ 如果不成功：`No module` → 確認 venv；Bot 沒回應 → 確認 Token
+  📦 Skills: 5 個
+  📚 知識庫: 3 篇
+  🧠 SOUL: ✅ 已載入
+  🤖 Bot: polling 啟動
+
+  🚀 http://localhost:8000
+```
+
+**確認 3 個 ✅**：
+- Tier 0 ✅ → Skills + Wiki + API 可用
+- Tier 1 ✅ → Telegram Bot 已連線
+- Tier 2 ✅ → Gemini AI 可用（有 RAG）
+
+⚠️ 如果 Tier 1 顯示 ⬚ → 確認 .env 的 TELEGRAM_BOT_TOKEN
+⚠️ 如果 Tier 2 顯示 ⬚ → 確認 .env 的 GEMINI_API_KEY
 
 ---
 
