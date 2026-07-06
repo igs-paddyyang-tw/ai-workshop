@@ -76,13 +76,23 @@ agents/admin-agent/knowledge/       ← 私有（只有 admin 能查到）
 
 📝 Kiro IDE 輸入：
 ```
-匯入 knowledge/raw/ 的所有文件到 Wiki
+把根目錄 knowledge/raw/ 的 3 篇 .md 檔案匯入到根目錄 knowledge/wiki/
+（不是 agents/ 下的，是專案根目錄的 knowledge/）
+
+具體操作：
+1. 讀取 knowledge/raw/ 所有 .md
+2. 確認有 frontmatter，沒有的話補上
+3. 寫入 knowledge/wiki/
+4. 更新 knowledge/index.md
 ```
 
-→ Kiro 呼叫 ingest API（或直接執行 WikiEngine.ingest()）
+→ Kiro 執行匯入（或提示你跑 `curl -X POST http://localhost:8000/api/v1/wiki/ingest`）
+
+⚠️ 如果 Kiro 把檔案放到 agents/ 下 → 提醒它：「不對，要放根目錄 knowledge/wiki/，不是 agent 的私有目錄」
 
 ✅ 預期結果：
-- 「已匯入 3 篇：ocean-king-analysis.md, super-ace-analysis.md, fishing-vs-slot-comparison.md」
+- `knowledge/wiki/` 出現 3 個 .md（ocean-king-analysis.md 等）
+- `knowledge/index.md` 更新（列出 3 篇）
 
 📝 在 Kiro 內驗證（不需要開 Telegram）：
 ```
@@ -122,7 +132,8 @@ agents/admin-agent/knowledge/       ← 私有（只有 admin 能查到）
 
 📝 匯入：
 ```
-匯入剛建立的文件到 Wiki
+把剛建立的 knowledge/raw/slot-market-trends.md 匯入到根目錄 knowledge/wiki/
+並更新 knowledge/index.md
 ```
 
 📝 在 Kiro 內驗證：
@@ -153,10 +164,11 @@ agents/admin-agent/knowledge/       ← 私有（只有 admin 能查到）
 
 📝 Kiro IDE 輸入：
 ```
-查詢 Wiki「Ocean King 3 跟 Ocean King 2 有什麼差別」
+搜尋根目錄 knowledge/wiki/ 中包含「Ocean King」的檔案，
+列出匹配的內容片段
 ```
 
-✅ 確認：有找到結果 + 有具體差異描述 → OK，可以上線
+✅ 確認：有找到 ocean-king-analysis.md 的內容 → OK，可以上線
 
 💻 重啟：Ctrl+C → `python start.py`
 
