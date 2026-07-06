@@ -113,44 +113,55 @@ agents/admin-agent/knowledge/       ← 私有（只有 admin 能查到）
 
 ---
 
-## Step 3：建自己的知識 + Kiro 內驗證（20-35 min）
+## Step 3：用 AI 產出新知識（20-35 min）
 
-**做什麼**：用 Kiro 建一份新的競品分析文件，匯入後確認能查到  
-**為什麼**：確認「教它新東西」的流程可行 — 你加什麼資料，它就能回答什麼
+**做什麼**：讓 Kiro 搜尋網路 → 整理成知識文件 → 匯入 Wiki  
+**為什麼**：不是手動寫內容，而是用 AI 的搜尋能力產出知識 — 這才是正確的工作方式
 
 📝 Kiro IDE 輸入：
 ```
-在 knowledge/raw/ 建立 slot-market-trends.md：
-2024-2025 老虎機市場趨勢分析，包含：
-- 東南亞市場成長數據（菲律賓為主力市場）
-- 玩法趨勢：Cascading Reels + Megaways 成主流
-- 美術風格：從寫實轉向卡通/Q版
-- 營收模式：Free-to-Play + IAP vs 幣商模式
-- 競爭格局：JILI、PG Soft、Pragmatic Play 三強鼎立
-要有 frontmatter（title, type, tags, created）
+幫我搜尋 2024-2025 老虎機市場最新趨勢，
+整理成一份知識文件存到 knowledge/raw/slot-market-trends.md
+
+要求：
+- 搜尋真實資料（市場規模、主要玩家、玩法趨勢）
+- 用 frontmatter 格式（title, type: market-research, tags, created）
+- 內容分段：市場概況 / 主要玩家 / 玩法趨勢 / 營收模式
+- 附上資料來源
+```
+
+→ Kiro 會：
+1. 跑 web search 抓真實資料
+2. 整理成結構化 .md
+3. 存到 knowledge/raw/slot-market-trends.md
+
+📝 確認產出：
+```
+打開 knowledge/raw/slot-market-trends.md，確認有 frontmatter 和實際數據
 ```
 
 📝 匯入：
 ```
-把剛建立的 knowledge/raw/slot-market-trends.md 匯入到根目錄 knowledge/wiki/
+把 knowledge/raw/slot-market-trends.md 匯入到根目錄 knowledge/wiki/
 並更新 knowledge/index.md
 ```
 
-📝 在 Kiro 內驗證：
+📝 驗證能查到：
 ```
-查詢「東南亞老虎機市場誰是主要玩家」
+搜尋 knowledge/wiki/ 中關於「老虎機市場」的內容
 ```
 
 ✅ 預期結果：
-- 回傳 JILI、PG Soft、Pragmatic Play 的相關資訊
-- 來源標記 slot-market-trends
+- 找到 slot-market-trends.md 的內容
+- 包含真實的市場數據（不是你手寫的）
 
-📝 再試一個：
-```
-查詢「Cascading Reels 是什麼玩法」
-```
+💡 **這才是正確的知識建構流程**：AI 搜尋 → 整理 → 存檔 → ingest → 可查詢
 
-✅ 預期：匹配到趨勢分析中的玩法說明
+📝 加碼（如果有時間）：
+```
+再搜尋「捕魚機遊戲 2024 最新動態」，
+整理成 knowledge/raw/fishing-game-2024.md 並匯入
+```
 
 💡 **到這裡，開發者端確認完成 — 知識庫有效、查詢正確。**
 
