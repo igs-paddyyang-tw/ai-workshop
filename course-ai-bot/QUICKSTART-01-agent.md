@@ -76,6 +76,8 @@ python start.py
 
 ---
 
+# IDE 開發
+
 ## Step 2：IDE 探索 — 看專案結構（5-10 min）
 
 **做什麼**：在 Kiro IDE 看專案的核心目錄  
@@ -231,6 +233,8 @@ knowledge/wiki/               → RAG 用的結構化知識
 ✅ 預期：指出 15% 偏低 + 行業對比 + 可能原因 + 建議
 
 ---
+
+# TG 上線驗證
 
 ## Step 6：TG 上線驗證（40-50 min）
 

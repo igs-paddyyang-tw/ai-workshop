@@ -42,31 +42,30 @@ agents/admin-agent/knowledge/       ← 私有（只有 admin 能查到）
 
 ---
 
-# 前半段：Kiro IDE 開發 + 驗證（開發者視角）
+# IDE 開發
 
-## Step 1：建立基準 — 還沒 ingest 的狀態（0-5 min）
+## Step 1：確認 Wiki 是空的（0-5 min）
 
-**做什麼**：在 Kiro 內問一個問題，確認 Wiki 還是空的  
+**做什麼**：確認 knowledge/wiki/ 還沒有內容  
 **為什麼**：raw/ 有素材 ≠ Agent 能引用。要先 ingest 才能查到。
 
 📝 Kiro IDE 輸入：
-```
-查詢 Wiki「Ocean King 系列捕魚機跟競品的差異」
-```
-
-✅ 預期結果：
-- 「Wiki 中沒有找到相關內容」
-- knowledge/raw/ 有 3 篇檔案，但 knowledge/wiki/ 是空的
-- **素材存在 ≠ 知識可用。還沒 ingest = Agent 不知道。**
-
-📝 確認狀態：
 ```
 列出 knowledge/raw/ 和 knowledge/wiki/ 各有什麼檔案
 ```
 
 ✅ 預期：
-- raw/：ocean-king-analysis.md、super-ace-analysis.md、fishing-vs-slot-comparison.md（3 篇素材）
+- raw/：3 篇素材（ocean-king-analysis.md、super-ace-analysis.md、fishing-vs-slot-comparison.md）
 - wiki/：空的（還沒匯入）
+
+💡 **素材存在 ≠ 知識可用。raw/ 是原料，wiki/ 是成品。**
+
+📝 驗證 TG 也查不到：
+```
+📱 TG → Market →「Ocean King 3 跟 2 有什麼差別？」
+```
+
+✅ 預期：回答泛泛（沒有「📚 參考」引用）= Wiki 還沒生效
 
 ---
 
@@ -80,7 +79,7 @@ agents/admin-agent/knowledge/       ← 私有（只有 admin 能查到）
 匯入 knowledge/raw/ 的所有文件到 Wiki
 ```
 
-→ 觸發 ark-wiki-engine ingest
+→ Kiro 呼叫 ingest API（或直接執行 WikiEngine.ingest()）
 
 ✅ 預期結果：
 - 「已匯入 3 篇：ocean-king-analysis.md, super-ace-analysis.md, fishing-vs-slot-comparison.md」
@@ -144,9 +143,11 @@ agents/admin-agent/knowledge/       ← 私有（只有 admin 能查到）
 
 💡 **到這裡，開發者端確認完成 — 知識庫有效、查詢正確。**
 
+💡 **跟第二堂的串接**：02 開發的 `ark-competitor-brief` Skill 會讀 knowledge/wiki/ 產出 SWOT 簡報 — 你現在匯入的知識，就是那個 Skill 的資料來源。
+
 ---
 
-# 後半段：Telegram 上線驗證（使用者 / 第三方視角）
+# TG 上線驗證
 
 ## Step 4：Telegram 驗證 — 使用者能拿到答案（35-45 min）
 
@@ -224,4 +225,4 @@ agents/admin-agent/knowledge/       ← 私有（只有 admin 能查到）
 
 ---
 
-*本堂重點：Kiro 驗證 = 開發 OK。Telegram 驗證 = 上線 OK。自演化 = 越用越聰明。*
+*本堂重點：IDE 開發知識庫。TG 驗證上線。自演化 = 越用越聰明。*

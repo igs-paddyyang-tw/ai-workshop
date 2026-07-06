@@ -22,7 +22,7 @@ ark-grill-me → ark-superpowers → ark-skill-creator → ark-code-spec-validat
 
 ---
 
-# 前半段：Kiro IDE 開發（Spec-Driven 完整迴圈）
+# IDE 開發
 
 ## Step 1：觀察能力不足（0-5 min）
 
@@ -197,7 +197,7 @@ ark-grill-me → ark-superpowers → ark-skill-creator → ark-code-spec-validat
 
 ---
 
-# 後半段：TG 上線驗證（使用者視角）
+# TG 上線驗證
 
 ## Step 6：TG 驗證 — Skill 有用（50-55 min）
 
