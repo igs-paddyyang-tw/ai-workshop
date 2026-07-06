@@ -60,9 +60,9 @@ python start.py
 ```
 
 **確認成功的 3 個關鍵**：
-- 3 個 Tier 都 ✅
-- 「@your_bot_name 已連線」→ Token 有效、TG 能通
-- 「🚀 http://localhost:8000」→ API 也能用
+- 3 個 Tier 都 ✅ → 程式啟動正常
+- 「@your_bot_name 已連線」→ Token 有效
+- 📱 **TG 打 `/start` 有回應 → 真的能用了**
 
 ⚠️ 如果顯示「❌ Bot Token 無效」→ 確認 .env 的 TELEGRAM_BOT_TOKEN
 ⚠️ 如果顯示「❌ Bot 連線失敗」→ 網路問題
@@ -70,8 +70,8 @@ python start.py
 
 📱 Telegram 確認 Bot 活著：
 - 打開你的 Bot → 輸入 `/start`
-- 收到「🤖 AI Agent 已就緒！」= 確認成功
-- 沒回應 → Token 錯誤或網路問題
+- 收到「🤖 AI Agent 已就緒！」= ✅ 啟動成功
+- 沒回應 → 確認 Token 正確 + 網路正常
 
 ---
 
