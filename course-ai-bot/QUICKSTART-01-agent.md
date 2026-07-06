@@ -76,71 +76,32 @@ python start.py
 
 ---
 
-## Step 2：IDE 探索 — 看開發者視角（5-10 min）
+## Step 2：IDE 探索 — 看專案結構（5-10 min）
 
-**做什麼**：在 Kiro IDE 看根目錄的 SOUL 和 Agent 結構  
-**為什麼**：先理解「開發者看到什麼」，再去 TG 看「使用者體驗到什麼」
-
-📝 Kiro IDE 輸入：
-```
-打開 .kiro/steering/SOUL.md，告訴我這是什麼
-```
-
-✅ 預期：Kiro 解釋這是根目錄的 fallback SOUL（預設人格）
+**做什麼**：在 Kiro IDE 看專案的核心目錄  
+**為什麼**：先知道「東西放哪」，後面改東西才不迷路
 
 📝 Kiro IDE 輸入：
 ```
-列出 agents/ 目錄下每個 Agent 的 SOUL.md 第一行（身份描述）
+列出這個專案的核心目錄結構，一句話說明每個的用途
 ```
 
-✅ 預期：看到 8 個 Agent 各有不同的身份定義
-
-📝 Kiro IDE 輸入：
+✅ 預期 Kiro 回覆：
 ```
-列出 src/skills/internal/ 有哪些 Skill，
-以及 agents/ 下每個 Agent 的 skills/ 有什麼 SKILL.md，
-解釋這兩種 Skill 的差異
-```
-
-✅ 預期 Kiro 解釋：
-
-| | `src/skills/internal/*.py` | `agents/*/skills/SKILL.md` |
-|---|---|---|
-| 本質 | Python 程式碼 | Markdown 文件 |
-| 執行者 | 機器（Python runtime） | LLM（讀文件後照做） |
-| 觸發方式 | 使用者指令 → Bot 呼叫函式 | 使用者意圖 → LLM 匹配 → 按步驟回覆 |
-| 輸出 | 程式回傳值（JSON / 字串） | LLM 生成的文字（照格式模板） |
-| 範例 | `news.py` 真的去抓 RSS | `ark-market-research` 告訴 LLM「去搜尋多源新聞」 |
-
-💡 **簡單比喻**：
-- `src/skills/internal/` = 工具箱裡的「實際工具」（螺絲起子、扳手）
-- `agents/*/SKILL.md` = 師傅的「工作 SOP」（何時用什麼工具、步驟順序）
-
-💡 **實際流程**：
-```
-使用者：「幫我查今天的 AI 新聞」
-→ Admin 分流到 Market Agent
-→ Market 讀 SKILL.md（知道要多源搜尋、格式化輸出）
-→ 執行時呼叫 src/skills/internal/news.py（真的去抓資料）
-→ 按 SKILL.md 的輸出格式回覆使用者
+.kiro/steering/SOUL.md        → 預設人格（fallback）
+agents/*/SOUL.md              → 各 Agent 獨立人格
+agents/*/skills/SKILL.md      → Agent 的工作 SOP（Markdown）
+src/skills/internal/*.py      → 實際執行工具（Python）
+knowledge/raw/                → 知識素材
+knowledge/wiki/               → RAG 用的結構化知識
 ```
 
-💡 **設計意圖**：
-- internal skills → 確定性高的操作寫成程式碼（不浪費 token）
-- SKILL.md → 需要彈性判斷的流程用自然語言描述（給 LLM 方法論）
-- **兩者互補，不是替代關係**
+💡 **一句話記住**：
+- **SOUL** = 它是誰（人格）
+- **SKILL.md** = 它怎麼做（SOP）
+- **internal/*.py** = 真正做事的工具
 
-⚠️ **目前 vs 未來（誠實說）**：
-
-| | 目前的 ai-bot（課程 A） | 課程 B 的 ai-team-agent |
-|---|---|---|
-| Agent 切換 | 使用者手動（/agents 按鈕） | pm-agent 自動判斷 |
-| Skill 觸發 | 關鍵字匹配（`"新聞" in text`） | LLM 語意匹配（Discovery） |
-| SOUL 有效 | ✅ 控制回答風格（這堂課焦點） | ✅ + 控制分工角色 |
-| 分流 | ❌ 沒有自動分流 | ✅ TaskGraph 自動拆解 |
-
-**本堂課學的是「零件」**：SOUL + SKILL.md + internal skill
-**課程 B 學的是「黏合劑」**：讓零件自動串起來（Agent orchestration）
+⚠️ 本堂聚焦 **SOUL 設計**。SKILL 在第二堂展開，自動串接在第四堂。
 
 **接下來去 TG 看使用者體驗到什麼 ↓**
 
