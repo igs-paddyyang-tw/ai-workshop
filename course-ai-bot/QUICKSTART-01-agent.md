@@ -98,20 +98,37 @@ python start.py
 📝 Kiro IDE 輸入：
 ```
 列出 src/skills/internal/ 有哪些 Skill，
-以及 agents/ 下每個 Agent 的 skills/ 有什麼 SKILL.md
+以及 agents/ 下每個 Agent 的 skills/ 有什麼 SKILL.md，
+解釋這兩種 Skill 的差異
 ```
 
-✅ 預期：
-- `src/skills/internal/`：echo、news、summarize、translate（Bot 實際能執行的）
-- `agents/*/skills/`：各 Agent 的能力宣告（SKILL.md）
+✅ 預期 Kiro 解釋：
 
-💡 **開發者視角**：
+| | `src/skills/internal/*.py` | `agents/*/skills/SKILL.md` |
+|---|---|---|
+| 本質 | Python 程式碼 | Markdown 文件 |
+| 執行者 | 機器（Python runtime） | LLM（讀文件後照做） |
+| 觸發方式 | 使用者指令 → Bot 呼叫函式 | 使用者意圖 → LLM 匹配 → 按步驟回覆 |
+| 輸出 | 程式回傳值（JSON / 字串） | LLM 生成的文字（照格式模板） |
+| 範例 | `news.py` 真的去抓 RSS | `ark-market-research` 告訴 LLM「去搜尋多源新聞」 |
+
+💡 **簡單比喻**：
+- `src/skills/internal/` = 工具箱裡的「實際工具」（螺絲起子、扳手）
+- `agents/*/SKILL.md` = 師傅的「工作 SOP」（何時用什麼工具、步驟順序）
+
+💡 **實際流程**：
 ```
-.kiro/steering/SOUL.md           ← 根目錄 SOUL（fallback）
-agents/admin-agent/.kiro/steering/SOUL.md  ← 各 Agent 獨立 SOUL
-agents/admin-agent/skills/       ← 能力宣告
-src/skills/internal/             ← 實際執行邏輯
+使用者：「幫我查今天的 AI 新聞」
+→ Admin 分流到 Market Agent
+→ Market 讀 SKILL.md（知道要多源搜尋、格式化輸出）
+→ 執行時呼叫 src/skills/internal/news.py（真的去抓資料）
+→ 按 SKILL.md 的輸出格式回覆使用者
 ```
+
+💡 **設計意圖**：
+- internal skills → 確定性高的操作寫成程式碼（不浪費 token）
+- SKILL.md → 需要彈性判斷的流程用自然語言描述（給 LLM 方法論）
+- **兩者互補，不是替代關係**
 
 **接下來去 TG 看使用者體驗到什麼 ↓**
 
