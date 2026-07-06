@@ -66,6 +66,11 @@ python start.py
 ⚠️ 如果 Tier 1 顯示 ⬚ → 確認 .env 的 TELEGRAM_BOT_TOKEN
 ⚠️ 如果 Tier 2 顯示 ⬚ → 確認 .env 的 GEMINI_API_KEY
 
+📱 Telegram 確認 Bot 活著：
+- 打開你的 Bot → 輸入 `/start`
+- 收到「🤖 AI Agent 已就緒！」= 確認成功
+- 沒回應 → Token 錯誤或網路問題
+
 ---
 
 ## Step 2：IDE 探索 — 看開發者視角（5-10 min）
