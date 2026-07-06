@@ -1,13 +1,18 @@
-"""Agent CLI — 透過 kiro-cli 執行對話（支援多 Agent）。
+"""Agent CLI — 8 Agent 常駐服務（使用 AgentProcess）。
 
-Agent 清單定義在此，session 管理由 session.py 負責。
+啟動時建立 8 個 AgentProcess，對話時透過 send() 排隊執行。
+架構與 ai-team-agent 完全一致。
 """
 from __future__ import annotations
 
 import asyncio
-import re
+import logging
 import shutil
 from pathlib import Path
+
+from src.agent.process import AgentProcess
+
+log = logging.getLogger("agent-cli")
 
 # ── 可用 Agent 清單 ──
 AVAILABLE_AGENTS = {
@@ -61,65 +66,101 @@ AVAILABLE_AGENTS = {
     },
 }
 
+# ── Agent 服務管理 ──
+
+_agents: dict[str, AgentProcess] = {}
+_started: bool = False
+
 
 def is_cli_available() -> bool:
     """檢查 kiro-cli 是否已安裝。"""
     return shutil.which("kiro-cli") is not None
 
 
+async def start_all_agents() -> int:
+    """啟動 8 個 Agent 常駐服務。回傳成功數量。"""
+    global _started
+    if _started:
+        return len(_agents)
+    if not is_cli_available():
+        log.info("kiro-cli 未安裝，跳過 Agent 服務啟動")
+        return 0
+
+    count = 0
+    for agent_id, info in AVAILABLE_AGENTS.items():
+        name = f"{agent_id}-agent"
+        working_dir = info["dir"]
+        proc = AgentProcess(
+            name=name,
+            working_dir=working_dir,
+            model="auto",
+            skip_resume=True,
+        )
+        proc.timeout = 120  # 個體模式不需要太長
+        await proc.start()
+        _agents[agent_id] = proc
+        count += 1
+
+    _started = True
+    log.info("All %d agents started", count)
+    return count
+
+
+async def stop_all_agents() -> None:
+    """停止所有 Agent。"""
+    global _started
+    for proc in _agents.values():
+        await proc.kill()
+    _agents.clear()
+    _started = False
+
+
 async def agent_cli_chat(
     message: str,
     *,
     agent_id: str = "admin",
-    timeout: int = 60,
+    timeout: int = 120,
 ) -> str | None:
-    """透過 kiro-cli 執行對話。
+    """透過 AgentProcess 執行對話。
 
-    Args:
-        message: 使用者訊息
-        agent_id: 指定 Agent（決定 working_dir → .kiro/）
-        timeout: 超時秒數
+    如果服務已啟動 → 用 send()（排隊執行）
+    如果服務沒啟動 → fallback 到直接 subprocess
     """
+    # 優先用常駐服務
+    proc = _agents.get(agent_id)
+    if proc and proc.is_alive():
+        result = await proc.send(message)
+        return result if result and result != "queued" else None
+
+    # Fallback: 直接 subprocess（相容舊行為）
     if not is_cli_available():
         return None
 
     info = AVAILABLE_AGENTS.get(agent_id, AVAILABLE_AGENTS["admin"])
     working_dir = Path(info["dir"])
-
-    # 確認 .kiro/ 存在
     if not (working_dir / ".kiro" / "steering" / "SOUL.md").exists():
         working_dir = Path(".")
 
     try:
-        proc = await asyncio.create_subprocess_exec(
+        import re
+        proc_sub = await asyncio.create_subprocess_exec(
             "kiro-cli", "chat",
-            "--trust-all-tools",
-            "--legacy-ui",
+            "--no-interactive", "--trust-all-tools",
             "--message", message,
             cwd=str(working_dir),
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
         stdout, stderr = await asyncio.wait_for(
-            proc.communicate(), timeout=timeout
+            proc_sub.communicate(), timeout=timeout
         )
-
-        if proc.returncode != 0:
+        if proc_sub.returncode != 0:
             return None
-
         output = stdout.decode("utf-8").strip()
-        output = _clean_output(output)
-        return output if output else None
-
+        output = re.sub(r"\x1b\[[0-9;]*m", "", output)
+        lines = [line for line in output.split("\n") if line.strip()]
+        return "\n".join(lines) if lines else None
     except asyncio.TimeoutError:
-        proc.kill()
         return None
     except Exception:
         return None
-
-
-def _clean_output(text: str) -> str:
-    """移除 ANSI escape codes。"""
-    text = re.sub(r"\x1b\[[0-9;]*m", "", text)
-    lines = [line for line in text.split("\n") if line.strip()]
-    return "\n".join(lines)

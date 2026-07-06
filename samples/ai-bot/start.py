@@ -76,6 +76,21 @@ def main() -> None:
         if not os.getenv("TELEGRAM_BOT_TOKEN", ""):
             print(f"  ⚠️  無 TG Token → 僅 API 模式")
 
+    # Agent 常駐服務（有裝 kiro-cli 時啟動 8 Agent）
+    from src.agent.cli import is_cli_available, start_all_agents
+    if is_cli_available():
+        import asyncio
+
+        async def _start_agents():
+            return await start_all_agents()
+
+        loop = asyncio.new_event_loop()
+        agent_count = loop.run_until_complete(_start_agents())
+        loop.close()
+        print(f"  🧠 Agent 服務: {agent_count} 個已啟動（kiro-cli）")
+    else:
+        print(f"  🧠 Agent 服務: ⬚（kiro-cli 未安裝，使用 Gemini fallback）")
+
     print(f"\n  🚀 API:  http://localhost:8000")
     print(f"  📖 Docs: http://localhost:8000/docs")
     print()
