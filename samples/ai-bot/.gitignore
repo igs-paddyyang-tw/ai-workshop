@@ -2,7 +2,9 @@
 __pycache__/
 *.pyc
 .env
-knowledge/wiki/*.md
-!knowledge/wiki/.gitkeep
+knowledge/wiki/slot-market-trends.md
+!knowledge/wiki/ocean-king-analysis.md
+!knowledge/wiki/super-ace-analysis.md
+!knowledge/wiki/fishing-vs-slot-comparison.md
 logs/*.log
 bot.pid
