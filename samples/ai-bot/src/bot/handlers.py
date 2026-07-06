@@ -188,6 +188,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         skill_args = parts[1] if len(parts) > 1 else ""
         result = await _execute_skill_by_id(skill_id, skill_args)
         if result is not None:
+            result = _clean_output(result)
             session.add_turn("agent", result)
             await save_memory(current_agent, user_id, text, result)
             await _set_reaction(update.message, "👍")
@@ -202,6 +203,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     if plan.intent == IntentType.SKILL and plan.skill_id:
         reply = await _execute_skill_by_id(plan.skill_id, text)
         if reply:
+            reply = _clean_output(reply)
             session.add_turn("agent", reply)
             await save_memory(current_agent, user_id, text, reply)
             await _set_reaction(update.message, "👍")
