@@ -327,6 +327,8 @@ def _clean_output(raw: str) -> str:
     text = _ANSI_RE.sub("", raw)
     # 清殘留 [0m 等
     text = re.sub(r"\[(?:\d+;)*\d*m", "", text)
+    # 清 kiro-cli '> ' 引用前綴
+    text = re.sub(r"^>\s?", "", text, flags=re.MULTILINE)
 
     # 策略 1: [DONE] 標記
     done_match = re.search(r"\[DONE\]\s*summary=(.+)", text)

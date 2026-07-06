@@ -153,6 +153,10 @@ class AgentProcess:
             output = stdout.decode("utf-8", errors="ignore").strip()
             err_text = stderr.decode("utf-8", errors="ignore").strip()
 
+            # 清除 ANSI escape codes
+            output = re.sub(r"\x1b\[[0-9;]*[a-zA-Z]", "", output)
+            output = re.sub(r"\[(?:\d+;)*\d*m", "", output)
+
             # 解析 token usage（優先 stderr，其次 stdout，最後 fallback 估算）
             usage = parse_token_usage(err_text) or parse_token_usage(output)
             if not usage:
