@@ -69,9 +69,10 @@ python start.py
 ⚠️ 如果 Tier 2 顯示 ⬚ → 確認 .env 的 GEMINI_API_KEY
 
 📱 Telegram 確認 Bot 活著：
-- 打開你的 Bot → 輸入 `/start`
-- 收到「🤖 AI Agent 已就緒！」= ✅ 啟動成功
-- 沒回應 → 確認 Token 正確 + 網路正常
+1. 打開你的 Bot → 點「Start」
+2. 收到「🤖 AI Agent 已就緒！」= ✅ 啟動成功
+3. 左下角出現 `/` 選單（/start、/agents、/mode、/history、/help）
+4. 沒回應 → 確認 Token 正確 + 網路正常
 
 ---
 
@@ -122,7 +123,7 @@ src/skills/internal/             ← 實際執行邏輯
 **為什麼**：使用者不知道有 SOUL.md，只會感受到「這個 Bot 風格不同」
 
 📱 Telegram：
-1. `/agents` → 出現 8 個按鈕
+1. 點選單 `/agents`（或直接打字）→ 出現 8 個按鈕
 2. 點「👑 Admin」→ 問「用一句話介紹你自己」
 3. 點「💻 Coder」→ 問同一個問題
 4. 點「🗺️ Market」→ 問同一個問題
