@@ -1,4 +1,4 @@
-"""Wiki 知識庫引擎。"""
+"""Wiki 知識庫引擎 — 兩層查詢（私有 + 全域）。"""
 from __future__ import annotations
 
 import os
@@ -9,8 +9,8 @@ from pathlib import Path
 import httpx
 
 BASE_DIR = Path(__file__).resolve().parents[2]
-RAW_DIR = BASE_DIR / "knowledge" / "raw"
-WIKI_DIR = BASE_DIR / "knowledge" / "wiki"
+GLOBAL_RAW = BASE_DIR / "knowledge" / "raw"
+GLOBAL_WIKI = BASE_DIR / "knowledge" / "wiki"
 INDEX_PATH = BASE_DIR / "knowledge" / "index.md"
 LOG_PATH = BASE_DIR / "knowledge" / "log.md"
 
@@ -18,27 +18,51 @@ REQUIRED_FIELDS = {"title", "type", "tags", "created", "updated"}
 
 
 class WikiEngine:
-    """最小 Wiki 引擎：query / ingest / lint。"""
+    """兩層 Wiki 引擎：查詢時先私有再全域，ingest 支援指定目標。"""
+
+    def __init__(self, agent_id: str | None = None):
+        self.agent_id = agent_id
+        self.global_raw = GLOBAL_RAW
+        self.global_wiki = GLOBAL_WIKI
+        if agent_id:
+            self.agent_raw = BASE_DIR / "agents" / agent_id / "knowledge" / "raw"
+            self.agent_wiki = BASE_DIR / "agents" / agent_id / "knowledge" / "wiki"
+        else:
+            self.agent_raw = None
+            self.agent_wiki = None
 
     # ─── query ───────────────────────────────────────────
 
     async def query(self, q: str, *, use_rag: bool = False) -> dict:
-        """全文搜尋 wiki/ 中的 md 檔案，Tier 2 時用 Gemini 合成答案。"""
-        results = self._fulltext_search(q)
+        """兩層查詢：先搜私有 wiki，再搜全域 wiki，合併結果。"""
+        private_results = self._search_dir(self.agent_wiki, q) if self.agent_wiki else []
+        global_results = self._search_dir(self.global_wiki, q)
+
+        # 標記來源
+        for r in private_results:
+            r["scope"] = "private"
+        for r in global_results:
+            r["scope"] = "global"
+
+        results = private_results + global_results
+
         if not use_rag or not results:
-            return {"results": results, "answer": None}
+            return {"results": results, "answer": None, "sources": []}
 
         # Tier 2: Gemini RAG
         answer = await self._rag_answer(q, results)
-        return {"results": results, "answer": answer}
+        sources = [r["file"] for r in results[:5]]
+        return {"results": results, "answer": answer, "sources": sources}
 
-    def _fulltext_search(self, q: str) -> list[dict]:
-        """簡易全文搜尋，回傳匹配片段。"""
+    def _search_dir(self, wiki_dir: Path | None, q: str) -> list[dict]:
+        """搜尋指定 wiki 目錄。"""
         hits: list[dict] = []
-        if not WIKI_DIR.exists():
+        if not wiki_dir or not wiki_dir.exists():
             return hits
         keywords = q.lower().split()
-        for md in WIKI_DIR.rglob("*.md"):
+        for md in wiki_dir.rglob("*.md"):
+            if md.name == ".gitkeep":
+                continue
             content = md.read_text(encoding="utf-8")
             lower_content = content.lower()
             if any(kw in lower_content for kw in keywords):
@@ -64,16 +88,18 @@ class WikiEngine:
         return lines[0][:max_len] if lines else ""
 
     async def _rag_answer(self, question: str, results: list[dict]) -> str | None:
-        """使用 Gemini 合成答案。"""
+        """使用 Gemini 合成答案，附引用來源。"""
         api_key = os.getenv("GEMINI_API_KEY", "")
         if not api_key or api_key == "your_gemini_api_key_here":
             return None
 
         context = "\n\n".join(
-            f"[{r['title']}]\n{r['snippet']}" for r in results[:5]
+            f"[{r['title']}] ({r['scope']})\n{r['snippet']}" for r in results[:5]
         )
         prompt = (
-            f"根據以下知識庫內容回答問題，回答使用繁體中文，並在結尾標註引用來源。\n\n"
+            f"根據以下知識庫內容回答問題，回答使用繁體中文。\n"
+            f"在回答結尾用「📚 參考：」列出引用的來源檔案名。\n"
+            f"如果知識庫沒有相關內容，請誠實說「目前知識庫沒有這方面的資料」。\n\n"
             f"知識庫內容：\n{context}\n\n問題：{question}"
         )
 
@@ -91,10 +117,17 @@ class WikiEngine:
 
     # ─── ingest ──────────────────────────────────────────
 
-    def ingest(self, filename: str | None = None) -> list[str]:
-        """將 raw/ 檔案匯入 wiki/，加上 frontmatter，更新 index.md。"""
-        WIKI_DIR.mkdir(parents=True, exist_ok=True)
-        files = [RAW_DIR / filename] if filename else list(RAW_DIR.glob("*.md"))
+    def ingest(self, scope: str = "global", filename: str | None = None) -> list[str]:
+        """將 raw/ 匯入 wiki/。scope: 'global' 或 'private'（需要 agent_id）。"""
+        if scope == "private" and self.agent_raw and self.agent_wiki:
+            raw_dir = self.agent_raw
+            wiki_dir = self.agent_wiki
+        else:
+            raw_dir = self.global_raw
+            wiki_dir = self.global_wiki
+
+        wiki_dir.mkdir(parents=True, exist_ok=True)
+        files = [raw_dir / filename] if filename else list(raw_dir.glob("*.md"))
         ingested: list[str] = []
 
         for src in files:
@@ -113,18 +146,19 @@ class WikiEngine:
                 )
                 wiki_content = frontmatter + content
 
-            dest = WIKI_DIR / src.name
+            dest = wiki_dir / src.name
             dest.write_text(wiki_content, encoding="utf-8")
             ingested.append(src.name)
 
-        self._update_index()
-        self._append_log(ingested)
+        if scope == "global":
+            self._update_index()
+        self._append_log(ingested, scope)
         return ingested
 
     def _update_index(self) -> None:
-        """重建 index.md。"""
+        """重建全域 index.md。"""
         lines = ["# Wiki 索引\n", "| 檔案 | 標題 |", "|------|------|"]
-        for md in sorted(WIKI_DIR.rglob("*.md")):
+        for md in sorted(GLOBAL_WIKI.rglob("*.md")):
             if md.name == ".gitkeep":
                 continue
             content = md.read_text(encoding="utf-8")
@@ -132,21 +166,27 @@ class WikiEngine:
             lines.append(f"| {md.name} | {title} |")
         INDEX_PATH.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
-    def _append_log(self, files: list[str]) -> None:
+    def _append_log(self, files: list[str], scope: str = "global") -> None:
         """追加操作日誌。"""
         ts = datetime.now().strftime("%Y-%m-%d %H:%M")
-        entry = f"- [{ts}] ingest: {', '.join(files)}\n"
+        agent_tag = f" [{self.agent_id}]" if self.agent_id and scope == "private" else ""
+        entry = f"- [{ts}]{agent_tag} ingest ({scope}): {', '.join(files)}\n"
         with LOG_PATH.open("a", encoding="utf-8") as f:
             f.write(entry)
 
     # ─── lint ────────────────────────────────────────────
 
-    def lint(self) -> list[dict]:
+    def lint(self, scope: str = "global") -> list[dict]:
         """檢查 wiki/ 頁面的 frontmatter 完整性。"""
+        if scope == "private" and self.agent_wiki:
+            wiki_dir = self.agent_wiki
+        else:
+            wiki_dir = self.global_wiki
+
         issues: list[dict] = []
-        if not WIKI_DIR.exists():
+        if not wiki_dir.exists():
             return issues
-        for md in WIKI_DIR.rglob("*.md"):
+        for md in wiki_dir.rglob("*.md"):
             if md.name == ".gitkeep":
                 continue
             content = md.read_text(encoding="utf-8")

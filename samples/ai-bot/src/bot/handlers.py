@@ -149,7 +149,7 @@ async def cmd_history(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """主對話處理：session 驅動 + 多輪記憶 + memory 寫入。"""
+    """主對話處理：session 驅動 + Wiki RAG + 多輪記憶 + memory 寫入。"""
     text = update.message.text.strip()
     user_id = update.effective_user.id
     session = session_manager.get_or_create(user_id)
@@ -167,13 +167,23 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             await update.message.reply_text(reply, parse_mode="Markdown", disable_web_page_preview=True)
             return
 
-    # ── 2. Agent CLI 模式 ──
+    # ── 2. Wiki RAG 查詢（先查知識庫，有結果就用）──
     reply: str | None = None
-    if is_cli_available():
+    try:
+        from src.wiki.engine import WikiEngine
+        engine = WikiEngine(agent_id=current_agent)
+        wiki_result = await engine.query(text, use_rag=True)
+        if wiki_result.get("answer"):
+            reply = wiki_result["answer"]
+    except Exception:
+        pass  # Wiki 不可用時 fallback 到下面
+
+    # ── 3. Agent CLI 模式 ──
+    if not reply and is_cli_available():
         await update.message.reply_text("🧠 思考中...")
         reply = await agent_cli_chat(text, agent_id=current_agent)
 
-    # ── 3. Gemini API fallback ──
+    # ── 4. Gemini API fallback ──
     if not reply:
         gemini_key = os.getenv("GEMINI_API_KEY", "")
         if gemini_key:
@@ -192,7 +202,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 "💡 開啟 AI：填入 GEMINI_API_KEY 或安裝 kiro-cli"
             )
 
-    # ── 4. 回覆 + 記憶 ──
+    # ── 5. 回覆 + 記憶 ──
     if reply:
         session.add_turn("agent", reply)
         await save_memory(current_agent, user_id, text, reply)
