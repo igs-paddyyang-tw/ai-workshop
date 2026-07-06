@@ -106,17 +106,17 @@ agents/admin-agent/knowledge/       ← 私有（只有 admin 能查到）
 
 📝 追加驗證：
 ```
-查詢「Super Ace 的 Golden Card 機制怎麼運作」
+列出 knowledge/wiki/ 目前有哪些檔案
 ```
 
-✅ 預期：匹配到 super-ace-analysis.md 中 Golden Card → Wild 轉換的說明
+✅ 預期：3 篇（ocean-king-analysis.md、super-ace-analysis.md、fishing-vs-slot-comparison.md）
 
 ---
 
-## Step 3：用 AI 產出新知識（20-35 min）
+## Step 3：用 AI 搜尋產出新知識（20-35 min）
 
 **做什麼**：讓 Kiro 搜尋網路 → 整理成知識文件 → 匯入 Wiki  
-**為什麼**：不是手動寫內容，而是用 AI 的搜尋能力產出知識 — 這才是正確的工作方式
+**為什麼**：不是手動寫內容，而是用 AI 的搜尋能力產出知識
 
 📝 Kiro IDE 輸入：
 ```
@@ -130,15 +130,7 @@ agents/admin-agent/knowledge/       ← 私有（只有 admin 能查到）
 - 附上資料來源
 ```
 
-→ Kiro 會：
-1. 跑 web search 抓真實資料
-2. 整理成結構化 .md
-3. 存到 knowledge/raw/slot-market-trends.md
-
-📝 確認產出：
-```
-打開 knowledge/raw/slot-market-trends.md，確認有 frontmatter 和實際數據
-```
+→ Kiro web search → 整理 → 存到 knowledge/raw/
 
 📝 匯入：
 ```
@@ -146,24 +138,14 @@ agents/admin-agent/knowledge/       ← 私有（只有 admin 能查到）
 並更新 knowledge/index.md
 ```
 
-📝 驗證能查到：
+📝 確認檔案存在：
 ```
-搜尋 knowledge/wiki/ 中關於「老虎機市場」的內容
-```
-
-✅ 預期結果：
-- 找到 slot-market-trends.md 的內容
-- 包含真實的市場數據（不是你手寫的）
-
-💡 **這才是正確的知識建構流程**：AI 搜尋 → 整理 → 存檔 → ingest → 可查詢
-
-📝 加碼（如果有時間）：
-```
-再搜尋「捕魚機遊戲 2024 最新動態」，
-整理成 knowledge/raw/fishing-game-2024.md 並匯入
+列出 knowledge/wiki/ 目前有哪些檔案
 ```
 
-💡 **到這裡，開發者端確認完成 — 知識庫有效、查詢正確。**
+✅ 預期：4 篇（多了 slot-market-trends.md）
+
+💡 **IDE 段完成**：知識庫從 3 篇 → 4 篇。接下來去 TG 確認使用者能查到。
 
 💡 **跟第二堂的串接**：02 開發的 `ark-competitor-brief` Skill 會讀 knowledge/wiki/ 產出 SWOT 簡報 — 你現在匯入的知識，就是那個 Skill 的資料來源。
 
@@ -171,75 +153,42 @@ agents/admin-agent/knowledge/       ← 私有（只有 admin 能查到）
 
 # TG 上線驗證
 
-💻 **上線前先在 IDE 確認**：
-
-📝 Kiro IDE 輸入：
-```
-搜尋根目錄 knowledge/wiki/ 中包含「Ocean King」的檔案，
-列出匹配的內容片段
-```
-
-✅ 確認：有找到 ocean-king-analysis.md 的內容 → OK，可以上線
-
 💻 重啟：Ctrl+C → `python start.py`
 
-## Step 4：Telegram 驗證 — 使用者能拿到答案（35-45 min）
+## Step 4：TG 驗證舊知識（35-42 min）
 
-**做什麼**：切到 Telegram，確認「真實使用者」也能拿到有引用的答案  
-**為什麼**：Kiro 驗證 = 開發 OK。Telegram 驗證 = 上線 OK、第三方可用。
+**做什麼**：問 Step 2 匯入的知識 → 確認有引用  
+**為什麼**：使用者能拿到有依據的答案 = 上線 OK
 
-📱 Telegram：
-1. `/agents` → Admin
-2. 問「Ocean King 3 跟 Ocean King 2 有什麼差別？」
-3. 問「Super Ace 的 Golden Card 怎麼觸發？」
+📱 Telegram → Market：
+1. 問「Ocean King 3 跟 Ocean King 2 有什麼差別？」
+2. 問「Super Ace 的 Golden Card 怎麼觸發？」
 
-✅ 預期結果：
-- 回答詳細 + 底部有「📚 參考：ocean-king-analysis」
-- Super Ace 問題引用「super-ace-analysis」
-- **使用者體驗 = 有依據、不幻覺、可信任**
+✅ 預期：
+- 回答有「📚 參考：ocean-king-analysis」
+- 有具體內容（不是泛泛回答）
 
-📱 對比測試：問一個 Wiki 沒有的問題
+📱 對比：問 Wiki 沒有的
 - 「PG Soft 的 Mahjong Ways 怎麼玩？」
-- 觀察：回答沒有「📚 參考」→ Agent 誠實表示沒有相關知識
-
-💡 **能回答的有引用，不能的坦白說 — 這就是可信任的 AI。**
+- ✅ 預期：沒有「📚 參考」→ 坦白說不知道
 
 ---
 
-## Step 5：自演化觀察 — 私有記憶成長（45-50 min）
+## Step 5：TG 驗證新知識（42-50 min）
 
-**做什麼**：觀察 memory 自動記錄到私有知識庫 + 理解兩層成長  
-**為什麼**：全域知識你手動加，私有知識 Agent 自動累積 — 雙線成長
+**做什麼**：問 Step 3 剛用 AI 產出的知識 → 確認也有引用  
+**為什麼**：你 10 分鐘前加的東西，使用者現在就能查到 = 知識成長生效
 
-📝 Kiro IDE 輸入：
-```
-列出 agents/admin-agent/knowledge/raw/ 的檔案
-```
+📱 Telegram → Market：
+- 問「最近老虎機市場有什麼新趨勢？」
 
-✅ 預期結果：
-- 看到今天對話的 memory 檔案（如 `2026-07-06_1030_user123.md`）
-- 這是 Agent 自動記錄的（你沒手動丟，它自己寫的）
+✅ 預期：
+- 引用 slot-market-trends.md 回答
+- 包含真實數據（Kiro 搜尋到的）
+- 有「📚 參考：slot-market-trends」
 
-📝 Kiro IDE 問：
-```
-解釋兩層知識庫的成長循環：
-- 全域：我丟文件 → ingest → 所有 Agent 能引用
-- 私有：每次對話 → memory 自動記 → ingest 後只有該 Agent 能引用
-這兩層怎麼讓系統越用越聰明？
-```
-
-✅ 理解重點：
-```
-全域知識（你手動加）：
-  丟文件 → knowledge/raw/ → ingest → wiki/ → 全 Agent 引用
-
-私有記憶（Agent 自動累積）：
-  對話 → memory → agents/{agent}/knowledge/raw/
-      → ingest → agents/{agent}/knowledge/wiki/
-      → 只有該 Agent 引用（越聊越懂你）
-
-雙線成長 = 自演化
-```
+💡 **你 Step 3 用 AI 搜尋的資料 → 現在使用者在 TG 能查到了。**
+**這就是知識成長：加資料 → ingest → 立即可用。**
 
 ---
 
@@ -247,16 +196,16 @@ agents/admin-agent/knowledge/       ← 私有（只有 admin 能查到）
 
 | 等級 | 達成條件 |
 |------|----------|
-| 🎯 保底 | Kiro 內 ingest 成功 + 查詢有結果 |
-| ✅ 標準 | Kiro 驗證 + Telegram 使用者也能拿到有引用的答案 |
-| 🏆 快速 | 建自己文件 + 雙端驗證 + 理解自演化循環 |
+| 🎯 保底 | ingest 成功 + wiki/ 有檔案 |
+| ✅ 標準 | TG 問舊知識有引用 + 問新知識也有引用 |
+| 🏆 快速 | 用 AI 搜尋產知識 + 雙端驗證 + 理解知識成長 |
 
 ## 🏠 回家練習
 
-1. 📝 Kiro：「建立一份我們公司其他產品線的競品分析，匯入 Wiki」
+1. 📝 Kiro：「搜尋我們公司其他產品的競品資料，整理成 knowledge/raw/ 格式並匯入」
 2. 📝 Kiro：「檢查 Wiki 健康度，修復所有問題」
-3. 思考：哪些公司文件丟進去後，新人就能自己問 Agent 找答案？（產品 spec？設計規範？營運 SOP？）
+3. 思考：哪些公司文件丟進去後，新人就能自己問 Agent 找答案？
 
 ---
 
-*本堂重點：IDE 開發知識庫。TG 驗證上線。自演化 = 越用越聰明。*
+*本堂重點：IDE 建構知識庫。TG 驗證上線。AI 搜尋 → 匯入 → 立即可用 = 知識成長。*
