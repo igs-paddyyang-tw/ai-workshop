@@ -26,6 +26,11 @@ from src.bot.handlers import (
 BOT_COMMANDS = [
     BotCommand("start", "啟動 Bot"),
     BotCommand("agents", "切換 Agent"),
+    BotCommand("news", "📰 抓新聞"),
+    BotCommand("wiki", "📚 查知識庫"),
+    BotCommand("summarize", "📝 摘要"),
+    BotCommand("translate", "🌐 翻譯"),
+    BotCommand("ingest", "⬆️ 匯入知識"),
     BotCommand("mode", "查看模式"),
     BotCommand("history", "對話歷史"),
     BotCommand("help", "指令說明"),

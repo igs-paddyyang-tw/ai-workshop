@@ -150,7 +150,14 @@ async def cmd_history(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """主對話處理：session 驅動 + Wiki RAG + 多輪記憶 + memory 寫入。"""
+    """主對話處理：Planner 六層路由 + Wiki RAG + memory。
+
+    路由層級：
+      L1: /reset → 清空 session
+      L2: /skill_id args → 直接執行 Skill
+      L3: keyword → Planner 路由（Skill 或 Wiki）
+      L4: 預設 → Wiki RAG → Gemini fallback → 兜底
+    """
     text = update.message.text.strip()
     user_id = update.effective_user.id
     session = session_manager.get_or_create(user_id)
@@ -163,9 +170,33 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     # ── Reaction: 👀 收到 ──
     await _set_reaction(update.message, "👀")
 
-    # ── 1. 關鍵字快速路由 ──
-    if any(kw in text for kw in ["新聞", "news", "今天新聞"]):
-        reply = await _handle_news()
+    # ── L1: /reset → 清空 session ──
+    if text.lower() in ("/reset", "重置"):
+        session.clear_history()
+        await _set_reaction(update.message, "👍")
+        await update.message.reply_text("🔄 對話已重置。")
+        return
+
+    # ── L2: /skill_id [args] → 直接執行 Skill ──
+    if text.startswith("/") and not text.startswith("//"):
+        parts = text[1:].split(maxsplit=1)
+        skill_id = parts[0].lower()
+        skill_args = parts[1] if len(parts) > 1 else ""
+        result = await _execute_skill_by_id(skill_id, skill_args)
+        if result is not None:
+            session.add_turn("agent", result)
+            await save_memory(current_agent, user_id, text, result)
+            await _set_reaction(update.message, "👍")
+            header = f"{agent_info['emoji']} [{current_agent}-agent]\n"
+            await update.message.reply_text(header + result, parse_mode="Markdown", disable_web_page_preview=True)
+            return
+
+    # ── L3: keyword → Planner 路由 ──
+    from src.agent.planner import route, IntentType
+    plan = route(text)
+
+    if plan.intent == IntentType.SKILL and plan.skill_id:
+        reply = await _execute_skill_by_id(plan.skill_id, text)
         if reply:
             session.add_turn("agent", reply)
             await save_memory(current_agent, user_id, text, reply)
@@ -174,12 +205,18 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             await update.message.reply_text(header + reply, parse_mode="Markdown", disable_web_page_preview=True)
             return
 
+    if plan.intent == IntentType.WIKI:
+        # Wiki 查詢優先
+        pass  # 繼續到下面的 Wiki RAG 段落
+
     # ── Reaction: 🔥 處理中 ──
     await _set_reaction(update.message, "🔥")
     await update.message.chat.send_action("typing")
 
-    # ── 2. Wiki RAG 查詢（先查知識庫，有結果就用）──
+    # ── L4: Wiki RAG → CLI → Gemini fallback ──
     reply: str | None = None
+
+    # 4a. Wiki RAG
     try:
         from src.wiki.engine import WikiEngine
         engine = WikiEngine(agent_id=current_agent)
@@ -187,25 +224,38 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         if wiki_result.get("answer"):
             reply = wiki_result["answer"]
     except Exception:
-        pass  # Wiki 不可用時 fallback 到下面
+        pass
 
-    # ── 3. Agent CLI 模式 ──
+    # 4b. Memory Search（引用歷史記憶）
+    if not reply:
+        try:
+            memory_context = _search_memory(current_agent, text)
+            if memory_context:
+                # 有相關記憶，注入到 Gemini context
+                pass  # memory_context 會在 Gemini 時使用
+        except Exception:
+            memory_context = None
+    else:
+        memory_context = None
+
+    # 4c. Agent CLI
     if not reply and is_cli_available():
         try:
             reply = await agent_cli_chat(text, agent_id=current_agent)
         except Exception:
-            reply = None  # CLI 失敗，fallback 到 Gemini
+            reply = None
 
-    # ── 4. Gemini API fallback ──
+    # 4d. Gemini API fallback
     if not reply:
         gemini_key = os.getenv("GEMINI_API_KEY", "")
         if gemini_key:
             try:
                 from src.llm.gemini_chat import gemini_chat
                 soul = _load_soul(current_agent)
-                # 注入對話歷史
                 context_str = session.get_context()
-                full_system = f"{soul}\n\n{context_str}" if context_str else soul
+                # 注入記憶（如果有）
+                memory_str = f"\n\n## 相關歷史記憶\n{memory_context}" if memory_context else ""
+                full_system = f"{soul}{memory_str}\n\n{context_str}" if context_str else f"{soul}{memory_str}"
                 reply = await gemini_chat(text, system=full_system)
             except Exception as e:
                 reply = f"⚠️ 錯誤: {e}"
@@ -215,7 +265,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 "💡 開啟 AI：填入 GEMINI_API_KEY 或安裝 kiro-cli"
             )
 
-    # ── 5. 回覆 + 記憶 + Reaction ──
+    # ── 回覆 + 記憶 + Reaction ──
     if reply:
         session.add_turn("agent", reply)
         await save_memory(current_agent, user_id, text, reply)
@@ -226,6 +276,115 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         await _set_reaction(update.message, "💔")
         header = f"{agent_info['emoji']} [{current_agent}-agent]\n"
         await update.message.reply_text(header + "⚠️ 抱歉，我暫時無法回應，請稍後再試。")
+
+
+# ── Skill 執行 ────────────────────────────────────────────
+
+
+async def _execute_skill_by_id(skill_id: str, args: str = "") -> str | None:
+    """根據 skill_id 直接執行對應 Skill。回傳結果字串或 None（不認識的 skill）。"""
+    skill_id = skill_id.lower().strip()
+
+    if skill_id == "news":
+        return await _handle_news()
+
+    if skill_id == "summarize":
+        if not args:
+            return "⚠️ 用法：/summarize <要摘要的文字>"
+        try:
+            from src.skills.internal.summarize import SummarizeSkill
+            skill = SummarizeSkill()
+            result = await skill.execute({"content": args, "max_length": 200})
+            if result.success:
+                return f"📝 摘要：\n{result.data['summary']}\n\n（原文 {result.data['original_length']} 字）"
+            return f"⚠️ {result.error}"
+        except Exception as e:
+            return f"⚠️ 摘要失敗: {e}"
+
+    if skill_id == "translate":
+        if not args:
+            return "⚠️ 用法：/translate <要翻譯的文字>"
+        try:
+            from src.skills.internal.translate import TranslateSkill
+            skill = TranslateSkill()
+            # 解析目標語言（預設 en）
+            parts = args.rsplit(" to ", 1)
+            text_to_translate = parts[0]
+            target_lang = parts[1].strip() if len(parts) > 1 else "en"
+            result = await skill.execute({"text": text_to_translate, "target_lang": target_lang})
+            if result.success:
+                return f"🌐 翻譯（→ {result.data['target_lang']}）：\n{result.data['translated']}"
+            return f"⚠️ {result.error}"
+        except Exception as e:
+            return f"⚠️ 翻譯失敗: {e}"
+
+    if skill_id == "wiki":
+        if not args:
+            return "⚠️ 用法：/wiki <查詢關鍵字>"
+        try:
+            from src.wiki.engine import WikiEngine
+            engine = WikiEngine()
+            result = await engine.query(args, use_rag=True)
+            if result.get("answer"):
+                return result["answer"]
+            elif result.get("results"):
+                lines = [f"📚 找到 {len(result['results'])} 筆："]
+                for r in result["results"][:5]:
+                    lines.append(f"• {r['title']}：{r['snippet'][:80]}")
+                return "\n".join(lines)
+            return "📚 知識庫中沒有找到相關內容。"
+        except Exception as e:
+            return f"⚠️ Wiki 查詢失敗: {e}"
+
+    if skill_id == "ingest":
+        try:
+            from src.wiki.engine import WikiEngine
+            engine = WikiEngine()
+            ingested = engine.ingest()
+            return f"✅ 匯入完成：{len(ingested)} 篇\n" + "\n".join(f"• {f}" for f in ingested)
+        except Exception as e:
+            return f"⚠️ Ingest 失敗: {e}"
+
+    return None  # 不認識的 skill_id
+
+
+# ── Memory Search ─────────────────────────────────────────
+
+
+def _search_memory(agent_id: str, query: str, max_results: int = 3) -> str | None:
+    """搜尋 Agent 的歷史記憶，回傳相關 context 或 None。"""
+    from pathlib import Path
+    memory_dir = Path(f"agents/{agent_id}-agent/knowledge/raw")
+    if not memory_dir.exists():
+        return None
+
+    keywords = query.lower().split()
+    matches: list[str] = []
+
+    for md in sorted(memory_dir.glob("*.md"), reverse=True)[:20]:  # 最近 20 筆
+        content = md.read_text(encoding="utf-8")
+        if any(kw in content.lower() for kw in keywords):
+            # 提取任務和結果
+            lines = content.split("\n")
+            task_line = ""
+            result_lines: list[str] = []
+            in_result = False
+            for line in lines:
+                if line.startswith("## 任務"):
+                    in_result = False
+                elif line.startswith("## 結果"):
+                    in_result = True
+                elif in_result and line.strip():
+                    result_lines.append(line)
+                elif not in_result and line.strip() and not line.startswith("---") and not line.startswith("user_id"):
+                    task_line = line
+            if result_lines:
+                matches.append(f"[{md.stem}] {task_line}\n{''.join(result_lines[:3])}")
+
+        if len(matches) >= max_results:
+            break
+
+    return "\n\n".join(matches) if matches else None
 
 
 # ── Reaction Helper ───────────────────────────────────────
