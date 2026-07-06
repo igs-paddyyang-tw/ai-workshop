@@ -34,7 +34,7 @@ def main() -> None:
     print(f"  📚 知識庫: {len(wiki_files)} 篇")
 
     # SOUL
-    soul_path = Path("soul.md")
+    soul_path = Path(".kiro/steering/SOUL.md")
     print(f"  🧠 SOUL: {'✅ 已載入' if soul_path.exists() else '⚠️ 未找到'}")
 
     # Bot
