@@ -115,25 +115,30 @@ class AgentProcess:
         """持續從佇列取出任務依序執行。"""
         while self._running:
             try:
-                text = await asyncio.wait_for(self._queue.get(), timeout=1.0)
+                text, future = await asyncio.wait_for(self._queue.get(), timeout=1.0)
             except asyncio.TimeoutError:
                 continue
-            await self._execute(text)
+            result = await self._execute(text)
+            if not future.done():
+                future.set_result(result)
             self._queue.task_done()
 
     async def send(self, text: str) -> str | None:
-        """將訊息加入佇列。忙碌時排隊而非丟棄。Shutdown 時拒絕新任務。"""
+        """將訊息加入佇列，等待 worker 完成後回傳結果。"""
         if AgentProcess._shutting_down:
             log.info("%s: rejecting new task during shutdown", self.name)
             return None
         if not self._running:
             return None
+        future: asyncio.Future = asyncio.get_event_loop().create_future()
+        await self._queue.put((text, future))
         if self._busy:
-            log.info("%s is busy, queuing message (queue_size=%d)", self.name, self._queue.qsize() + 1)
-            await self._queue.put(text)
-            return "queued"
-        # 空閒時直接執行
-        return await self._execute(text)
+            log.info("%s is busy, queued (size=%d)", self.name, self._queue.qsize())
+        try:
+            return await asyncio.wait_for(future, timeout=self.timeout)
+        except asyncio.TimeoutError:
+            log.error("%s send() timed out waiting for queue", self.name)
+            return None
 
     async def _execute(self, text: str) -> str | None:
         """Spawn kiro-cli 處理一則訊息，完成後回傳 output。"""

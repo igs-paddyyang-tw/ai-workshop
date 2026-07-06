@@ -130,7 +130,7 @@ async def agent_cli_chat(
     proc = _agents.get(agent_id)
     if proc and proc.is_alive():
         result = await proc.send(message)
-        return result if result and result != "queued" else None
+        return result if result else None
 
     # Fallback: 直接 subprocess（相容舊行為）
     if not is_cli_available():
