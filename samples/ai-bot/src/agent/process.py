@@ -75,7 +75,7 @@ class AgentProcess:
     BACKENDS = {
         "kiro": lambda self, msg: [
             "kiro-cli", "chat", "--no-interactive", "--trust-all-tools",
-            "--model", self.model,
+            *(["--model", self.model] if self.model != "auto" else []),
             *([] if self.skip_resume else ["--resume"]),
             msg,
         ],
@@ -158,9 +158,8 @@ class AgentProcess:
             output = stdout.decode("utf-8", errors="ignore").strip()
             err_text = stderr.decode("utf-8", errors="ignore").strip()
 
-            # 清除 ANSI escape codes
+            # 基礎 ANSI strip（讓 log 可讀，完整清理交給 handlers._clean_output）
             output = re.sub(r"\x1b\[[0-9;]*[a-zA-Z]", "", output)
-            output = re.sub(r"\[(?:\d+;)*\d*m", "", output)
 
             # 解析 token usage（優先 stderr，其次 stdout，最後 fallback 估算）
             usage = parse_token_usage(err_text) or parse_token_usage(output)

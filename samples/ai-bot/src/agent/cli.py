@@ -96,7 +96,7 @@ async def start_all_agents() -> int:
             model="auto",
             skip_resume=True,
         )
-        proc.timeout = 120  # 個體模式不需要太長
+        proc.timeout = 180  # kiro-cli tool 呼叫可能 2-3 次各 30-60s
         await proc.start()
         _agents[agent_id] = proc
         count += 1
@@ -146,7 +146,7 @@ async def agent_cli_chat(
         proc_sub = await asyncio.create_subprocess_exec(
             "kiro-cli", "chat",
             "--no-interactive", "--trust-all-tools",
-            "--message", message,
+            message,  # positional arg（跟 AgentProcess 一致）
             cwd=str(working_dir),
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
