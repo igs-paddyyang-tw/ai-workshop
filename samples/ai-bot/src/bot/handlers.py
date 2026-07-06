@@ -327,9 +327,6 @@ _TOOL_LINE_PREFIXES = (
 )
 _TOOL_LINE_RE = re.compile(
     r"^\s*[✓✗●◉⏺]\s+(Found|Read|Completed|Fetched|Searching|Writing|Created)"
-    r"|^\s*━+\s*$"
-    r"|^\s*─+\s*$"
-    r"|^```"
     r"|^\s*\d+\s*(file|match)"
 )
 
@@ -366,6 +363,7 @@ def _clean_output(raw: str) -> str:
     lines = text.splitlines()
     conclusion_lines: list[str] = []
     found_content = False
+    consecutive_tool_lines = 0
 
     for line in reversed(lines):
         stripped = line.strip()
@@ -376,9 +374,12 @@ def _clean_output(raw: str) -> str:
             or bool(_TOOL_LINE_RE.match(stripped))
         )
         if is_tool_line:
-            if found_content:
-                break
+            consecutive_tool_lines += 1
+            if found_content and consecutive_tool_lines >= 3:
+                break  # 連續 3 行工具噪音才視為進入工具區段
             continue
+
+        consecutive_tool_lines = 0  # 重置計數
         found_content = True
         # Strip '> ' prompt prefix
         if line.startswith("> "):
