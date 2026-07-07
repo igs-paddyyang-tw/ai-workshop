@@ -25,25 +25,29 @@ knowledge/
 
 **規則**：raw/ 是原料，wiki/ 是成品。Bot 只搜尋 wiki/。
 
+💡 **概念**：`raw/` = 原料（你丟的）→ `ingest` = 轉換 → `wiki/` = 成品（Bot 能搜尋）
+
 ---
 
 # IDE 開發
 
-## Step 1：看現況 + 建立基準（0-10 min）
+## Step 1：確認新知識還沒有（0-10 min）
 
-**做什麼**：確認 wiki/ 有什麼 + 問一個還沒有的問題 + 理解機制  
-**為什麼**：知道「缺什麼」→ 等下加了能對比
+**做什麼**：確認 wiki/ 現有內容 + 建立基準（新知識查不到）
 
 📝 Kiro IDE 輸入：
 ```
-列出 knowledge/wiki/ 有哪些檔案，以及 raw/ 和 wiki/ 的差別是什麼
+列出 knowledge/wiki/ 有哪些檔案
 ```
 
-✅ 預期：
-- wiki/ 有 3 篇：ocean-king / super-ace / fishing-vs-slot
-- Kiro 解釋：raw = 原料 / wiki = 成品（有 frontmatter）/ ingest = 轉換
+✅ 預期：3 篇
+```
+ocean-king-analysis.md
+super-ace-analysis.md
+fishing-vs-slot-comparison.md
+```
 
-📝 IDE 驗證（確認 query 能用）：
+📝 IDE 驗證（確認舊知識能查到）：
 ```
 幫我在終端執行：
 curl -X POST http://localhost:8000/api/v1/wiki/query -H "Content-Type: application/json" -d '{"q":"Ocean King"}'
@@ -57,9 +61,9 @@ curl -X POST http://localhost:8000/api/v1/wiki/query -H "Content-Type: applicati
 curl -X POST http://localhost:8000/api/v1/wiki/query -H "Content-Type: application/json" -d '{"q":"老虎機市場趨勢"}'
 ```
 
-✅ 預期：沒有結果（因為還沒加這份資料）
+✅ 預期：沒有結果
 
-💡 **系統有 3 篇舊知識能查到，但沒有「老虎機市場趨勢」→ Step 2 你來加。**
+💡 **舊的能查到，新的查不到 → Step 2 你來加。**
 
 ---
 
