@@ -1,4 +1,4 @@
-"""FastAPI — 課程 A 簡易 API + Web UI。"""
+"""FastAPI — AI Agent 專家平台 API + Web UI。"""
 from pathlib import Path
 
 from fastapi import FastAPI, Request
@@ -9,7 +9,7 @@ from pydantic import BaseModel
 
 TEMPLATES_DIR = Path(__file__).resolve().parents[2] / "templates"
 
-app = FastAPI(title="AI Bot — 個體 Agent API")
+app = FastAPI(title="AI Agent 專家平台 API")
 engine = WikiEngine()
 
 

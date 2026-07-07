@@ -101,14 +101,26 @@ class WikiEngine:
         return lines[0][:max_len] if lines else ""
 
     async def _rag_answer(self, question: str, results: list[dict]) -> str | None:
-        """使用 Gemini 合成答案，附引用來源。"""
+        """使用 Gemini 合成答案，傳入完整文件內容。"""
         api_key = os.getenv("GEMINI_API_KEY", "")
         if not api_key or api_key == "your_gemini_api_key_here":
             return None
 
-        context = "\n\n".join(
-            f"[{r['title']}] ({r['scope']})\n{r['snippet']}" for r in results[:5]
-        )
+        # 讀取完整 wiki 檔案（每篇限 2000 字，最多 5 篇）
+        context_parts = []
+        for r in results[:5]:
+            wiki_path = self.global_wiki / r["file"] if self.global_wiki else None
+            if not wiki_path or not wiki_path.exists():
+                # 試私有
+                if self.agent_wiki:
+                    wiki_path = self.agent_wiki / r["file"]
+            if wiki_path and wiki_path.exists():
+                content = wiki_path.read_text(encoding="utf-8")[:2000]
+                context_parts.append(f"[{r['title']}]\n{content}")
+            else:
+                context_parts.append(f"[{r['title']}]\n{r['snippet']}")
+        
+        context = "\n\n---\n\n".join(context_parts)
         prompt = (
             f"根據以下知識庫內容回答問題，回答使用繁體中文。\n"
             f"在回答結尾用「📚 參考：」列出引用的來源檔案名。\n"
@@ -116,7 +128,8 @@ class WikiEngine:
             f"知識庫內容：\n{context}\n\n問題：{question}"
         )
 
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
+        model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
         payload = {"contents": [{"parts": [{"text": prompt}]}]}
         async with httpx.AsyncClient(timeout=30) as client:
             resp = await client.post(url, json=payload)
