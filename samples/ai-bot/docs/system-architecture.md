@@ -184,20 +184,21 @@ send(text) → Future 等待 → worker 執行 → 回傳結果
 
 ## Telegram Bot
 
-### 指令選單（10 項）
+### 指令選單（4 項）
 
 | 指令 | 功能 |
 |------|------|
 | /start | 啟動 + 清歷史 |
 | /agents | 切換 Agent（Inline Button） |
-| /news | 📰 抓新聞 |
-| /wiki | 📚 查知識庫 |
-| /summarize | 📝 摘要 |
-| /translate | 🌐 翻譯 |
-| /ingest | ⬆️ 匯入知識 |
-| /mode | 查看模式 |
-| /history | 對話歷史 |
+| /reset | 重置對話 |
 | /help | 指令說明 |
+
+其他功能用自然語言觸發（L2/L3 路由自動處理）：
+- 「新聞」→ news skill
+- 「查知識 XXX」→ wiki query
+- 「摘要 XXX」→ summarize
+- 「翻譯 XXX」→ translate
+- 「匯入知識」→ ingest（或用 Admin 後台按鈕）
 
 ### 互動回饋
 
