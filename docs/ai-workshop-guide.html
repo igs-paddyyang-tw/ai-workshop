@@ -98,11 +98,11 @@ hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
 <h2>📊 五堂課能力遞進</h2>
 <table>
 <tr><th>堂</th><th>主題</th><th>一句話</th><th>帶走的能力</th></tr>
-<tr><td>01</td><td>🗣️ Agent 初始</td><td>改 SOUL → Bot 行為變</td><td>為任何場景設計 AI 人格</td></tr>
-<tr><td>02</td><td>⚡ Skills 開發</td><td>拷問 → Spec → 實作 → 驗證</td><td>Spec-Driven 開發方法</td></tr>
+<tr><td>01</td><td>🗣️ SOUL 人格設計</td><td>改 SOUL → Bot 行為變</td><td>為任何場景設計 AI 人格</td></tr>
+<tr><td>02</td><td>⚡ Spec-Driven 開發</td><td>拷問 → Spec → 實作 → 驗證</td><td>ark-competitor-brief（SWOT 競品分析）</td></tr>
 <tr><td>03</td><td>🧠 LLM Wiki</td><td>加知識 → 回答有依據</td><td>建立個人/公司知識庫</td></tr>
 <tr><td>04</td><td>🤝 Agent Team</td><td>一句話派工 → 自動分工</td><td>建立 AI 團隊、加人即用</td></tr>
-<tr><td>05</td><td>🏭 營運落地</td><td>排程 + 費控 = 自動運作</td><td>從 Demo 到正式上線</td></tr>
+<tr><td>05</td><td>🏭 營運落地</td><td>排程 + 費控 + 知識迴圈</td><td>從 Demo 到正式上線</td></tr>
 </table>
 
 <hr>
@@ -142,6 +142,18 @@ hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
 
 <hr>
 
+<h2>🖥️ 平台架構</h2>
+<p>Web UI 5 頁 + Agent Builder — 完整開發 & 管理介面：</p>
+<pre><code>http://localhost:8000
+  /        → Chat（對話主介面）
+  /admin   → Dashboard（系統儀表板）
+  /wiki    → Wiki（知識庫瀏覽器）
+  /graph   → Graph（Agent 關聯圖）
+  /builder → Builder（Agent Builder：SOUL 編輯 + 知識綁定 + 預覽對話）
+  /api-docs → API（API 文件）</code></pre>
+
+<hr>
+
 <h2>🎁 帶走什麼</h2>
 <pre><code>samples/
 ├── ai-bot/              ← 課程 A 產出（改 SOUL 直接用）
@@ -154,6 +166,15 @@ hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
     ├── team-dev.yaml    ← 研發團隊
     ├── scheduler.yaml   ← 排程設定
     └── start.py         ← 一鍵啟動</code></pre>
+
+<h3>🌐 Web UI 6 頁（課後帶走即可用）</h3>
+<pre><code>http://localhost:8000
+  /        → Chat         對話主介面，切換 Agent 即時聊
+  /admin   → Dashboard    系統狀態 + 費用 + 排程監控
+  /wiki    → Wiki         知識庫瀏覽 + 搜尋 + Markdown 閱讀
+  /graph   → Graph        Agent 關聯圖 + 任務流視覺化
+  /builder → Builder      SOUL 編輯 + 知識綁定 + 預覽對話
+  /api-docs → API         REST API 文件（OpenAPI）</code></pre>
 
 </div>
 </div>
@@ -179,15 +200,15 @@ hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
 
 <table>
 <tr><th>#</th><th>主題</th><th>Skill</th><th>核心體驗</th></tr>
-<tr><td>01</td><td>Agent 初始</td><td>—</td><td>改 SOUL → 風格即時變</td></tr>
-<tr><td>02</td><td>Skills 開發</td><td>grill-me + superpowers + skill-creator + validator</td><td>Spec-Driven 完整迴圈</td></tr>
+<tr><td>01</td><td>SOUL 人格設計</td><td>—</td><td>改 SOUL → 風格即時變</td></tr>
+<tr><td>02</td><td>Spec-Driven 開發</td><td>grill-me + superpowers + skill-creator + validator</td><td>ark-competitor-brief（SWOT）</td></tr>
 <tr><td>03</td><td>LLM Wiki</td><td>ark-wiki-engine</td><td>加知識前 vs 後的差異</td></tr>
 </table>
 
 <hr>
 
 <!-- 01 -->
-<h1>🚀 第一堂：Agent 初始 — 它能「說話」</h1>
+<h1>🚀 第一堂：SOUL 人格設計 — 它能「說話」</h1>
 
 <div class="step-card">
 <h3>Step 1：啟動 Bot（0-5 min）</h3>
@@ -199,12 +220,14 @@ python start.py</code></pre>
 </div>
 
 <div class="step-card">
-<h3>Step 2：切換 Agent 體驗（5-15 min）</h3>
-<p><span class="badge badge-tg">📱 Telegram</span> <code>/agents</code> → 8 個按鈕 → 問同一個問題，觀察 4 種不同回答</p>
+<h3>Step 2：IDE 探索 Agent 結構（5-12 min）</h3>
+<p><span class="badge badge-kiro">📝 Kiro</span></p>
+<pre><code>打開 agents/ 資料夾，列出所有 Agent 的名稱和 SOUL 摘要</code></pre>
+<p>✅ 認識 8 個 Agent 各自的角色定位（admin / pm / market / data / report / qa / coder / ai-dev）</p>
 </div>
 
 <div class="step-card">
-<h3>Step 3：修改 SOUL（15-30 min）⭐</h3>
+<h3>Step 3：修改 SOUL（12-25 min）⭐</h3>
 <p><span class="badge badge-kiro">📝 Kiro</span></p>
 <pre><code>把 admin-agent 的 SOUL 改成「幽默搞笑」風格</code></pre>
 <p>📱 驗證 → 再改成「資深技術顧問」→ 📱 再驗證</p>
@@ -212,50 +235,79 @@ python start.py</code></pre>
 </div>
 
 <div class="step-card">
-<h3>Step 4：為多 Agent 設計 SOUL（30-40 min）</h3>
-<p><span class="badge badge-kiro">📝 Kiro</span> 設計 market-agent 為「新聞主播」、qa-agent 為「嚴格審查員」</p>
+<h3>Step 4：遊戲業務案例 — 設計遊戲分析師（25-35 min）</h3>
+<p><span class="badge badge-kiro">📝 Kiro</span> 設計 market-agent 為「遊戲產業分析師」：</p>
+<pre><code>修改 market-agent 的 SOUL：
+- 角色：資深遊戲產業分析師
+- 專長：捕魚機/老虎機市場趨勢、競品分析
+- 風格：數據導向、圖表思維、結論先行</code></pre>
 </div>
 
 <div class="step-card">
-<h3>Step 5：設計真實場景（40-50 min）</h3>
-<p><span class="badge badge-kiro">📝 Kiro</span> 設計「公司客服 Bot」或「日報助手」的 SOUL</p>
+<h3>Step 5：多 Agent 業務分工（35-43 min）</h3>
+<p><span class="badge badge-kiro">📝 Kiro</span> 為遊戲部門設計分工：</p>
+<ul>
+<li><code>market-agent</code> → 遊戲產業分析師（市場調研）</li>
+<li><code>data-agent</code> → 數據工程師（玩家行為分析）</li>
+<li><code>report-agent</code> → 報告撰寫者（週報/月報）</li>
+</ul>
+<p><span class="badge badge-tg">📱 TG</span> <code>/agents</code> 切換，問「捕魚機市場趨勢」觀察不同 Agent 回答角度</p>
+</div>
+
+<div class="step-card">
+<h3>Step 6：Telegram 上線驗證（43-50 min）</h3>
+<p><span class="badge badge-tg">📱 TG</span> 完整驗證流程：</p>
+<ul>
+<li><code>/agents</code> → 切換到修改過的 Agent</li>
+<li>問業務問題 → 觀察人格是否生效</li>
+<li><code>/help</code> → 確認可用指令</li>
+</ul>
+<p>💡 <strong>從 IDE 設計 → TG 即時驗證 = 駕馭工程完整迴圈</strong></p>
 </div>
 
 <hr>
 
 <!-- 02 -->
-<h1>🚀 第二堂：Skills 開發 — 它能「做事」</h1>
+<h1>🚀 第二堂：Spec-Driven 開發 — 它能「做事」</h1>
 
 <h3>🔧 Spec-Driven 迴圈</h3>
 <pre><code>ark-grill-me → ark-superpowers → ark-skill-creator → ark-code-spec-validator
  （想清楚）       （寫規格）         （依規格做）          （驗證一致）</code></pre>
 
+<h3>📋 本堂案例：ark-competitor-brief（SWOT 競品分析）</h3>
+<p>為 market-agent 開發一個能自動產出 SWOT 競品分析簡報的 Skill。</p>
+
 <div class="step-card">
 <h3>Step 1：為什麼需要 Skill（0-5 min）</h3>
-<p><span class="badge badge-tg">📱 TG</span> 問 Admin 做超出能力的事 → 回答很泛 → 需要 Skill 擴充</p>
+<p><span class="badge badge-tg">📱 TG</span> 問 market-agent「幫我做 Ocean King vs Super Ace 的 SWOT 分析」</p>
+<p>→ 回答很泛、沒有結構 → 需要 Skill 擴充</p>
 </div>
 
 <div class="step-card">
 <h3>Step 2：拷問設計（5-20 min）⭐</h3>
 <p><span class="badge badge-kiro">📝 Kiro</span></p>
-<pre><code>拷問我的設計：為 market-agent 開發新聞爬蟲 Skill</code></pre>
+<pre><code>拷問我的設計：為 market-agent 開發 ark-competitor-brief Skill
+- 功能：輸入兩個遊戲名稱，產出 SWOT 競品分析簡報
+- 輸出格式：Markdown，含 S/W/O/T 四象限 + 結論建議</code></pre>
 <p>⚠️ <strong>不要全部回 OK</strong> — 質疑、補充、控制範疇</p>
 </div>
 
 <div class="step-card">
 <h3>Step 3：產出 Spec（20-35 min）</h3>
 <p><span class="badge badge-kiro">📝 Kiro</span> <code>根據決策摘要，幫我寫 spec</code></p>
-<p>✅ 產出 <code>docs/specs/news-scraper-spec.md</code>（含可量化驗收條件）</p>
+<p>✅ 產出 <code>docs/specs/competitor-brief-spec.md</code>（含可量化驗收條件）</p>
 </div>
 
 <div class="step-card">
 <h3>Step 4：依 Spec 產出 Skill（35-45 min）</h3>
-<p><span class="badge badge-kiro">📝 Kiro</span> <code>建立新 Skill，根據 spec 實作</code></p>
+<p><span class="badge badge-kiro">📝 Kiro</span> <code>建立 ark-competitor-brief Skill，根據 spec 實作</code></p>
+<p>✅ 產出含 SKILL.md + main handler + SWOT 模板</p>
 </div>
 
 <div class="step-card">
 <h3>Step 5：驗證一致性（45-50 min）</h3>
-<p><span class="badge badge-kiro">📝 Kiro</span> <code>驗證 code 跟 spec 一致嗎</code> → Score ≥ 90 可上線</p>
+<p><span class="badge badge-kiro">📝 Kiro</span> <code>驗證 ark-competitor-brief 的 code 跟 spec 一致嗎</code> → Score ≥ 90 可上線</p>
+<p><span class="badge badge-tg">📱 TG</span> 實際使用：「Ocean King vs Super Ace SWOT 分析」→ 確認格式正確</p>
 </div>
 
 <hr>
@@ -271,16 +323,14 @@ python start.py</code></pre>
 <tr><td>fishing-vs-slot-comparison.md</td><td>捕魚機 vs 老虎機定位比較</td></tr>
 </table>
 
-<h4>前半段：Kiro IDE 開發驗證</h4>
-
 <div class="step-card">
-<h3>Step 1：建立基準（0-5 min）</h3>
+<h3>Step 1：查 — 建立基準（0-5 min）</h3>
 <p><span class="badge badge-kiro">📝 Kiro</span> <code>查詢 Wiki「Ocean King 系列差異」</code></p>
 <p>✅ 查不到（raw/ 有素材但 wiki/ 是空的 → 還沒 ingest）</p>
 </div>
 
 <div class="step-card">
-<h3>Step 2：匯入 + 驗證 RAG（5-20 min）⭐</h3>
+<h3>Step 2：加 — 匯入 + 驗證 RAG（5-20 min）⭐</h3>
 <p><span class="badge badge-kiro">📝 Kiro</span></p>
 <pre><code>匯入 knowledge/raw/ 的所有文件到 Wiki</code></pre>
 <pre><code>再查一次「Ocean King 系列跟競品的差異」</code></pre>
@@ -288,21 +338,44 @@ python start.py</code></pre>
 </div>
 
 <div class="step-card">
-<h3>Step 3：建新知識（20-35 min）</h3>
-<p><span class="badge badge-kiro">📝 Kiro</span> 建立 <code>slot-market-trends.md</code>（東南亞市場趨勢）→ 匯入 → 驗證能查到</p>
+<h3>Step 3：lint — 知識品質檢查（20-30 min）</h3>
+<p><span class="badge badge-kiro">📝 Kiro</span></p>
+<pre><code>建立 slot-market-trends.md（東南亞市場趨勢）→ 匯入 → 驗證能查到</code></pre>
+<pre><code>列出 Wiki 索引統計：總文件數、總 chunk 數、最近更新時間</code></pre>
+<p>✅ 確認索引完整、無遺漏</p>
 </div>
 
-<h4>後半段：Telegram 上線驗證</h4>
-
 <div class="step-card">
-<h3>Step 4：使用者也能拿到答案（35-45 min）</h3>
+<h3>Step 4：TG 用 — 使用者也能拿到答案（30-40 min）</h3>
 <p><span class="badge badge-tg">📱 TG</span> 問「Ocean King 3 vs 2？」→ 有引用 ✅ / 問沒有的 → 坦白說 ❌</p>
+<p>💡 <strong>有知識 = 有依據；沒知識 = 坦白承認</strong></p>
 </div>
 
 <div class="step-card">
-<h3>Step 5：自演化（45-50 min）</h3>
+<h3>Step 5：TG + Web lint — Admin 面板驗證（40-50 min）</h3>
+<p><span class="badge badge-tg">📱 TG</span> <code>/wiki stats</code> → 查看索引統計</p>
+<p>🌐 <strong>Web UI</strong> <code>http://localhost:8000/wiki</code> → Wiki 瀏覽器：搜尋 + Markdown 閱讀 + 檔案列表</p>
 <p><span class="badge badge-kiro">📝 Kiro</span> 看 memory 自動記錄 → 理解成長循環</p>
+<p>💡 <strong>TG 用 + Web 管 + IDE 開發 = 三端一致的知識系統</strong></p>
 </div>
+
+<hr>
+
+<h2>🎁 課程 A 帶走什麼</h2>
+<pre><code>samples/ai-bot/
+├── agents/          ← 8 個 Agent（各有 .kiro/ 配置）
+├── knowledge/raw/   ← 遊戲競品分析（種子知識）
+├── skills/          ← ark-competitor-brief 等 Skill
+└── start.py         ← 一鍵啟動</code></pre>
+
+<h3>🌐 Web UI 6 頁（課後帶走即可用）</h3>
+<pre><code>http://localhost:8000
+  /        → Chat         對話主介面，切換 Agent 即時聊
+  /admin   → Dashboard    系統狀態 + 費用 + 排程監控
+  /wiki    → Wiki         知識庫瀏覽 + 搜尋 + Markdown 閱讀
+  /graph   → Graph        Agent 關聯圖 + 任務流視覺化
+  /builder → Builder      SOUL 編輯 + 知識綁定 + 預覽對話
+  /api-docs → API         REST API 文件（OpenAPI）</code></pre>
 
 </div>
 </div>
@@ -332,7 +405,7 @@ python start.py</code></pre>
 <table>
 <tr><th>#</th><th>主題</th><th>Skill</th><th>核心體驗</th></tr>
 <tr><td>04</td><td>Agent Team</td><td>ark-agent-team-builder + ark-kiro-init</td><td>一句話派工 → 自動分工</td></tr>
-<tr><td>05</td><td>營運落地</td><td>—（平台設定）</td><td>排程 + 費控 = 自動運作</td></tr>
+<tr><td>05</td><td>營運落地</td><td>—（平台設定）</td><td>排程 + 費控 + 知識迴圈</td></tr>
 </table>
 
 <hr>
@@ -415,13 +488,14 @@ python start.py</code></pre>
 <h4>後半段：觸發 + 體驗迴圈</h4>
 
 <div class="step-card">
-<h3>Step 4：觸發排程 + 驗證（22-32 min）</h3>
+<h3>Step 4：觸發週競品排程（22-32 min）⭐</h3>
 <p><span class="badge badge-kiro">📝 Kiro</span> <code>手動觸發 weekly-competitor-report 排程</code></p>
 <p><span class="badge badge-tg">📱 TG</span> market + designer + report 協作 → <code>/board</code> 看狀態 → <code>/costs</code> 看費用</p>
+<p>✅ 排程觸發 → 多 Agent 自動分工 → 產出存入 <code>knowledge/raw/</code></p>
 </div>
 
 <div class="step-card">
-<h3>Step 5：體驗迴圈 — 產出變知識（32-42 min）⭐</h3>
+<h3>Step 5：迴圈體驗 — ingest + 引用（32-42 min）⭐</h3>
 <p><span class="badge badge-kiro">📝 Kiro</span></p>
 <pre><code>列出 knowledge/raw/ 最新的檔案</code></pre>
 <pre><code>匯入 knowledge/raw/ 最新的檔案到 Wiki</code></pre>
@@ -440,6 +514,24 @@ python start.py</code></pre>
 </table>
 <p>💡 <strong>你設定好迴圈，剩下的它自己來 = 自演化</strong></p>
 </div>
+
+<hr>
+
+<h2>🎁 課程 B 帶走什麼</h2>
+<pre><code>samples/ai-team-agent/
+├── team-ops.yaml    ← 營運團隊配置
+├── team-dev.yaml    ← 研發團隊配置
+├── scheduler.yaml   ← 排程設定（含 ingest 迴圈）
+└── start.py         ← 一鍵啟動</code></pre>
+
+<h3>🌐 Web UI 6 頁（課後帶走即可用）</h3>
+<pre><code>http://localhost:8000
+  /        → Chat         對話主介面，切換 Agent 即時聊
+  /admin   → Dashboard    系統狀態 + 費用 + 排程監控
+  /wiki    → Wiki         知識庫瀏覽 + 搜尋 + Markdown 閱讀
+  /graph   → Graph        Agent 關聯圖 + 任務流視覺化
+  /builder → Builder      SOUL 編輯 + 知識綁定 + 預覽對話
+  /api-docs → API         REST API 文件（OpenAPI）</code></pre>
 
 </div>
 </div>
@@ -497,7 +589,7 @@ python start.py</code></pre>
 
 <hr>
 
-<h2>事件驅動生命週期案例：開發新魚種「黃金鯊魚」</h2>
+<h2>事件驅動生命週期案例：開發黃金鯊魚 Boss</h2>
 <table>
 <tr><th>Layer</th><th>事件</th><th>動作</th></tr>
 <tr><td>L1 Gateway</td><td>收到「企劃：新增黃金鯊魚 Boss，10000x 倍率，限時 30 秒」</td><td>路由到 pm-agent</td></tr>
@@ -508,6 +600,49 @@ python start.py</code></pre>
 <tr><td>L3 Knowledge</td><td>記錄設計決策</td><td>寫入 wiki：黃金鯊魚設計規格 → 下次新增 Boss 可參考</td></tr>
 <tr><td>L5 Operations</td><td>audit log</td><td>耗時 12 min / 費用 $0.08 / 3 Agent 協作完成</td></tr>
 </table>
+
+<hr>
+
+<h2>SKILL.md 範例：ark-boss-designer</h2>
+<pre><code># ark-boss-designer
+
+## 概述
+為捕魚機遊戲設計新 Boss 魚種的完整規格產出 Skill。
+
+## 輸入
+- boss_name: Boss 名稱（如「黃金鯊魚」）
+- multiplier: 倍率（如 10000x）
+- time_limit: 限時秒數（如 30）
+- theme: 視覺主題（如「黃金 + 閃電」）
+
+## 輸出
+Markdown 文件，包含：
+1. **外觀設計** — 主體描述、配色、動畫節點
+2. **數值設計** — 血量公式、倍率分佈、出現機率
+3. **機制設計** — 限時規則、特殊技能、連鎖效果
+4. **測試計畫** — 模擬局數、爆率驗收標準
+
+## 使用場景
+- 遊戲企劃提出新 Boss 需求時
+- 版本更新需要新增高倍率魚種時
+- 季節活動限定 Boss 設計
+
+## 依賴
+- knowledge/wiki/ 中的既有 Boss 設計規格（作為參考基準）
+- ark-competitor-brief 產出的競品分析（了解市場定位）</code></pre>
+
+<hr>
+
+<h2>🎁 進階帶走什麼</h2>
+
+<h3>🌐 Web UI 6 頁（課後帶走即可用）</h3>
+<pre><code>http://localhost:8000
+  /        → Chat         對話主介面，切換 Agent 即時聊
+  /admin   → Dashboard    系統狀態 + 費用 + 排程監控
+  /wiki    → Wiki         知識庫瀏覽 + 搜尋 + Markdown 閱讀
+  /graph   → Graph        Agent 關聯圖 + 任務流視覺化
+  /builder → Builder      SOUL 編輯 + 知識綁定 + 預覽對話
+  /api-docs → API         REST API 文件（OpenAPI）</code></pre>
 
 </div>
 </div>
