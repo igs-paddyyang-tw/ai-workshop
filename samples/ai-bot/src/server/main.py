@@ -29,6 +29,20 @@ def admin_page():
     return HTMLResponse(content=html)
 
 
+@app.get("/wiki", response_class=HTMLResponse)
+def wiki_page():
+    """Wiki 瀏覽器。"""
+    html = (TEMPLATES_DIR / "wiki.html").read_text(encoding="utf-8")
+    return HTMLResponse(content=html)
+
+
+@app.get("/builder", response_class=HTMLResponse)
+def builder_page():
+    """Agent Builder。"""
+    html = (TEMPLATES_DIR / "builder.html").read_text(encoding="utf-8")
+    return HTMLResponse(content=html)
+
+
 @app.get("/api-docs", response_class=HTMLResponse)
 def api_docs_page():
     """API 文件（自訂風格）。"""
@@ -170,6 +184,32 @@ async def api_chat(req: ChatRequest):
         "source": source,
         "sources": wiki_result.get("sources", []) if source == "wiki" else [],
     }
+
+
+@app.get("/api/v1/wiki/pages")
+async def list_wiki_pages():
+    """列出所有 wiki 頁面。"""
+    import re as _re
+    wiki_dir = Path("knowledge/wiki")
+    pages = []
+    if wiki_dir.exists():
+        for md in sorted(wiki_dir.glob("*.md")):
+            content = md.read_text(encoding="utf-8")
+            title = ""
+            m = _re.search(r'^title:\s*["\']?(.+?)["\']?\s*$', content, _re.MULTILINE)
+            if m:
+                title = m.group(1)
+            pages.append({"filename": md.name, "title": title or md.stem})
+    return {"pages": pages}
+
+
+@app.get("/api/v1/wiki/pages/{filename}")
+async def get_wiki_page(filename: str):
+    """取得單一 wiki 頁面內容。"""
+    path = Path("knowledge/wiki") / filename
+    if not path.exists():
+        return {"error": "not found"}
+    return {"filename": filename, "content": path.read_text(encoding="utf-8")}
 
 
 @app.post("/api/v1/wiki/query")

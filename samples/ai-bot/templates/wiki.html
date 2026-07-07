@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📖 AI Bot — Wiki</title>
+<style>
+:root { --bg: #0f172a; --surface: #1e293b; --border: #334155; --text: #e2e8f0; --muted: #94a3b8; --accent: #22d3ee; --green: #4ade80; --yellow: #fbbf24; --red: #f87171; --purple: #a78bfa; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+
+header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0.8rem 1.5rem; display: flex; align-items: center; justify-content: space-between; }
+header h1 { font-size: 1.2rem; color: var(--accent); }
+header nav a { color: var(--muted); text-decoration: none; margin-left: 1rem; font-size: 0.9rem; }
+header nav a:hover { color: var(--accent); }
+header nav a.active { color: var(--accent); }
+
+.wiki-layout { flex: 1; display: grid; grid-template-columns: 280px 1fr; overflow: hidden; }
+
+/* Sidebar */
+.sidebar { background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
+.search-box { padding: 1rem; border-bottom: 1px solid var(--border); }
+.search-box input { width: 100%; padding: 0.6rem 0.8rem; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 0.9rem; outline: none; }
+.search-box input:focus { border-color: var(--accent); }
+.search-box input::placeholder { color: var(--muted); }
+.file-list { flex: 1; overflow-y: auto; padding: 0.5rem; }
+.file-item { padding: 0.6rem 0.8rem; border-radius: 6px; cursor: pointer; font-size: 0.9rem; color: var(--muted); transition: all 0.2s; display: flex; align-items: center; gap: 0.5rem; }
+.file-item:hover { background: var(--bg); color: var(--text); }
+.file-item.active { background: var(--bg); color: var(--accent); border: 1px solid var(--border); }
+.file-item .icon { font-size: 1rem; }
+.file-count { padding: 0.5rem 1rem; font-size: 0.75rem; color: var(--muted); border-top: 1px solid var(--border); }
+
+/* Content */
+.content-area { flex: 1; overflow-y: auto; padding: 2rem; }
+.content-area .empty { text-align: center; padding: 4rem 2rem; color: var(--muted); }
+.content-area .empty .icon { font-size: 3rem; margin-bottom: 1rem; }
+.content-area .page-title { font-size: 1.5rem; color: var(--accent); margin-bottom: 1rem; padding-bottom: 0.8rem; border-bottom: 1px solid var(--border); }
+.content-area .page-meta { font-size: 0.8rem; color: var(--muted); margin-bottom: 1.5rem; }
+.content-area .page-body { line-height: 1.8; font-size: 0.95rem; }
+.content-area .page-body h1, .content-area .page-body h2, .content-area .page-body h3 { color: var(--accent); margin: 1.5rem 0 0.8rem; }
+.content-area .page-body h1 { font-size: 1.4rem; }
+.content-area .page-body h2 { font-size: 1.2rem; }
+.content-area .page-body h3 { font-size: 1.05rem; }
+.content-area .page-body p { margin: 0.6rem 0; }
+.content-area .page-body code { background: var(--bg); padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.85rem; color: var(--green); }
+.content-area .page-body pre { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; overflow-x: auto; margin: 1rem 0; }
+.content-area .page-body pre code { background: none; padding: 0; }
+.content-area .page-body ul, .content-area .page-body ol { padding-left: 1.5rem; margin: 0.5rem 0; }
+.content-area .page-body li { margin: 0.3rem 0; }
+.content-area .page-body blockquote { border-left: 3px solid var(--accent); padding-left: 1rem; color: var(--muted); margin: 1rem 0; }
+.content-area .page-body table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+.content-area .page-body th, .content-area .page-body td { border: 1px solid var(--border); padding: 0.5rem 0.8rem; text-align: left; }
+.content-area .page-body th { background: var(--surface); color: var(--accent); }
+
+/* Search results */
+.search-results { padding: 0.5rem 1rem; font-size: 0.8rem; color: var(--green); border-bottom: 1px solid var(--border); display: none; }
+
+@media (max-width: 768px) {
+  .wiki-layout { grid-template-columns: 1fr; }
+  .sidebar { max-height: 250px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>📖 AI Bot — Wiki</h1>
+  <nav>
+    <a href="/">💬 Chat</a>
+    <a href="/admin">⚙️ Dashboard</a>
+    <a href="/wiki" class="active">📖 Wiki</a>
+    <a href="/builder">🏗️ Builder</a>
+    <a href="/api-docs">📡 API</a>
+  </nav>
+</header>
+
+<div class="wiki-layout">
+  <!-- Sidebar: file list -->
+  <div class="sidebar">
+    <div class="search-box">
+      <input type="text" id="searchInput" placeholder="🔍 搜尋 Wiki..." autocomplete="off">
+    </div>
+    <div class="search-results" id="searchResults"></div>
+    <div class="file-list" id="fileList">
+      <div style="padding:1rem; color:var(--muted); font-size:0.85rem;">載入中...</div>
+    </div>
+    <div class="file-count" id="fileCount"></div>
+  </div>
+
+  <!-- Content area -->
+  <div class="content-area" id="contentArea">
+    <div class="empty">
+      <div class="icon">📖</div>
+      <p>選擇左側的 Wiki 頁面來閱讀內容</p>
+      <p style="font-size:0.85rem; margin-top:0.5rem;">或使用搜尋框查找知識庫</p>
+    </div>
+  </div>
+</div>
+
+<script>
+let allPages = [];
+let currentFile = null;
+
+// 載入檔案列表
+async function loadPages() {
+  try {
+    const resp = await fetch('/api/v1/wiki/pages');
+    const data = await resp.json();
+    allPages = data.pages || [];
+    renderFileList(allPages);
+  } catch (e) {
+    document.getElementById('fileList').innerHTML = `<div style="padding:1rem; color:var(--red); font-size:0.85rem;">❌ 載入失敗: ${e.message}</div>`;
+  }
+}
+
+function renderFileList(pages) {
+  const list = document.getElementById('fileList');
+  if (pages.length === 0) {
+    list.innerHTML = '<div style="padding:1rem; color:var(--muted); font-size:0.85rem;">沒有找到頁面</div>';
+    document.getElementById('fileCount').textContent = '';
+    return;
+  }
+  list.innerHTML = pages.map(p => `
+    <div class="file-item ${currentFile === p.filename ? 'active' : ''}" onclick="loadPage('${p.filename}')">
+      <span class="icon">📄</span>
+      <span>${p.title || p.filename}</span>
+    </div>
+  `).join('');
+  document.getElementById('fileCount').textContent = `共 ${pages.length} 個頁面`;
+}
+
+// 載入單頁內容
+async function loadPage(filename) {
+  currentFile = filename;
+  renderFileList(allPages);
+
+  const area = document.getElementById('contentArea');
+  area.innerHTML = '<div style="padding:2rem; color:var(--muted);">載入中...</div>';
+
+  try {
+    const resp = await fetch(`/api/v1/wiki/pages/${encodeURIComponent(filename)}`);
+    const data = await resp.json();
+    if (data.error) {
+      area.innerHTML = `<div class="empty"><div class="icon">❌</div><p>${data.error}</p></div>`;
+      return;
+    }
+    const content = data.content || '';
+    const rendered = renderMarkdown(content);
+    area.innerHTML = `
+      <div class="page-title">${filename}</div>
+      <div class="page-meta">📁 knowledge/wiki/${filename}</div>
+      <div class="page-body">${rendered}</div>
+    `;
+  } catch (e) {
+    area.innerHTML = `<div class="empty"><div class="icon">❌</div><p>載入失敗: ${e.message}</p></div>`;
+  }
+}
+
+// 搜尋
+let searchTimeout = null;
+document.getElementById('searchInput').addEventListener('input', (e) => {
+  clearTimeout(searchTimeout);
+  const q = e.target.value.trim();
+  searchTimeout = setTimeout(() => doSearch(q), 300);
+});
+
+async function doSearch(q) {
+  const resultsEl = document.getElementById('searchResults');
+  if (!q) {
+    resultsEl.style.display = 'none';
+    renderFileList(allPages);
+    return;
+  }
+
+  try {
+    const resp = await fetch('/api/v1/wiki/query', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ q })
+    });
+    const data = await resp.json();
+    resultsEl.style.display = 'block';
+
+    if (data.results && data.results.length > 0) {
+      resultsEl.textContent = `🔍 找到 ${data.results.length} 筆結果`;
+      // 過濾顯示匹配的頁面
+      const matchedFiles = data.results.map(r => r.source || r.filename).filter(Boolean);
+      const filtered = allPages.filter(p => matchedFiles.includes(p.filename));
+      renderFileList(filtered.length > 0 ? filtered : allPages);
+    } else {
+      resultsEl.textContent = '🔍 沒有找到結果';
+      // fallback: 本地過濾
+      const filtered = allPages.filter(p =>
+        p.title.toLowerCase().includes(q.toLowerCase()) ||
+        p.filename.toLowerCase().includes(q.toLowerCase())
+      );
+      renderFileList(filtered);
+    }
+  } catch (e) {
+    resultsEl.style.display = 'block';
+    resultsEl.textContent = '⚠️ 搜尋失敗，使用本地過濾';
+    const filtered = allPages.filter(p =>
+      p.title.toLowerCase().includes(q.toLowerCase()) ||
+      p.filename.toLowerCase().includes(q.toLowerCase())
+    );
+    renderFileList(filtered);
+  }
+}
+
+// 簡易 Markdown 渲染
+function renderMarkdown(md) {
+  // 移除 frontmatter
+  md = md.replace(/^---[\s\S]*?---\n*/m, '');
+
+  let html = md
+    // code blocks
+    .replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
+    // inline code
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    // headers
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+    // bold & italic
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    // blockquote
+    .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
+    // unordered list
+    .replace(/^- (.+)$/gm, '<li>$1</li>')
+    // links
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" style="color:var(--accent)">$1</a>')
+    // hr
+    .replace(/^---$/gm, '<hr style="border-color:var(--border); margin:1rem 0;">')
+    // paragraphs (lines not starting with html tags)
+    .replace(/^(?!<[hluobtaprs])((?!^\s*$).+)$/gm, '<p>$1</p>');
+
+  // Wrap consecutive <li> in <ul>
+  html = html.replace(/(<li>.*?<\/li>\n?)+/g, '<ul>$&</ul>');
+
+  return html;
+}
+
+// Enter 鍵搜尋
+document.getElementById('searchInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    clearTimeout(searchTimeout);
+    doSearch(e.target.value.trim());
+  }
+});
+
+// 初始載入
+loadPages();
+</script>
+</body>
+</html>
