@@ -43,6 +43,13 @@ def builder_page():
     return HTMLResponse(content=html)
 
 
+@app.get("/graph", response_class=HTMLResponse)
+def graph_page():
+    """Wiki 知識圖譜。"""
+    html = (TEMPLATES_DIR / "graph.html").read_text(encoding="utf-8")
+    return HTMLResponse(content=html)
+
+
 @app.get("/api-docs", response_class=HTMLResponse)
 def api_docs_page():
     """API 文件（自訂風格）。"""

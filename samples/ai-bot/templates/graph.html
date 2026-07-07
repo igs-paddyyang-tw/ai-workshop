@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🕸️ AI Bot — Wiki Graph</title>
+<style>
+:root { --bg: #0f172a; --surface: #1e293b; --border: #334155; --text: #e2e8f0; --muted: #94a3b8; --accent: #22d3ee; --green: #4ade80; --yellow: #fbbf24; --purple: #a78bfa; --orange: #fb923c; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; }
+header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0.8rem 1.5rem; display: flex; align-items: center; justify-content: space-between; }
+header h1 { font-size: 1.2rem; color: var(--accent); }
+header nav a { color: var(--muted); text-decoration: none; margin-left: 1rem; font-size: 0.9rem; }
+header nav a:hover { color: var(--accent); }
+header nav a.active { color: var(--accent); }
+
+.main { flex: 1; display: flex; overflow: hidden; }
+.graph-area { flex: 1; position: relative; }
+canvas { width: 100%; height: 100%; }
+.sidebar { width: 300px; background: var(--surface); border-left: 1px solid var(--border); padding: 1rem; overflow-y: auto; }
+.sidebar h3 { color: var(--accent); font-size: 1rem; margin-bottom: 0.8rem; }
+.sidebar .stat { display: flex; justify-content: space-between; padding: 0.4rem 0; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+.node-card { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 0.8rem; margin: 0.5rem 0; }
+.node-card h4 { color: var(--text); font-size: 0.9rem; margin-bottom: 0.3rem; }
+.node-card .tags { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.3rem; }
+.tag { padding: 0.1rem 0.4rem; border-radius: 3px; font-size: 0.7rem; background: var(--border); color: var(--muted); }
+.legend { margin-top: 1rem; }
+.legend-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; margin: 0.3rem 0; }
+.legend-dot { width: 12px; height: 12px; border-radius: 50%; }
+.toolbar { position: absolute; top: 1rem; left: 1rem; display: flex; gap: 0.5rem; }
+.toolbar button { padding: 0.4rem 0.8rem; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 0.8rem; cursor: pointer; }
+.toolbar button:hover { border-color: var(--accent); color: var(--accent); }
+.toolbar button.active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🕸️ Wiki Graph — 知識全貌</h1>
+  <nav>
+    <a href="/">💬 Chat</a>
+    <a href="/admin">⚙️ Dashboard</a>
+    <a href="/wiki">📖 Wiki</a>
+    <a href="/graph" class="active">🕸️ Graph</a>
+    <a href="/builder">🏗️ Builder</a>
+    <a href="/api-docs">📡 API</a>
+  </nav>
+</header>
+
+<div class="main">
+  <div class="graph-area">
+    <canvas id="graphCanvas"></canvas>
+    <div class="toolbar">
+      <button class="active" onclick="setView('all')">全部</button>
+      <button onclick="setView('tags')">依 Tag 分群</button>
+      <button onclick="setView('type')">依 Type 分色</button>
+    </div>
+  </div>
+
+  <div class="sidebar">
+    <h3>📊 統計</h3>
+    <div class="stat"><span>總頁面</span><span id="totalPages">-</span></div>
+    <div class="stat"><span>總 Tags</span><span id="totalTags">-</span></div>
+    <div class="stat"><span>總連結</span><span id="totalLinks">-</span></div>
+    <div class="stat"><span>孤立頁面</span><span id="orphans">-</span></div>
+
+    <h3 style="margin-top:1rem;">📄 頁面列表</h3>
+    <div id="nodeList"></div>
+
+    <div class="legend">
+      <h3>🎨 圖例</h3>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--accent)"></div> competitive-analysis</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div> market-research</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--yellow)"></div> concept</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--purple)"></div> entity</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--orange)"></div> other</div>
+      <div class="legend-item" style="margin-top:0.5rem;color:var(--muted)">節點大小 = 被引用次數<br>連線 = 共享 Tag</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const TYPE_COLORS = {
+  'competitive-analysis': '#22d3ee',
+  'market-research': '#4ade80',
+  'concept': '#fbbf24',
+  'entity': '#a78bfa',
+};
+
+let pages = [];
+let nodes = [];
+let links = [];
+let currentView = 'all';
+
+async function loadData() {
+  try {
+    const resp = await fetch('/api/v1/wiki/pages');
+    const data = await resp.json();
+    pages = data.pages || [];
+
+    // 取得每頁詳細資訊（tags, type）
+    for (let p of pages) {
+      try {
+        const r = await fetch(`/api/v1/wiki/pages/${p.filename}`);
+        const d = await r.json();
+        // 解析 frontmatter
+        const content = d.content || '';
+        p.type = extractField(content, 'type') || 'other';
+        p.tags = extractTags(content);
+      } catch(e) {
+        p.type = 'other';
+        p.tags = [];
+      }
+    }
+
+    buildGraph();
+    render();
+    updateSidebar();
+  } catch(e) {
+    console.error(e);
+  }
+}
+
+function extractField(content, field) {
+  const m = content.match(new RegExp(`^${field}:\\s*(.+)$`, 'm'));
+  return m ? m[1].trim().replace(/['"]/g, '') : null;
+}
+
+function extractTags(content) {
+  const m = content.match(/^tags:\s*\[(.+)\]/m);
+  if (!m) return [];
+  return m[1].split(',').map(t => t.trim().replace(/['"]/g, ''));
+}
+
+function buildGraph() {
+  nodes = pages.map((p, i) => ({
+    id: i,
+    filename: p.filename,
+    title: p.title,
+    type: p.type,
+    tags: p.tags,
+    x: 200 + Math.random() * 400,
+    y: 150 + Math.random() * 300,
+    vx: 0, vy: 0,
+    connections: 0,
+  }));
+
+  links = [];
+  // 建立連結：共享 tag 的頁面互相連結
+  for (let i = 0; i < nodes.length; i++) {
+    for (let j = i + 1; j < nodes.length; j++) {
+      const shared = nodes[i].tags.filter(t => nodes[j].tags.includes(t));
+      if (shared.length > 0) {
+        links.push({ source: i, target: j, weight: shared.length, tags: shared });
+        nodes[i].connections += shared.length;
+        nodes[j].connections += shared.length;
+      }
+    }
+  }
+}
+
+function updateSidebar() {
+  document.getElementById('totalPages').textContent = nodes.length;
+  const allTags = new Set(nodes.flatMap(n => n.tags));
+  document.getElementById('totalTags').textContent = allTags.size;
+  document.getElementById('totalLinks').textContent = links.length;
+  const orphans = nodes.filter(n => n.connections === 0).length;
+  document.getElementById('orphans').textContent = orphans;
+
+  const list = document.getElementById('nodeList');
+  list.innerHTML = nodes.map(n => `
+    <div class="node-card">
+      <h4>${n.title}</h4>
+      <div style="font-size:0.75rem;color:var(--muted)">type: ${n.type} | 連結: ${n.connections}</div>
+      <div class="tags">${n.tags.map(t => `<span class="tag">${t}</span>`).join('')}</div>
+    </div>
+  `).join('');
+}
+
+// 簡易力導向模擬
+function simulate() {
+  const k = 0.01; // 彈簧
+  const repel = 5000; // 斥力
+  const damping = 0.9;
+
+  // 斥力
+  for (let i = 0; i < nodes.length; i++) {
+    for (let j = i + 1; j < nodes.length; j++) {
+      const dx = nodes[j].x - nodes[i].x;
+      const dy = nodes[j].y - nodes[i].y;
+      const dist = Math.max(Math.sqrt(dx*dx + dy*dy), 1);
+      const f = repel / (dist * dist);
+      nodes[i].vx -= f * dx / dist;
+      nodes[i].vy -= f * dy / dist;
+      nodes[j].vx += f * dx / dist;
+      nodes[j].vy += f * dy / dist;
+    }
+  }
+
+  // 彈簧（連結）
+  for (const link of links) {
+    const s = nodes[link.source];
+    const t = nodes[link.target];
+    const dx = t.x - s.x;
+    const dy = t.y - s.y;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    const f = k * (dist - 150);
+    s.vx += f * dx / dist;
+    s.vy += f * dy / dist;
+    t.vx -= f * dx / dist;
+    t.vy -= f * dy / dist;
+  }
+
+  // 更新位置
+  const canvas = document.getElementById('graphCanvas');
+  for (const n of nodes) {
+    n.vx *= damping;
+    n.vy *= damping;
+    n.x += n.vx;
+    n.y += n.vy;
+    n.x = Math.max(50, Math.min(canvas.width - 50, n.x));
+    n.y = Math.max(50, Math.min(canvas.height - 50, n.y));
+  }
+}
+
+function render() {
+  const canvas = document.getElementById('graphCanvas');
+  canvas.width = canvas.parentElement.clientWidth;
+  canvas.height = canvas.parentElement.clientHeight;
+  const ctx = canvas.getContext('2d');
+
+  // 模擬幾步
+  for (let i = 0; i < 5; i++) simulate();
+
+  // 清除
+  ctx.fillStyle = '#0f172a';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // 畫連結
+  ctx.strokeStyle = '#334155';
+  ctx.lineWidth = 1;
+  for (const link of links) {
+    const s = nodes[link.source];
+    const t = nodes[link.target];
+    ctx.globalAlpha = 0.3 + link.weight * 0.2;
+    ctx.beginPath();
+    ctx.moveTo(s.x, s.y);
+    ctx.lineTo(t.x, t.y);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+
+  // 畫節點
+  for (const n of nodes) {
+    const r = 8 + n.connections * 3;
+    const color = TYPE_COLORS[n.type] || '#fb923c';
+    
+    // 光暈
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = color;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // 標籤
+    ctx.fillStyle = '#e2e8f0';
+    ctx.font = '11px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(n.title.substring(0, 20), n.x, n.y + r + 14);
+  }
+
+  requestAnimationFrame(render);
+}
+
+function setView(view) {
+  currentView = view;
+  document.querySelectorAll('.toolbar button').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+}
+
+loadData();
+</script>
+</body>
+</html>
