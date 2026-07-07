@@ -144,7 +144,12 @@ class WikiEngine:
     # ─── ingest ──────────────────────────────────────────
 
     def ingest(self, scope: str = "global", filename: str | None = None) -> list[str]:
-        """將 raw/ 匯入 wiki/。scope: 'global' 或 'private'（需要 agent_id）。"""
+        """將 raw/ 匯入 wiki/。只匯入新的或有更新的（比對修改時間）。
+
+        - 只掃 raw/ 下最多 2 層（避免吞入別人的專案）
+        - wiki/ 已有且不比 raw 舊 → 跳過
+        - raw 比 wiki 新 → 更新
+        """
         if scope == "private" and self.agent_raw and self.agent_wiki:
             raw_dir = self.agent_raw
             wiki_dir = self.agent_wiki
@@ -153,12 +158,30 @@ class WikiEngine:
             wiki_dir = self.global_wiki
 
         wiki_dir.mkdir(parents=True, exist_ok=True)
-        files = [raw_dir / filename] if filename else list(raw_dir.rglob("*.md"))
+
+        # 收集檔案（限制深度 2 層：raw/*.md + raw/一層子資料夾/*.md）
+        if filename:
+            files = [raw_dir / filename]
+        else:
+            files = list(raw_dir.glob("*.md"))  # 第一層
+            for sub in raw_dir.iterdir():
+                if sub.is_dir() and not sub.name.startswith("."):
+                    files.extend(sub.glob("*.md"))  # 第二層
+
         ingested: list[str] = []
 
         for src in files:
             if not src.exists():
                 continue
+
+            # 保持相對路徑
+            rel_path = src.relative_to(raw_dir)
+            dest = wiki_dir / rel_path
+
+            # 比對修改時間：wiki 版本不比 raw 舊 → 跳過
+            if dest.exists() and dest.stat().st_mtime >= src.stat().st_mtime:
+                continue
+
             content = src.read_text(encoding="utf-8")
             if content.startswith("---"):
                 wiki_content = content
@@ -172,9 +195,6 @@ class WikiEngine:
                 )
                 wiki_content = frontmatter + content
 
-            # 保持相對路徑（支援子資料夾）
-            rel_path = src.relative_to(raw_dir)
-            dest = wiki_dir / rel_path
             dest.parent.mkdir(parents=True, exist_ok=True)
             dest.write_text(wiki_content, encoding="utf-8")
             ingested.append(str(rel_path))
