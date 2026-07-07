@@ -45,65 +45,56 @@ agents/admin-agent/knowledge/       ← 私有（只有 admin 能查到）
 
 # IDE 開發
 
-## Step 1：確認 Wiki 是空的（0-5 min）
+## Step 1：確認目前知識庫狀態（0-5 min）
 
-**做什麼**：確認 knowledge/wiki/ 還沒有內容  
-**為什麼**：raw/ 有素材 ≠ Agent 能引用。要先 ingest 才能查到。
+**做什麼**：看 wiki/ 目前有什麼 + 問一個還沒有的問題當基準  
+**為什麼**：等下你加新知識後，同一問題會有不同結果 = 知識成長
 
 📝 Kiro IDE 輸入：
 ```
-列出 knowledge/raw/ 和 knowledge/wiki/ 各有什麼檔案
+列出 knowledge/wiki/ 有哪些檔案
 ```
 
-✅ 預期：
-- raw/：3 篇素材（ocean-king-analysis.md、super-ace-analysis.md、fishing-vs-slot-comparison.md）
-- wiki/：空的（還沒匯入）
-
-💡 **素材存在 ≠ 知識可用。raw/ 是原料，wiki/ 是成品。**
-
-📝 驗證 TG 也查不到：
+✅ 預期：3 篇（預設的競品分析）
 ```
-📱 TG → Market →「Ocean King 3 跟 2 有什麼差別？」
+ocean-king-analysis.md
+super-ace-analysis.md
+fishing-vs-slot-comparison.md
 ```
 
-✅ 預期：回答泛泛（沒有「📚 參考」引用）= Wiki 還沒生效
+📱 TG → Market → 問「最近老虎機市場有什麼新趨勢？」
+
+✅ 預期：回答沒有「📚 參考」引用（因為 wiki/ 沒有市場趨勢的資料）
+
+💡 **系統有 3 篇舊知識，但沒有「你的新知識」→ Step 3 你來加。**
 
 ---
 
-## Step 2：匯入知識 + Kiro 內驗證（5-20 min）⭐ 核心
+## Step 2：理解 ingest 流程 + 驗證 Wiki 可查詢（5-20 min）⭐ 核心
 
-**做什麼**：匯入知識後，在 Kiro 內確認 RAG 有效  
-**為什麼**：開發者先確認功能正常，再提供給使用者
+**做什麼**：理解 raw/ → wiki/ 的流程，驗證現有 Wiki 能被查到  
+**為什麼**：Step 3 你要加新知識，先確認機制運作正常
 
 📝 Kiro IDE 輸入：
 ```
-把根目錄 knowledge/raw/ 的 3 篇 .md 檔案匯入到根目錄 knowledge/wiki/
-（不是 agents/ 下的，是專案根目錄的 knowledge/）
-
-具體操作：
-1. 讀取 knowledge/raw/ 所有 .md
-2. 確認有 frontmatter，沒有的話補上
-3. 寫入 knowledge/wiki/
-4. 更新 knowledge/index.md
+說明 knowledge/raw/ 和 knowledge/wiki/ 的關係：
+- raw/ 是什麼？wiki/ 是什麼？
+- ingest 做了什麼事？
+- 看一下 knowledge/wiki/ocean-king-analysis.md 的 frontmatter
 ```
 
-→ Kiro 執行匯入（或提示你跑 `curl -X POST http://localhost:8000/api/v1/wiki/ingest`）
+✅ 預期 Kiro 解釋：
+- raw/ = 原始素材（你丟的）
+- wiki/ = 結構化知識（有 frontmatter，Bot 能搜尋的）
+- ingest = 把 raw/ 處理成 wiki/（補 frontmatter + 更新 index）
 
-⚠️ 如果 Kiro 把檔案放到 agents/ 下 → 提醒它：「不對，要放根目錄 knowledge/wiki/，不是 agent 的私有目錄」
-
-✅ 預期結果：
-- `knowledge/wiki/` 出現 3 個 .md（ocean-king-analysis.md 等）
-- `knowledge/index.md` 更新（列出 3 篇）
-
-📝 在 Kiro 內驗證（不需要開 Telegram）：
+📝 驗證 Wiki 能被查詢（確認 Bot server 在跑）：
 ```
-再查一次「Ocean King 系列跟競品的差異」
+幫我在終端執行：
+curl -X POST http://localhost:8000/api/v1/wiki/query -H "Content-Type: application/json" -d '{"q":"Ocean King"}'
 ```
 
-✅ 預期結果：
-- 找到 ocean-king-analysis.md 的相關片段
-- 列出 Ocean King 2/3/4 各版本的特色差異
-- **跟 Step 1 明顯不同 — 這就是 RAG 的效果**
+✅ 預期：回傳包含 ocean-king-analysis.md 的搜尋結果
 
 📝 追加驗證：
 ```
@@ -111,6 +102,8 @@ agents/admin-agent/knowledge/       ← 私有（只有 admin 能查到）
 ```
 
 ✅ 預期：3 篇（ocean-king-analysis.md、super-ace-analysis.md、fishing-vs-slot-comparison.md）
+
+💡 **現有的 3 篇是預設的。接下來 Step 3 你用 AI 搜尋產出新知識加進去。**
 
 ---
 
