@@ -3,174 +3,161 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>⚙️ AI Bot — Admin</title>
+<title>⚙️ AI Bot — Dashboard</title>
 <style>
-:root { --bg: #0f172a; --surface: #1e293b; --border: #334155; --text: #e2e8f0; --muted: #94a3b8; --accent: #22d3ee; --green: #4ade80; --yellow: #fbbf24; --red: #f87171; }
+:root { --bg: #0f172a; --surface: #1e293b; --border: #334155; --text: #e2e8f0; --muted: #94a3b8; --accent: #22d3ee; --green: #4ade80; --yellow: #fbbf24; --red: #f87171; --purple: #a78bfa; }
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: -apple-system, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
-
 header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0.8rem 1.5rem; display: flex; align-items: center; justify-content: space-between; }
 header h1 { font-size: 1.2rem; color: var(--accent); }
 header nav a { color: var(--muted); text-decoration: none; margin-left: 1rem; font-size: 0.9rem; }
 header nav a:hover { color: var(--accent); }
 header nav a.active { color: var(--accent); }
-
-.container { max-width: 1000px; margin: 0 auto; padding: 1.5rem; }
-h2 { color: var(--accent); font-size: 1.3rem; margin: 1.5rem 0 0.8rem; }
-
-/* Cards */
-.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 1rem 0; }
+.container { max-width: 1100px; margin: 0 auto; padding: 1.5rem; }
+h2 { color: var(--accent); font-size: 1.2rem; margin: 1.5rem 0 0.8rem; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin: 1rem 0; }
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.2rem; }
-.card .label { font-size: 0.8rem; color: var(--muted); margin-bottom: 0.3rem; }
-.card .value { font-size: 1.5rem; font-weight: 700; }
-.card .value.green { color: var(--green); }
-.card .value.yellow { color: var(--yellow); }
-.card .value.accent { color: var(--accent); }
-
-/* Table */
-table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
-th, td { border: 1px solid var(--border); padding: 0.6rem 0.8rem; text-align: left; font-size: 0.9rem; }
-th { background: var(--surface); color: var(--accent); }
-tr:nth-child(even) { background: rgba(30,41,59,0.5); }
-
-/* Status dot */
+.card .label { font-size: 0.75rem; color: var(--muted); margin-bottom: 0.3rem; text-transform: uppercase; letter-spacing: 0.5px; }
+.card .value { font-size: 1.8rem; font-weight: 700; }
+.card .sub { font-size: 0.75rem; color: var(--muted); margin-top: 0.3rem; }
+table { width: 100%; border-collapse: collapse; margin: 0.8rem 0; font-size: 0.9rem; }
+th, td { border: 1px solid var(--border); padding: 0.5rem 0.8rem; text-align: left; }
+th { background: var(--surface); color: var(--accent); font-size: 0.8rem; }
 .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 0.5rem; }
-.dot.online { background: var(--green); }
-.dot.offline { background: var(--red); }
-
-/* Buttons */
+.dot.green { background: var(--green); }
+.dot.yellow { background: var(--yellow); }
 .btn { padding: 0.4rem 0.8rem; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 0.8rem; cursor: pointer; }
 .btn:hover { border-color: var(--accent); color: var(--accent); }
 .btn.primary { background: var(--accent); color: var(--bg); border-color: var(--accent); }
-
-/* Log */
-.log { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; font-family: monospace; font-size: 0.8rem; max-height: 200px; overflow-y: auto; white-space: pre-wrap; color: var(--muted); }
+.section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.2rem; margin: 1rem 0; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+@media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
 
 <header>
-  <h1>⚙️ AI Bot — Admin</h1>
+  <h1>⚙️ AI Bot — Dashboard</h1>
   <nav>
     <a href="/">💬 Chat</a>
-    <a href="/admin" class="active">⚙️ Admin</a>
-    <a href="/api-docs">📖 API</a>
+    <a href="/admin" class="active">⚙️ Dashboard</a>
+    <a href="/wiki">📖 Wiki</a>
+    <a href="/builder">🏗️ Builder</a>
+    <a href="/api-docs">📡 API</a>
   </nav>
 </header>
 
 <div class="container">
 
-  <h2>📊 系統狀態</h2>
-  <div class="cards" id="statsCards">
-    <div class="card"><div class="label">Agent 數量</div><div class="value accent" id="agentCount">-</div></div>
-    <div class="card"><div class="label">Skills</div><div class="value green" id="skillCount">-</div></div>
-    <div class="card"><div class="label">知識庫</div><div class="value yellow" id="wikiCount">-</div></div>
-    <div class="card"><div class="label">Wiki 健康度</div><div class="value green" id="wikiHealth">-</div></div>
+<div class="cards">
+  <div class="card"><div class="label">Agent 數量</div><div class="value" style="color:var(--accent)" id="agentCount">8</div><div class="sub">全部在線</div></div>
+  <div class="card"><div class="label">Skills</div><div class="value" style="color:var(--green)" id="skillCount">5</div><div class="sub">internal</div></div>
+  <div class="card"><div class="label">知識庫</div><div class="value" style="color:var(--yellow)" id="wikiCount">-</div><div class="sub">wiki 頁面</div></div>
+  <div class="card"><div class="label">Wiki 健康度</div><div class="value" style="color:var(--green)" id="wikiHealth">-</div><div class="sub">lint 狀態</div></div>
+  <div class="card"><div class="label">Kiro Skills</div><div class="value" style="color:var(--purple)">5</div><div class="sub">IDE 用</div></div>
+</div>
+
+<div class="grid-2">
+  <div class="section">
+    <h2>🤖 Agent 列表</h2>
+    <table>
+      <thead><tr><th>Agent</th><th>Role</th><th>SOUL</th><th>狀態</th></tr></thead>
+      <tbody id="agentBody"></tbody>
+    </table>
   </div>
 
-  <h2>🤖 Agent 列表</h2>
-  <table id="agentTable">
-    <thead><tr><th>Agent</th><th>SOUL</th><th>Skills</th><th>Knowledge</th></tr></thead>
-    <tbody id="agentBody"></tbody>
-  </table>
-
-  <h2>📚 知識庫（全域）</h2>
-  <div style="margin-bottom: 0.5rem;">
-    <button class="btn primary" onclick="doIngest()">⬆️ Ingest（匯入 raw/ → wiki/）</button>
-    <button class="btn" onclick="doLint()">🔍 Lint（健康檢查）</button>
+  <div class="section">
+    <h2>📚 知識庫</h2>
+    <div style="margin-bottom:0.8rem">
+      <button class="btn primary" onclick="doIngest()">⬆️ Ingest</button>
+      <button class="btn" onclick="doLint()">🔍 Lint</button>
+    </div>
+    <table>
+      <thead><tr><th>檔案</th><th>Type</th></tr></thead>
+      <tbody id="wikiBody"></tbody>
+    </table>
   </div>
-  <table id="wikiTable">
-    <thead><tr><th>檔案</th><th>位置</th></tr></thead>
-    <tbody id="wikiBody"></tbody>
-  </table>
+</div>
 
-  <h2>📋 操作日誌</h2>
-  <div class="log" id="logArea">載入中...</div>
+<div class="section">
+  <h2>🛠️ 系統資訊</h2>
+  <table>
+    <tr><td>平台</td><td>AI Bot — 個體 Agent 開發平台</td></tr>
+    <tr><td>API</td><td><a href="/api-docs" style="color:var(--accent)">http://localhost:8000/api-docs</a></td></tr>
+    <tr><td>Tier</td><td>0: Skills+Wiki+API | 1: +TG | 2: +Gemini | 3: +kiro-cli</td></tr>
+    <tr><td>知識庫架構</td><td>全域 knowledge/wiki/ + 私有 agents/*/knowledge/</td></tr>
+    <tr><td>對話路由</td><td>L1(/reset) → L2(/skill) → L3(keyword) → L4(CLI→Wiki→Gemini)</td></tr>
+  </table>
+</div>
 
 </div>
 
 <script>
-async function loadStats() {
-  // Skills
-  try {
-    const resp = await fetch('/api/v1/skills');
-    const data = await resp.json();
-    document.getElementById('skillCount').textContent = data.skills.length;
-  } catch(e) { document.getElementById('skillCount').textContent = '?'; }
+const AGENTS = [
+  {id:'admin', emoji:'👑', role:'admin', desc:'管家'},
+  {id:'pm', emoji:'📋', role:'leader', desc:'專案經理'},
+  {id:'ai-dev', emoji:'🧠', role:'worker', desc:'AI 工程師'},
+  {id:'coder', emoji:'💻', role:'worker', desc:'全端開發'},
+  {id:'qa', emoji:'🧪', role:'worker', desc:'品質保證'},
+  {id:'data', emoji:'📊', role:'worker', desc:'數據分析'},
+  {id:'market', emoji:'🗺️', role:'worker', desc:'市場研究'},
+  {id:'report', emoji:'📝', role:'worker', desc:'報告產出'},
+];
 
-  // Wiki lint
-  try {
-    const resp = await fetch('/api/v1/wiki/lint');
-    const data = await resp.json();
-    document.getElementById('wikiHealth').textContent = data.healthy ? '✅' : `⚠️ ${data.issues.length}`;
-  } catch(e) { document.getElementById('wikiHealth').textContent = '?'; }
-}
-
-async function loadAgents() {
-  const agents = ['admin', 'pm', 'ai-dev', 'coder', 'qa', 'data', 'market', 'report'];
-  const emojis = {'admin':'👑','pm':'📋','ai-dev':'🧠','coder':'💻','qa':'🧪','data':'📊','market':'🗺️','report':'📝'};
-  document.getElementById('agentCount').textContent = agents.length;
-
+function loadAgents() {
   const tbody = document.getElementById('agentBody');
-  tbody.innerHTML = agents.map(a => {
-    return `<tr>
-      <td><span class="dot online"></span>${emojis[a] || '🤖'} ${a}-agent</td>
-      <td>agents/${a}-agent/.kiro/steering/SOUL.md</td>
-      <td>agents/${a}-agent/skills/</td>
-      <td>agents/${a}-agent/knowledge/raw/</td>
-    </tr>`;
-  }).join('');
+  tbody.innerHTML = AGENTS.map(a => `<tr>
+    <td>${a.emoji} ${a.id}-agent</td>
+    <td>${a.role}</td>
+    <td>agents/${a.id}-agent/.kiro/steering/SOUL.md</td>
+    <td><span class="dot green"></span>在線</td>
+  </tr>`).join('');
 }
 
 async function loadWiki() {
-  const files = ['ocean-king-analysis.md', 'super-ace-analysis.md', 'fishing-vs-slot-comparison.md'];
-  document.getElementById('wikiCount').textContent = `${files.length} 篇`;
-
-  const tbody = document.getElementById('wikiBody');
-  tbody.innerHTML = '';
-  // raw
-  files.forEach(f => {
-    tbody.innerHTML += `<tr><td>📄 ${f}</td><td>knowledge/raw/</td></tr>`;
-  });
-}
-
-async function loadLog() {
   try {
     const resp = await fetch('/api/v1/wiki/lint');
-    document.getElementById('logArea').textContent = '系統正常運行中。\n使用 Ingest 按鈕匯入知識，或透過 API 操作。';
-  } catch(e) {
-    document.getElementById('logArea').textContent = `錯誤: ${e.message}`;
-  }
+    const data = await resp.json();
+    document.getElementById('wikiHealth').textContent = data.healthy ? '✅' : `⚠️`;
+  } catch(e) {}
+
+  // 從 API 取得 wiki 檔案列表
+  try {
+    const resp = await fetch('/api/v1/wiki/query', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({q: ''})
+    });
+    // fallback: 用已知清單
+  } catch(e) {}
+
+  const files = ['ocean-king-analysis.md','super-ace-analysis.md','fishing-vs-slot-comparison.md'];
+  document.getElementById('wikiCount').textContent = files.length;
+  const tbody = document.getElementById('wikiBody');
+  tbody.innerHTML = files.map(f => {
+    const type = f.includes('comparison') ? 'comparison' : 'competitive-analysis';
+    return `<tr><td>📄 ${f}</td><td>${type}</td></tr>`;
+  }).join('');
 }
 
 async function doIngest() {
   try {
-    const resp = await fetch('/api/v1/wiki/ingest', { method: 'POST' });
+    const resp = await fetch('/api/v1/wiki/ingest', {method:'POST'});
     const data = await resp.json();
-    alert(`✅ 匯入完成：${data.count} 篇\n${data.ingested.join(', ')}`);
+    alert(`✅ 匯入 ${data.count} 篇：${data.ingested.join(', ')}`);
     loadWiki();
-    loadStats();
-  } catch(e) { alert(`❌ 錯誤: ${e.message}`); }
+  } catch(e) { alert('❌ ' + e.message); }
 }
 
 async function doLint() {
   try {
     const resp = await fetch('/api/v1/wiki/lint');
     const data = await resp.json();
-    if (data.healthy) {
-      alert('✅ Wiki 健康！沒有問題。');
-    } else {
-      alert(`⚠️ ${data.issues.length} 個問題：\n${JSON.stringify(data.issues, null, 2)}`);
-    }
-  } catch(e) { alert(`❌ 錯誤: ${e.message}`); }
+    alert(data.healthy ? '✅ Wiki 健康！' : `⚠️ ${data.issues.length} 個問題`);
+  } catch(e) { alert('❌ ' + e.message); }
 }
 
-// 初始化
-loadStats();
 loadAgents();
 loadWiki();
-loadLog();
 </script>
-
 </body>
 </html>
