@@ -205,21 +205,45 @@ class WikiEngine:
         return ingested
 
     def _update_index(self) -> None:
-        """重建全域 index.md。"""
-        lines = ["# Wiki 索引\n", "| 檔案 | 標題 |", "|------|------|"]
+        """重建全域 index.md（帶相對路徑 + 按資料夾分類）。"""
+        lines = ["# Wiki 索引\n"]
+        
+        # 收集所有檔案（帶相對路徑）
+        entries: dict[str, list] = {}  # folder -> [(rel_path, title)]
         for md in sorted(GLOBAL_WIKI.rglob("*.md")):
-            if md.name == ".gitkeep":
+            if md.name in (".gitkeep", "index.md", "log.md", "schema.md"):
                 continue
+            rel = md.relative_to(GLOBAL_WIKI)
             content = md.read_text(encoding="utf-8")
             title = self._extract_title(content)
-            lines.append(f"| {md.name} | {title} |")
+            folder = str(rel.parent) if rel.parent != Path(".") else "(根層)"
+            if folder not in entries:
+                entries[folder] = []
+            entries[folder].append((str(rel), title))
+        
+        # 按資料夾分類輸出
+        for folder in sorted(entries.keys()):
+            if folder == "(根層)":
+                lines.append(f"\n## 📄 根層\n")
+            else:
+                lines.append(f"\n## 📁 {folder}\n")
+            lines.append("| 檔案 | 標題 |")
+            lines.append("|------|------|")
+            for rel_path, title in entries[folder]:
+                lines.append(f"| {rel_path} | {title} |")
+        
         INDEX_PATH.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
     def _append_log(self, files: list[str], scope: str = "global") -> None:
-        """追加操作日誌。"""
+        """追加操作日誌（只在有實際變動時）。"""
+        if not files:
+            return  # 沒有變動不追加
         ts = datetime.now().strftime("%Y-%m-%d %H:%M")
         agent_tag = f" [{self.agent_id}]" if self.agent_id and scope == "private" else ""
-        entry = f"- [{ts}]{agent_tag} ingest ({scope}): {', '.join(files)}\n"
+        entry = f"- [{ts}]{agent_tag} ingest ({scope}): {len(files)} 篇 — {', '.join(files[:5])}"
+        if len(files) > 5:
+            entry += f" ...等共 {len(files)} 篇"
+        entry += "\n"
         with LOG_PATH.open("a", encoding="utf-8") as f:
             f.write(entry)
 
