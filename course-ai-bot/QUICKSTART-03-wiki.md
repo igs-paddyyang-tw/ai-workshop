@@ -25,6 +25,39 @@ knowledge/
 
 **規則**：raw/ 是原料，wiki/ 是成品。Bot 只搜尋 wiki/。
 
+## 📖 本堂知識（2 分鐘看完）
+
+### LLM Wiki = AI 能搜尋的知識庫
+- 不是維基百科，是你自己的 Markdown 知識庫
+- Bot 收到問題 → 搜尋 wiki/ → 找到相關段落 → 合成回答 + 附引用
+- 有引用 = RAG（Retrieval-Augmented Generation）
+
+### 三者的關係
+
+| 東西 | 是什麼 | 誰用 |
+|------|--------|------|
+| `knowledge/wiki/*.md` | 知識檔案 | Bot 的 WikiEngine 搜尋 |
+| `WikiEngine`（Python） | 搜尋引擎 | Bot runtime 自動呼叫 |
+| `ark-wiki-engine`（Skill） | IDE 操作工具 | 你在 Kiro IDE 觸發 ingest/query |
+
+### IDE vs TG 的知識流
+
+```
+你（IDE）：                        使用者（TG）：
+  Kiro 讀檔案 / 跑 curl              Bot handlers.py
+       ↓                                  ↓
+  直接看 wiki/ 內容              WikiEngine.query() 搜尋 wiki/
+       ↓                                  ↓
+  確認「檔案在不在」              Gemini + Wiki context → 回答 + 📚
+```
+
+### 兩層知識庫
+
+| 層 | 位置 | 誰能用 | 怎麼加 |
+|----|------|--------|--------|
+| 全域 | `knowledge/wiki/` | 所有 Agent | 你手動 ingest（本堂教的） |
+| 私有 | `agents/{agent}/knowledge/wiki/` | 只有該 Agent | memory 自動累積（課程 B 展開） |
+
 💡 **概念**：`raw/` = 原料（你丟的）→ `ingest` = 轉換 → `wiki/` = 成品（Bot 能搜尋）
 
 ---
