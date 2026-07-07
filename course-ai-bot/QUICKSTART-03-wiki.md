@@ -11,38 +11,27 @@
 
 ## 📖 本堂知識（2 分鐘看完）
 
-### LLM Wiki = AI 能搜尋的知識庫
-- 不是維基百科，是你自己的 Markdown 知識庫
-- Bot 收到問題 → 搜尋 wiki/ → 找到相關段落 → 合成回答 + 附引用
-- 有引用 = RAG（Retrieval-Augmented Generation）
+### LLM Wiki = 你的 AI 筆記本
+- 你丟筆記進去 → Agent 能引用回答（不用靠猜）
+- 有引用 📚 = 有依據 / 沒引用 = Agent 在猜
+- 跟 Google 的差別：Google 搜全世界，Wiki 只搜你自己的資料
 
-### 三者的關係
+### 三個動作
 
-| 東西 | 是什麼 | 誰用 |
+| 動作 | 做什麼 | 類比 |
 |------|--------|------|
-| `knowledge/wiki/*.md` | 知識檔案 | Bot 的 WikiEngine 搜尋 |
-| `WikiEngine`（Python） | 搜尋引擎 | Bot runtime 自動呼叫 |
-| `ark-wiki-engine`（Skill） | IDE 操作工具 | 你在 Kiro IDE 觸發 ingest/query |
+| Ingest | 把文件丟進 Wiki | 把筆記放進書架 |
+| Query | 問問題，Wiki 找答案 | 翻書架找相關的 |
+| Lint | 檢查品質 | 確認書有沒有目錄和標籤 |
 
-### IDE vs TG 的知識流
+### 兩種驗證方式
 
-```
-你（IDE）：                        使用者（TG）：
-  Kiro 讀檔案 / 跑 curl              Bot handlers.py
-       ↓                                  ↓
-  直接看 wiki/ 內容              WikiEngine.query() 搜尋 wiki/
-       ↓                                  ↓
-  確認「API 能查到」              Gemini + Wiki context → 回答 + 📚
-```
+| 方式 | 誰用 | 做什麼 |
+|------|------|--------|
+| 📝 IDE 對話 | 所有人 | 問 Kiro 問題，看有沒有引用 |
+| 💻 curl API | 軟體人員 | 直接打 API 確認系統回傳 |
 
-### 兩層知識庫
-
-| 層 | 位置 | 誰能用 | 怎麼加 |
-|----|------|--------|--------|
-| 全域 | `knowledge/wiki/` | 所有 Agent | 你手動 ingest（本堂教的） |
-| 私有 | `agents/{agent}/knowledge/wiki/` | 只有該 Agent | memory 自動累積（課程 B 展開） |
-
-💡 `raw/` = 原料 → `ingest` = 轉換 → `wiki/` = 成品（Bot 能搜尋）
+💡 `raw/` = 你丟的原始文件 → `ingest` = 放進書架 → `wiki/` = Agent 能翻的書
 
 ---
 
@@ -50,23 +39,30 @@
 
 ## Step 1：查知識 — 確認現狀（0-5 min）
 
-**做什麼**：用 curl 確認舊知識能查到 + 新知識查不到
+**做什麼**：先問一個 Wiki 有的問題 + 一個沒有的問題，建立基準
 
-📝 Kiro IDE 輸入：
+📝 Kiro IDE 輸入（所有人）：
+```
+讀取 agents/market-agent/.kiro/steering/SOUL.md，
+用 market-agent 的人格回答：「Ocean King 3 跟 Ocean King 2 有什麼差別？」
+```
+
+✅ 預期：Kiro 能回答（因為它會讀 wiki/ 的檔案）
+
+📝 再問一個 Wiki 沒有的：
+```
+用 market-agent 的人格回答：「最近老虎機市場有什麼新趨勢？」
+```
+
+✅ 預期：回答比較泛（Wiki 沒有這份資料）→ Step 2 你來加
+
+💻 軟體人員加做（確認 API 正常）：
 ```
 幫我在終端執行：
 curl -X POST http://localhost:8000/api/v1/wiki/query -H "Content-Type: application/json" -d '{"q":"Ocean King"}'
 ```
 
-✅ 預期：回傳 ocean-king-analysis.md 的搜尋結果（舊知識能查 ✅）
-
-📝 再查一個新的：
-```
-幫我在終端執行：
-curl -X POST http://localhost:8000/api/v1/wiki/query -H "Content-Type: application/json" -d '{"q":"老虎機市場趨勢"}'
-```
-
-✅ 預期：沒有結果（新知識還沒加 → Step 2 你來加）
+✅ 預期：回傳搜尋結果（確認 Bot server 和 WikiEngine 正常運作）
 
 ---
 
