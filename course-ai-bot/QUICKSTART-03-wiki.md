@@ -3,114 +3,70 @@
 ## 🎯 課堂目標
 
 完成後你能：
-1. 在 Kiro IDE 內完成知識庫建構 + 驗證 RAG 有效
-2. 讓 Agent 學會「你教它的東西」（丟文件 → 能回答）
-3. 部署到 Telegram 確認使用者也能拿到正確答案
-4. 理解自演化：每次對話都在讓 Agent 變聰明
+1. 用 AI 搜尋能力產出知識文件並匯入系統
+2. 在 IDE 驗證知識庫能被查詢
+3. 在 TG 確認 Agent 真的在用你的知識回答
+4. 理解「加資料 → ingest → 立即可用 = 知識成長」
 
 ## 📋 前置條件
 
 - 已完成第一堂（samples/ai-bot 能跑 + GEMINI_API_KEY 已設定）
 - Kiro IDE（含 .kiro/skills/ark-wiki-engine）
 
-## 使用的功能
-
-| 功能 | 觸發方式 | 位置 |
-|------|---------|------|
-| Wiki 匯入 | 📝「匯入知識到 Wiki」或 `curl /api/v1/wiki/ingest` | 全域 knowledge/ |
-| Wiki 查詢 | 📱 TG 直接問（自動查）或 `curl /api/v1/wiki/query` | 先私有再全域 |
-| Wiki 檢查 | 📝「檢查 Wiki 健康度」或 `curl /api/v1/wiki/lint` | 全域 knowledge/ |
-
-### 📂 知識庫架構（兩層）
+## 📂 知識庫架構
 
 ```
-knowledge/                          ← 全域（所有 Agent 共用）
-├── raw/                            ← 丟文件的地方
-│   ├── ocean-king-analysis.md
-│   ├── super-ace-analysis.md
-│   └── fishing-vs-slot-comparison.md
-└── wiki/                           ← ingest 後 → TG 能查到
-
-agents/admin-agent/knowledge/       ← 私有（只有 admin 能查到）
-├── raw/                            ← memory 自動寫入的對話記錄
-└── wiki/                           ← 私有 ingest 後
+knowledge/
+├── raw/    ← 原始素材（你丟的 / AI 搜尋產出的）
+├── wiki/   ← 結構化知識（ingest 後，Bot 能搜尋）
+├── index.md ← 索引目錄
+└── log.md   ← 操作日誌
 ```
 
-**規則**：
-- TG 問問題 → 先查私有 wiki → 再查全域 wiki → 合併回答
-- 全域 = 公司共用知識（競品分析、SOP）
-- 私有 = Agent 的對話記憶（越聊越懂你）
+**規則**：raw/ 是原料，wiki/ 是成品。Bot 只搜尋 wiki/。
 
 ---
 
 # IDE 開發
 
-## Step 1：確認目前知識庫狀態（0-5 min）
+## Step 1：看現況 + 建立基準（0-10 min）
 
-**做什麼**：看 wiki/ 目前有什麼 + 問一個還沒有的問題當基準  
-**為什麼**：等下你加新知識後，同一問題會有不同結果 = 知識成長
-
-📝 Kiro IDE 輸入：
-```
-列出 knowledge/wiki/ 有哪些檔案
-```
-
-✅ 預期：3 篇（預設的競品分析）
-```
-ocean-king-analysis.md
-super-ace-analysis.md
-fishing-vs-slot-comparison.md
-```
-
-📱 TG → Market → 問「最近老虎機市場有什麼新趨勢？」
-
-✅ 預期：回答沒有「📚 參考」引用（因為 wiki/ 沒有市場趨勢的資料）
-
-💡 **系統有 3 篇舊知識，但沒有「你的新知識」→ Step 3 你來加。**
-
----
-
-## Step 2：理解 ingest 流程 + 驗證 Wiki 可查詢（5-20 min）⭐ 核心
-
-**做什麼**：理解 raw/ → wiki/ 的流程，驗證現有 Wiki 能被查到  
-**為什麼**：Step 3 你要加新知識，先確認機制運作正常
+**做什麼**：確認 wiki/ 有什麼 + 問一個還沒有的問題 + 理解機制  
+**為什麼**：知道「缺什麼」→ 等下加了能對比
 
 📝 Kiro IDE 輸入：
 ```
-說明 knowledge/raw/ 和 knowledge/wiki/ 的關係：
-- raw/ 是什麼？wiki/ 是什麼？
-- ingest 做了什麼事？
-- 看一下 knowledge/wiki/ocean-king-analysis.md 的 frontmatter
+列出 knowledge/wiki/ 有哪些檔案，以及 raw/ 和 wiki/ 的差別是什麼
 ```
 
-✅ 預期 Kiro 解釋：
-- raw/ = 原始素材（你丟的）
-- wiki/ = 結構化知識（有 frontmatter，Bot 能搜尋的）
-- ingest = 把 raw/ 處理成 wiki/（補 frontmatter + 更新 index）
+✅ 預期：
+- wiki/ 有 3 篇：ocean-king / super-ace / fishing-vs-slot
+- Kiro 解釋：raw = 原料 / wiki = 成品（有 frontmatter）/ ingest = 轉換
 
-📝 驗證 Wiki 能被查詢（確認 Bot server 在跑）：
+📝 IDE 驗證（確認 query 能用）：
 ```
 幫我在終端執行：
 curl -X POST http://localhost:8000/api/v1/wiki/query -H "Content-Type: application/json" -d '{"q":"Ocean King"}'
 ```
 
-✅ 預期：回傳包含 ocean-king-analysis.md 的搜尋結果
+✅ 預期：回傳 ocean-king-analysis.md 的搜尋結果
 
-📝 追加驗證：
+📝 IDE 驗證（確認新知識還沒有）：
 ```
-列出 knowledge/wiki/ 目前有哪些檔案
+幫我在終端執行：
+curl -X POST http://localhost:8000/api/v1/wiki/query -H "Content-Type: application/json" -d '{"q":"老虎機市場趨勢"}'
 ```
 
-✅ 預期：3 篇（ocean-king-analysis.md、super-ace-analysis.md、fishing-vs-slot-comparison.md）
+✅ 預期：沒有結果（因為還沒加這份資料）
 
-💡 **現有的 3 篇是預設的。接下來 Step 3 你用 AI 搜尋產出新知識加進去。**
+💡 **系統有 3 篇舊知識能查到，但沒有「老虎機市場趨勢」→ Step 2 你來加。**
 
 ---
 
-## Step 3：用 AI 搜尋產出新知識（20-35 min）
+## Step 2：用 AI 搜尋產新知識 + IDE 驗證（10-30 min）⭐ 核心
 
-**做什麼**：讓 Kiro 搜尋網路 → 整理成知識文件 → 匯入 Wiki  
-**為什麼**：不是手動寫內容，而是用 AI 的搜尋能力產出知識
+**做什麼**：Kiro 搜尋網路 → 存 raw/ → ingest → IDE 確認能查到  
+**為什麼**：用 AI 搜尋能力建構知識庫 — 不是手動寫內容
 
 📝 Kiro IDE 輸入：
 ```
@@ -126,38 +82,46 @@ curl -X POST http://localhost:8000/api/v1/wiki/query -H "Content-Type: applicati
 
 → Kiro web search → 整理 → 存到 knowledge/raw/
 
-📝 匯入：
+📝 匯入到 Wiki：
 ```
 把 knowledge/raw/slot-market-trends.md 匯入到根目錄 knowledge/wiki/
 並更新 knowledge/index.md
+（不是 agents/ 下的，是專案根目錄的 knowledge/wiki/）
 ```
 
-📝 確認檔案存在：
+📝 IDE 驗證（確認新知識能查到了）：
 ```
-列出 knowledge/wiki/ 目前有哪些檔案
+幫我在終端執行：
+curl -X POST http://localhost:8000/api/v1/wiki/query -H "Content-Type: application/json" -d '{"q":"老虎機市場趨勢"}'
+```
+
+✅ 預期：回傳 slot-market-trends.md 的搜尋結果（Step 1 查不到，現在查得到）
+
+📝 確認數量：
+```
+列出 knowledge/wiki/ 有哪些檔案
 ```
 
 ✅ 預期：4 篇（多了 slot-market-trends.md）
 
-💡 **IDE 段完成**：知識庫從 3 篇 → 4 篇。接下來去 TG 確認使用者能查到。
+💡 **IDE 驗證完成**：知識庫從 3 → 4 篇，query 確認能查到。接下來確認 Agent 也能用。
 
-💡 **跟第二堂的串接**：02 開發的 `ark-competitor-brief` Skill 會讀 knowledge/wiki/ 產出 SWOT 簡報 — 你現在匯入的知識，就是那個 Skill 的資料來源。
+💡 **跟第二堂的串接**：02 的 `ark-competitor-brief` Skill 讀 knowledge/wiki/ 產 SWOT — 你加的知識就是它的資料來源。
 
 ---
 
 # TG 上線驗證
 
 💡 **為什麼要在 TG 再驗一次？**
-- IDE 問 = Kiro 自己回答（不經過你的 Agent 系統）
-- TG 問 = 真的走 Agent 運作（SOUL + Wiki RAG + Planner + Memory）
-- TG 有 📚 引用 = **你建的系統在用你的知識庫回答**，不是 AI 亂猜
+- IDE 驗證的是「檔案在不在 + API 能不能查」
+- TG 驗證的是「Agent 真的走你的知識回答」（SOUL + Wiki RAG + Planner）
+- TG 有 📚 引用 = **你建的系統在用你的知識庫**，不是 AI 亂猜
 
 💻 重啟：Ctrl+C → `python start.py`
 
-## Step 4：TG 驗證舊知識（35-42 min）
+## Step 3：TG 驗證 — Agent 用你的知識回答（30-50 min）
 
-**做什麼**：問 Step 2 匯入的知識 → 確認有引用  
-**為什麼**：使用者能拿到有依據的答案 = 上線 OK
+### 3.1 驗證舊知識
 
 📱 Telegram → Market：
 1. 問「Ocean King 3 跟 Ocean King 2 有什麼差別？」
@@ -167,27 +131,25 @@ curl -X POST http://localhost:8000/api/v1/wiki/query -H "Content-Type: applicati
 - 回答有「📚 參考：ocean-king-analysis」
 - 有具體內容（不是泛泛回答）
 
-📱 對比：問 Wiki 沒有的
-- 「PG Soft 的 Mahjong Ways 怎麼玩？」
-- ✅ 預期：沒有「📚 參考」→ 坦白說不知道
-
----
-
-## Step 5：TG 驗證新知識（42-50 min）
-
-**做什麼**：問 Step 3 剛用 AI 產出的知識 → 確認也有引用  
-**為什麼**：你 10 分鐘前加的東西，使用者現在就能查到 = 知識成長生效
+### 3.2 驗證新知識（你 Step 2 加的）
 
 📱 Telegram → Market：
 - 問「最近老虎機市場有什麼新趨勢？」
 
 ✅ 預期：
 - 引用 slot-market-trends.md 回答
-- 包含真實數據（Kiro 搜尋到的）
+- 包含真實數據（Step 2 AI 搜尋到的）
 - 有「📚 參考：slot-market-trends」
 
-💡 **你 Step 3 用 AI 搜尋的資料 → 現在使用者在 TG 能查到了。**
-**這就是知識成長：加資料 → ingest → 立即可用。**
+💡 **Step 1 同一問題沒有引用 → 現在有引用 = 知識成長生效。**
+
+### 3.3 對比：Wiki 沒有的問題
+
+📱 問「PG Soft 的 Mahjong Ways 怎麼玩？」
+
+✅ 預期：沒有「📚 參考」→ Agent 坦白說沒有相關知識
+
+💡 **能回答的有引用，不能的坦白說 — 這就是可信任的 AI。**
 
 ---
 
@@ -195,16 +157,17 @@ curl -X POST http://localhost:8000/api/v1/wiki/query -H "Content-Type: applicati
 
 | 等級 | 達成條件 |
 |------|----------|
-| 🎯 保底 | ingest 成功 + wiki/ 有檔案 |
+| 🎯 保底 | wiki/ 有 4 篇 + IDE curl query 有結果 |
 | ✅ 標準 | TG 問舊知識有引用 + 問新知識也有引用 |
-| 🏆 快速 | 用 AI 搜尋產知識 + 雙端驗證 + 理解知識成長 |
+| 🏆 快速 | AI 搜尋產知識 + IDE 驗證 + TG 驗證 + 理解知識成長 |
 
 ## 🏠 回家練習
 
 1. 📝 Kiro：「搜尋我們公司其他產品的競品資料，整理成 knowledge/raw/ 格式並匯入」
-2. 📝 Kiro：「檢查 Wiki 健康度，修復所有問題」
+2. 📝 Kiro：「檢查 Wiki 健康度（lint）」
 3. 思考：哪些公司文件丟進去後，新人就能自己問 Agent 找答案？
 
 ---
 
-*本堂重點：IDE 建構知識庫。TG 驗證上線。AI 搜尋 → 匯入 → 立即可用 = 知識成長。*
+*本堂重點：AI 搜尋 → 存 raw → ingest → wiki → Agent 能引用 = 知識成長。*
+*IDE 驗證 = 資料在系統裡。TG 驗證 = Agent 真的在用。*
