@@ -72,11 +72,11 @@ th { background: var(--surface); color: var(--accent); font-size: 0.8rem; }
     <div style="margin-bottom:0.8rem">
       <button class="btn primary" onclick="doIngest()">⬆️ Ingest</button>
       <button class="btn" onclick="doLint()">🔍 Lint</button>
+      <a href="/wiki" class="btn" style="text-decoration:none;margin-left:0.3rem">📖 開 Wiki 瀏覽器</a>
     </div>
-    <table>
-      <thead><tr><th>檔案</th><th>Type</th></tr></thead>
-      <tbody id="wikiBody"></tbody>
-    </table>
+    <div id="wikiSummary" style="margin-bottom:0.8rem;font-size:0.85rem;color:var(--muted)"></div>
+    <div id="wikiFolders"></div>
+    <div id="lintResult" style="display:none;margin-top:1rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:1rem;max-height:300px;overflow-y:auto;font-size:0.85rem;"></div>
   </div>
 </div>
 
@@ -126,38 +126,43 @@ async function loadWiki() {
     const resp = await fetch('/api/v1/wiki/pages');
     const data = await resp.json();
     const pages = data.pages || [];
-    
-    // 相容兩種格式：樹狀（有 type）或平面（無 type）
-    function flatFiles(items, list = []) {
+    let totalFiles = 0;
+    const folderCounts = [];
+    let rootCount = 0;
+    function countTree(items) {
       for (const item of items) {
-        if (item.type === 'file') {
-          list.push(item);
-        } else if (item.type === 'folder' && item.children) {
-          flatFiles(item.children, list);
-        } else if (item.filename) {
-          // 平面格式（舊 API）
-          list.push(item);
-        }
+        if (item.type === 'file') { totalFiles++; rootCount++; }
+        else if (item.type === 'folder') {
+          const c = countChildren(item.children || []);
+          folderCounts.push({name: item.name, count: c});
+          totalFiles += c;
+        } else if (item.filename) { totalFiles++; rootCount++; }
       }
-      return list;
     }
-    
-    const files = flatFiles(pages);
-    document.getElementById('wikiCount').textContent = files.length || '0';
-    
-    const tbody = document.getElementById('wikiBody');
-    if (files.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="2" style="color:var(--muted)">knowledge/wiki/ 沒有檔案（試試點 Ingest）</td></tr>';
-    } else {
-      tbody.innerHTML = files.slice(0, 15).map(f => {
-        const name = f.title || f.filename || '(untitled)';
-        const path = f.filename || '';
-        return `<tr><td>📄 ${name}</td><td style="font-size:0.8rem;color:var(--muted)">${path}</td></tr>`;
-      }).join('');
+    function countChildren(items) {
+      let c = 0;
+      for (const item of items) {
+        if (item.type === 'file' || item.filename) c++;
+        else if (item.type === 'folder') c += countChildren(item.children || []);
+      }
+      return c;
     }
+    countTree(pages);
+    document.getElementById('wikiCount').textContent = totalFiles;
+    document.getElementById('wikiSummary').textContent = `共 ${totalFiles} 篇（${folderCounts.length} 個資料夾 + ${rootCount} 篇根層）`;
+    const fd = document.getElementById('wikiFolders');
+    let html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:0.5rem;">';
+    for (const f of folderCounts.sort((a,b) => b.count - a.count)) {
+      html += `<div style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:0.5rem 0.8rem;font-size:0.85rem;">📁 ${f.name} <span style="color:var(--accent);float:right">${f.count}</span></div>`;
+    }
+    if (rootCount > 0) {
+      html += `<div style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:0.5rem 0.8rem;font-size:0.85rem;">📄 根層 <span style="color:var(--accent);float:right">${rootCount}</span></div>`;
+    }
+    html += '</div>';
+    fd.innerHTML = html;
   } catch(e) {
     document.getElementById('wikiCount').textContent = '?';
-    document.getElementById('wikiBody').innerHTML = '<tr><td colspan="2" style="color:var(--red)">API 連線失敗</td></tr>';
+    document.getElementById('wikiFolders').innerHTML = '<div style="color:#f87171">API 連線失敗</div>';
   }
 }
 
@@ -165,17 +170,38 @@ async function doIngest() {
   try {
     const resp = await fetch('/api/v1/wiki/ingest', {method:'POST'});
     const data = await resp.json();
-    alert(`✅ 匯入 ${data.count} 篇：${data.ingested.join(', ')}`);
+    if (data.count === 0) alert('✅ 沒有新檔案需要匯入（全部都是最新的）');
+    else alert(`✅ 匯入 ${data.count} 篇：\n${data.ingested.slice(0,10).join('\n')}${data.count > 10 ? '\n...' : ''}`);
     loadWiki();
   } catch(e) { alert('❌ ' + e.message); }
 }
 
 async function doLint() {
+  const rd = document.getElementById('lintResult');
+  rd.style.display = 'block';
+  rd.innerHTML = '檢查中...';
   try {
     const resp = await fetch('/api/v1/wiki/lint');
     const data = await resp.json();
-    alert(data.healthy ? '✅ Wiki 健康！' : `⚠️ ${data.issues.length} 個問題`);
-  } catch(e) { alert('❌ ' + e.message); }
+    if (data.healthy) { rd.innerHTML = '<div style="color:#4ade80">✅ Wiki 健康！所有頁面 frontmatter 完整。</div>'; return; }
+    const issues = data.issues || [];
+    const byField = {};
+    for (const issue of issues) {
+      for (const field of issue.missing_fields) {
+        if (!byField[field]) byField[field] = [];
+        byField[field].push(issue.file);
+      }
+    }
+    let html = `<div style="color:var(--yellow);margin-bottom:0.5rem;">⚠️ ${issues.length} 個頁面有問題</div>`;
+    for (const [field, files] of Object.entries(byField).sort((a,b) => b[1].length - a[1].length)) {
+      html += `<details style="margin:0.3rem 0;"><summary style="cursor:pointer;">缺 <code>${field}</code>（${files.length} 篇）</summary><div style="padding-left:1rem;color:var(--muted);max-height:100px;overflow-y:auto;">`;
+      for (const f of files.slice(0, 20)) html += `<div style="font-size:0.8rem;">📄 ${f}</div>`;
+      if (files.length > 20) html += `<div style="font-size:0.8rem;">...還有 ${files.length - 20} 篇</div>`;
+      html += '</div></details>';
+    }
+    html += '<div style="margin-top:0.8rem;"><button class="btn" onclick="document.getElementById(\'lintResult\').style.display=\'none\'">❌ 關閉</button></div>';
+    rd.innerHTML = html;
+  } catch(e) { rd.innerHTML = `<div style="color:#f87171">❌ ${e.message}</div>`; }
 }
 
 loadAgents();
