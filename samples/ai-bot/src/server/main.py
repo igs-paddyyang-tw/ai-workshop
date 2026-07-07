@@ -274,28 +274,42 @@ async def get_graph():
 
 @app.get("/api/v1/wiki/pages")
 async def list_wiki_pages():
-    """列出所有 wiki 頁面。"""
+    """列出所有 wiki 頁面（含子資料夾，樹狀結構）。"""
     import re as _re
     wiki_dir = Path("knowledge/wiki")
-    pages = []
-    if wiki_dir.exists():
-        for md in sorted(wiki_dir.glob("*.md")):
-            content = md.read_text(encoding="utf-8")
-            title = ""
-            m = _re.search(r'^title:\s*["\']?(.+?)["\']?\s*$', content, _re.MULTILINE)
-            if m:
-                title = m.group(1)
-            pages.append({"filename": md.name, "title": title or md.stem})
-    return {"pages": pages}
+
+    def extract_title(content: str) -> str:
+        m = _re.search(r'^title:\s*["\']?(.+?)["\']?\s*$', content, _re.MULTILINE)
+        return m.group(1) if m else ""
+
+    def scan_dir(dir_path: Path, prefix: str = "") -> list:
+        items = []
+        if not dir_path.exists():
+            return items
+        for entry in sorted(dir_path.iterdir()):
+            if entry.name.startswith("."):
+                continue
+            rel_path = entry.name if not prefix else f"{prefix}/{entry.name}"
+            if entry.is_dir():
+                children = scan_dir(entry, rel_path)
+                if children:
+                    items.append({"type": "folder", "name": entry.name, "path": rel_path, "children": children})
+            elif entry.suffix == ".md":
+                content = entry.read_text(encoding="utf-8")
+                title = extract_title(content) or entry.stem
+                items.append({"type": "file", "filename": rel_path, "title": title})
+        return items
+
+    return {"pages": scan_dir(wiki_dir)}
 
 
-@app.get("/api/v1/wiki/pages/{filename}")
-async def get_wiki_page(filename: str):
-    """取得單一 wiki 頁面內容。"""
-    path = Path("knowledge/wiki") / filename
-    if not path.exists():
+@app.get("/api/v1/wiki/pages/{filepath:path}")
+async def get_wiki_page(filepath: str):
+    """取得指定 wiki 頁面內容（支援子路徑）。"""
+    path = Path("knowledge/wiki") / filepath
+    if not path.exists() or not path.is_file():
         return {"error": "not found"}
-    return {"filename": filename, "content": path.read_text(encoding="utf-8")}
+    return {"filename": filepath, "content": path.read_text(encoding="utf-8")}
 
 
 @app.post("/api/v1/wiki/query")

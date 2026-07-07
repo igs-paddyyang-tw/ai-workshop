@@ -140,7 +140,7 @@ class WikiEngine:
             wiki_dir = self.global_wiki
 
         wiki_dir.mkdir(parents=True, exist_ok=True)
-        files = [raw_dir / filename] if filename else list(raw_dir.glob("*.md"))
+        files = [raw_dir / filename] if filename else list(raw_dir.rglob("*.md"))
         ingested: list[str] = []
 
         for src in files:
@@ -159,9 +159,12 @@ class WikiEngine:
                 )
                 wiki_content = frontmatter + content
 
-            dest = wiki_dir / src.name
+            # 保持相對路徑（支援子資料夾）
+            rel_path = src.relative_to(raw_dir)
+            dest = wiki_dir / rel_path
+            dest.parent.mkdir(parents=True, exist_ok=True)
             dest.write_text(wiki_content, encoding="utf-8")
-            ingested.append(src.name)
+            ingested.append(str(rel_path))
 
         if scope == "global":
             self._update_index()
