@@ -195,6 +195,16 @@ ai-bot/
 | 1 | + TG Token | Bot + Inline Button + Reaction + 8 Agent |
 | 2 | + Gemini Key | AI 對話 + RAG + SOUL 人格 |
 | 3 | + kiro-cli | 8 Agent 常駐服務（完整 .kiro/ 配置） |
+| 4 | + team.yaml | 團隊模式（PM 派工 + discovery + 任務狀態）|
+
+## 兩種模式
+
+```
+沒有 team.yaml → 個體模式（課程 A：駕馭工程）
+有 team.yaml  → 團隊模式（課程 B：迴圈工程）
+
+升級方式：cp team-ops.yaml team.yaml → 重啟 → 團隊模式啟用
+```
 
 ---
 
