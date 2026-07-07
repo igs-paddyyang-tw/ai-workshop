@@ -47,15 +47,17 @@ python start.py
 2. 📱 Telegram 點 Start → 收到回覆 + 左下角出現 `/` 選單
 3. 🌐 瀏覽器開 http://localhost:8000 → 看到 Chat UI
 
-## Web UI（三個頁面）
+## Web UI（五個頁面）
 
 | URL | 頁面 | 功能 |
 |-----|------|------|
 | `/` | 💬 Chat | 聊天室窗 — 8 Agent 切換 + Wiki 查詢 |
-| `/admin` | ⚙️ Admin | 管理介面 — KPI + Agent 列表 + Ingest/Lint |
-| `/api-docs` | 📖 API | API 文件 — 暗黑風格 + Try 按鈕即時測試 |
+| `/admin` | ⚙️ Dashboard | KPI 卡片 + Agent 列表 + 知識庫管理 + 系統資訊 |
+| `/wiki` | 📖 Wiki | 瀏覽器 — 檔案列表 + 搜尋 + Markdown 內容顯示 |
+| `/builder` | 🏗️ Builder | Agent Builder — SOUL 編輯 + 知識綁定 + 預覽對話 |
+| `/api-docs` | 📡 API | API 文件 — 暗黑風格 + Try 按鈕即時測試 |
 
-統一導航列：三頁頂部都有 💬 Chat | ⚙️ Admin | 📖 API
+統一導航列：💬 Chat | ⚙️ Dashboard | 📖 Wiki | 🏗️ Builder | 📡 API
 
 ## Telegram 互動
 
@@ -166,10 +168,12 @@ ai-bot/
 │       └── ark-wiki-engine/    ← 03 知識庫
 ├── agents/                     ← 8 個 Agent（各有 .kiro/ + knowledge/）
 ├── knowledge/                  ← 全域知識庫（所有 Agent 共用）
-├── templates/                  ← Web UI
+├── templates/                  ← Web UI（5 頁）
 │   ├── index.html              ← 💬 Chat
-│   ├── admin.html              ← ⚙️ Admin
-│   └── api-docs.html           ← 📖 API
+│   ├── admin.html              ← ⚙️ Dashboard
+│   ├── wiki.html               ← 📖 Wiki 瀏覽器
+│   ├── builder.html            ← 🏗️ Agent Builder + 預覽對話
+│   └── api-docs.html           ← 📡 API
 ├── src/
 │   ├── agent/                  ← 核心（process + cli + session + memory + planner）
 │   ├── bot/                    ← Telegram（Planner L1-L4 + Reaction + 標頭）
