@@ -104,25 +104,25 @@ python start.py
 
 📝 Kiro IDE 輸入：
 ```
-列出這個專案的核心目錄結構，一句話說明每個的用途
+列出這個專案有哪些 Agent，各自的角色是什麼
 ```
 
-✅ 預期 Kiro 回覆：
-```
-.kiro/steering/SOUL.md        → 預設人格（fallback）
-agents/*/SOUL.md              → 各 Agent 獨立人格
-agents/*/skills/SKILL.md      → Agent 的工作 SOP（Markdown）
-src/skills/internal/*.py      → 實際執行工具（Python）
-knowledge/raw/                → 知識素材
-knowledge/wiki/               → RAG 用的結構化知識
-```
+✅ 預期：8 個 Agent 各有不同角色（admin/pm/market/data...）
 
 💡 **一句話記住**：
-- **SOUL** = 它是誰（人格）
-- **SKILL.md** = 它怎麼做（SOP）
-- **internal/*.py** = 真正做事的工具
+- **SOUL** = 它是誰（改這個 → 行為就變）
+- **Skills** = 它會什麼（第二堂教）
+- **Wiki** = 它知道什麼（第三堂教）
 
-⚠️ 本堂聚焦 **SOUL 設計**。SKILL 在第二堂展開，自動串接在第四堂。
+💻 技術補充：
+```
+.kiro/steering/SOUL.md           = 人格檔案
+agents/*/skills/SKILL.md         = 能力宣告（Markdown SOP）
+src/skills/internal/*.py         = 實際執行的 Python 程式碼
+knowledge/raw/ → wiki/           = 知識庫
+```
+
+⚠️ 本堂聚焦 SOUL 設計。Skills 和 Wiki 後面教。
 
 **接下來去 TG 看使用者體驗到什麼 ↓**
 
