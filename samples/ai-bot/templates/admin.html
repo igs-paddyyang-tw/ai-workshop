@@ -119,39 +119,45 @@ async function loadWiki() {
   try {
     const resp = await fetch('/api/v1/wiki/lint');
     const data = await resp.json();
-    document.getElementById('wikiHealth').textContent = data.healthy ? '✅' : `⚠️`;
-  } catch(e) {}
+    document.getElementById('wikiHealth').textContent = data.healthy ? '✅' : `⚠️ ${data.issues?.length || ''}`;
+  } catch(e) { document.getElementById('wikiHealth').textContent = '?'; }
 
   try {
     const resp = await fetch('/api/v1/wiki/pages');
     const data = await resp.json();
-    // 計算總數（遞迴數 file 節點）
-    function countFiles(items) {
-      let count = 0;
-      for (const item of items) {
-        if (item.type === 'file') count++;
-        else if (item.children) count += countFiles(item.children);
-      }
-      return count;
-    }
-    const total = countFiles(data.pages || []);
-    document.getElementById('wikiCount').textContent = total;
+    const pages = data.pages || [];
     
-    // 建列表（取前 10 個 file）
+    // 相容兩種格式：樹狀（有 type）或平面（無 type）
     function flatFiles(items, list = []) {
       for (const item of items) {
-        if (item.type === 'file') list.push(item);
-        else if (item.children) flatFiles(item.children, list);
+        if (item.type === 'file') {
+          list.push(item);
+        } else if (item.type === 'folder' && item.children) {
+          flatFiles(item.children, list);
+        } else if (item.filename) {
+          // 平面格式（舊 API）
+          list.push(item);
+        }
       }
       return list;
     }
-    const files = flatFiles(data.pages || []).slice(0, 10);
+    
+    const files = flatFiles(pages);
+    document.getElementById('wikiCount').textContent = files.length || '0';
+    
     const tbody = document.getElementById('wikiBody');
-    tbody.innerHTML = files.map(f => {
-      return `<tr><td>📄 ${f.title || f.filename}</td><td>${f.filename}</td></tr>`;
-    }).join('');
+    if (files.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="2" style="color:var(--muted)">knowledge/wiki/ 沒有檔案（試試點 Ingest）</td></tr>';
+    } else {
+      tbody.innerHTML = files.slice(0, 15).map(f => {
+        const name = f.title || f.filename || '(untitled)';
+        const path = f.filename || '';
+        return `<tr><td>📄 ${name}</td><td style="font-size:0.8rem;color:var(--muted)">${path}</td></tr>`;
+      }).join('');
+    }
   } catch(e) {
     document.getElementById('wikiCount').textContent = '?';
+    document.getElementById('wikiBody').innerHTML = '<tr><td colspan="2" style="color:var(--red)">API 連線失敗</td></tr>';
   }
 }
 
