@@ -13,6 +13,26 @@
 - 已完成第一堂（samples/ai-bot 能跑）
 - Kiro IDE（含 .kiro/skills/ 已 clone）
 
+## 📖 本堂知識（2 分鐘看完）
+
+### Spec-Driven = 先想清楚再做
+- 傳統：想到就寫 → 品質看運氣
+- Spec-Driven：拷問 → 寫規格 → 依規格做 → 驗證 = 品質可控
+
+### SKILL.md = Agent 的 SOP
+- 不是程式碼，是 Markdown 文件
+- 告訴 Agent「遇到什麼需求要按什麼步驟做」
+- 有 SKILL.md = 格式固定、品質可預期
+
+### 4 個 IDE Skill 各做什麼
+
+| Skill | 一句話 |
+|-------|--------|
+| ark-grill-me | 拷問你的設計，逼你想清楚 |
+| ark-superpowers | 把決策寫成可驗證的 Spec |
+| ark-skill-creator | 依 Spec 產出 SKILL.md |
+| ark-code-spec-validator | 驗證 Code 跟 Spec 一致（Score 0-100） |
+
 ## 使用的 4 個 Skill
 
 ```

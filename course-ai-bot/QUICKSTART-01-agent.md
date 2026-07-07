@@ -13,6 +13,25 @@
 - Python 3.12+ / Telegram Bot Token / Gemini API Key
 - Kiro IDE（或 Cursor / VS Code + AI 插件）
 
+## 📖 本堂知識（2 分鐘看完）
+
+### SOUL.md = Agent 的人格定義
+- 一個 Markdown 檔案，定義「你是誰 / 語氣 / 格式 / 邊界」
+- 改 SOUL = Bot 行為馬上變（不用改程式碼）
+
+### Agent = 有人格的 AI
+- 不只是 chatbot（能回話）
+- Agent = SOUL（人格）+ Skills（能力）+ Knowledge（知識）
+- 8 個 Agent = 8 種不同人格在同一系統裡
+
+### IDE 和 TG 的分工
+
+| | IDE（Kiro） | TG（Telegram） |
+|---|---|---|
+| 你做什麼 | 設計 SOUL、改檔案 | 跟 Agent 對話 |
+| 誰在回答 | Kiro 自己 | 你建的 Agent 系統 |
+| 用途 | 開發 | 使用者體驗 |
+
 ---
 
 ## Step 1：啟動 Bot（0-5 min）
