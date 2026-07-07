@@ -193,6 +193,85 @@ async def api_chat(req: ChatRequest):
     }
 
 
+@app.get("/api/v1/graph")
+async def get_graph():
+    """回傳完整圖譜資料（節點+連線）。"""
+    from pathlib import Path
+    import re
+
+    nodes = []
+    links = []
+
+    # Agent 節點
+    agents_dir = Path("agents")
+    agent_ids = []
+    if agents_dir.exists():
+        for d in sorted(agents_dir.iterdir()):
+            if d.is_dir() and d.name.endswith("-agent"):
+                agent_id = d.name.replace("-agent", "")
+                agent_ids.append(agent_id)
+                # 讀 SOUL 第一行
+                soul_path = d / ".kiro" / "steering" / "SOUL.md"
+                soul_desc = ""
+                if soul_path.exists():
+                    lines = soul_path.read_text(encoding="utf-8").splitlines()
+                    for line in lines:
+                        if line.strip() and not line.startswith("---") and not line.startswith("#"):
+                            soul_desc = line.strip()[:80]
+                            break
+                nodes.append({"id": f"agent:{agent_id}", "type": "agent", "label": f"{agent_id}-agent", "meta": soul_desc})
+
+                # Skill 節點
+                skills_dir = d / "skills"
+                if skills_dir.exists():
+                    for skill_dir in sorted(skills_dir.iterdir()):
+                        if skill_dir.is_dir() and (skill_dir / "SKILL.md").exists():
+                            skill_name = skill_dir.name
+                            # 讀 description
+                            skill_content = (skill_dir / "SKILL.md").read_text(encoding="utf-8")
+                            desc_match = re.search(r"^description:\s*\|?\s*\n?\s*(.+)", skill_content, re.MULTILINE)
+                            skill_desc = desc_match.group(1).strip()[:80] if desc_match else ""
+                            nodes.append({"id": f"skill:{skill_name}", "type": "skill", "label": skill_name, "meta": skill_desc})
+                            # Agent -> Skill 連線
+                            links.append({"source": f"agent:{agent_id}", "target": f"skill:{skill_name}", "relation": "has_skill"})
+
+    # Wiki 節點
+    wiki_dir = Path("knowledge/wiki")
+    wiki_tags = {}  # filename -> tags
+    if wiki_dir.exists():
+        for md in sorted(wiki_dir.glob("*.md")):
+            content = md.read_text(encoding="utf-8")
+            title_match = re.search(r'^title:\s*["\']?(.+?)["\']?\s*$', content, re.MULTILINE)
+            title = title_match.group(1) if title_match else md.stem
+            tags_match = re.search(r'^tags:\s*\[(.+)\]', content, re.MULTILINE)
+            tags = [t.strip().strip("'\"") for t in tags_match.group(1).split(",")] if tags_match else []
+            wiki_tags[md.name] = tags
+            nodes.append({"id": f"wiki:{md.name}", "type": "wiki", "label": title, "meta": ", ".join(tags)})
+
+    # Skill -> Wiki 連線（Skill 觸發詞匹配 wiki title）
+    for node in nodes:
+        if node["type"] == "skill":
+            skill_id = node["id"]
+            # 簡單匹配：skill label 含 wiki 主題關鍵字
+            skill_label = node["label"].lower()
+            for wiki_node in [n for n in nodes if n["type"] == "wiki"]:
+                wiki_label = wiki_node["label"].lower()
+                # competitor/market skill 連 競品分析 wiki
+                if any(kw in skill_label for kw in ["market", "competitor", "research"]):
+                    if any(kw in wiki_label for kw in ["ocean", "super", "slot", "fish", "捕魚", "老虎"]):
+                        links.append({"source": skill_id, "target": wiki_node["id"], "relation": "reads_wiki"})
+
+    # Wiki <-> Wiki 連線（共享 tag）
+    wiki_files = list(wiki_tags.keys())
+    for i in range(len(wiki_files)):
+        for j in range(i + 1, len(wiki_files)):
+            shared = set(wiki_tags[wiki_files[i]]) & set(wiki_tags[wiki_files[j]])
+            if shared:
+                links.append({"source": f"wiki:{wiki_files[i]}", "target": f"wiki:{wiki_files[j]}", "relation": "shared_tag"})
+
+    return {"nodes": nodes, "links": links}
+
+
 @app.get("/api/v1/wiki/pages")
 async def list_wiki_pages():
     """列出所有 wiki 頁面。"""
