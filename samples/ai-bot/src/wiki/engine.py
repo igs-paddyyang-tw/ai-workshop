@@ -59,7 +59,7 @@ class WikiEngine:
         hits: list[dict] = []
         if not wiki_dir or not wiki_dir.exists():
             return hits
-        keywords = q.lower().split()
+        keywords = self._tokenize(q)
         for md in wiki_dir.rglob("*.md"):
             if md.name == ".gitkeep":
                 continue
@@ -70,6 +70,19 @@ class WikiEngine:
                 snippet = self._extract_snippet(content, keywords)
                 hits.append({"file": md.name, "title": title, "snippet": snippet})
         return hits
+
+    @staticmethod
+    def _tokenize(q: str) -> list[str]:
+        """分詞：空格分割 + 中文每 2 字一組（bigram）。"""
+        tokens: list[str] = []
+        for part in q.lower().split():
+            tokens.append(part)
+            # 中文 bigram
+            cjk_chars = [c for c in part if '\u4e00' <= c <= '\u9fff']
+            if len(cjk_chars) >= 2:
+                for i in range(len(cjk_chars) - 1):
+                    tokens.append(cjk_chars[i] + cjk_chars[i + 1])
+        return list(set(tokens))
 
     @staticmethod
     def _extract_title(content: str) -> str:
