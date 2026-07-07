@@ -183,6 +183,9 @@ class WikiEngine:
                 continue
 
             content = src.read_text(encoding="utf-8")
+            # Strip BOM
+            if content.startswith("\ufeff"):
+                content = content[1:]
             if content.startswith("---"):
                 wiki_content = content
             else:
@@ -269,8 +272,12 @@ class WikiEngine:
         return issues
 
     @staticmethod
+    @staticmethod
     def _check_frontmatter(content: str) -> list[str]:
         """檢查必要 frontmatter 欄位。"""
+        # Strip UTF-8 BOM（Windows PowerShell 產生的）
+        if content.startswith("\ufeff"):
+            content = content[1:]
         if not content.startswith("---"):
             return list(REQUIRED_FIELDS)
         end = content.find("---", 3)
