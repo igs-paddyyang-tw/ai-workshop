@@ -66,9 +66,9 @@ curl -X POST http://localhost:8000/api/v1/wiki/query -H "Content-Type: applicati
 
 ---
 
-## Step 2：增加新知識（5-25 min）⭐ 核心
+## Step 2：增加新知識（5-20 min）⭐ 核心
 
-**做什麼**：用 AI 搜尋產出新知識 → ingest → curl 確認能查到
+**做什麼**：用 AI 搜尋產出新知識 → 匯入 Wiki → 確認能查到
 
 📝 Kiro IDE 輸入（AI 搜尋產出知識）：
 ```
@@ -84,64 +84,75 @@ curl -X POST http://localhost:8000/api/v1/wiki/query -H "Content-Type: applicati
 
 → Kiro web search → 整理 → 存到 knowledge/raw/
 
-📝 匯入到 Wiki：
+📝 匯入到 Wiki（所有人）：
 ```
-把 knowledge/raw/slot-market-trends.md 匯入到根目錄 knowledge/wiki/
+把 knowledge/raw/slot-market-trends.md 匯入到 knowledge/wiki/
+（確認放在根目錄的 knowledge/wiki/，不是 agents/ 下面）
 並更新 knowledge/index.md
-（不是 agents/ 下的，是專案根目錄的 knowledge/wiki/）
 ```
 
-📝 curl 驗證（確認 ingest 成功）：
+📝 確認能查到（所有人）：
 ```
-幫我在終端執行：
+用 market-agent 的人格回答：「最近老虎機市場有什麼新趨勢？」
+```
+
+✅ 預期：現在能回答了（Step 1 同一問題答不好 → 現在有引用）
+
+💻 軟體人員加做：
+```
 curl -X POST http://localhost:8000/api/v1/wiki/query -H "Content-Type: application/json" -d '{"q":"老虎機市場趨勢"}'
 ```
-
-✅ 預期：回傳 slot-market-trends.md 的搜尋結果（Step 1 查不到 → 現在查得到 ✅）
 
 💡 **跟第二堂的串接**：02 的 `ark-competitor-brief` Skill 讀 knowledge/wiki/ 產 SWOT — 你加的知識就是它的資料來源。
 
 ---
 
-## Step 3：健康檢查（25-30 min）
+## Step 3：健康檢查（20-25 min）
 
-**做什麼**：用 curl lint 確認知識庫品質正常
+**做什麼**：確認知識庫品質正常
 
-📝 Kiro IDE 輸入：
+📝 Kiro IDE 輸入（所有人）：
 ```
-幫我在終端執行：
+幫我檢查 knowledge/wiki/ 的所有檔案，
+看看有沒有缺少 frontmatter 的（title / type / tags / created）
+```
+
+✅ 預期：Kiro 回報全部正常，或列出有問題的檔案
+
+🌐 或開 Admin 後台（所有人）：
+- http://localhost:8000/admin → 點「🔍 Lint」按鈕 → 看結果
+
+💻 軟體人員加做：
+```
 curl http://localhost:8000/api/v1/wiki/lint
 ```
 
 ✅ 健康：`{"issues": [], "healthy": true}`
-
-⚠️ 有問題（缺 frontmatter）→ 📝「幫我修復 lint 回報的問題」→ 再 curl lint 確認
 
 📝 確認最終數量：
 ```
 列出 knowledge/wiki/ 有哪些檔案
 ```
 
-✅ 預期：4 篇 + 全部 healthy = IDE 開發完成，Agent 可以上線
+✅ 預期：4 篇 + 全部健康 = 可以上線
 
 ---
 
 # TG 上線驗證
 
 💡 **為什麼要在 TG 再驗一次？**
-- IDE 驗的是「API 能查到」
-- TG 驗的是「Agent 真的走你的知識回答」（SOUL + Wiki RAG + Planner）
-- TG 有 📚 引用 = **你建的系統在用你的知識庫**，不是 AI 亂猜
+- IDE = Kiro 自己回答（不經過 Agent 系統）
+- TG = 真的走 Agent 運作（SOUL + Wiki RAG + Planner）
+- TG 有 📚 引用 = **你建的系統在用你的知識庫**
 
 💻 重啟：Ctrl+C → `python start.py`
 
-## Step 4：使用知識 — Agent 引用回答（30-42 min）
+## Step 4：使用知識 — Agent 引用回答（25-40 min）
 
 ### 4.1 驗證舊知識
 
 📱 Telegram → Market：
 1. 問「Ocean King 3 跟 Ocean King 2 有什麼差別？」
-2. 問「Super Ace 的 Golden Card 怎麼觸發？」
 
 ✅ 預期：回答有「📚 參考：ocean-king-analysis」
 
@@ -150,48 +161,34 @@ curl http://localhost:8000/api/v1/wiki/lint
 📱 Telegram → Market：
 - 問「最近老虎機市場有什麼新趨勢？」
 
-✅ 預期：
-- 引用 slot-market-trends.md 回答
-- 有「📚 參考：slot-market-trends」
-- **Step 1 查不到 → 現在 Agent 能引用 = 知識成長生效**
+✅ 預期：引用 slot-market-trends.md + 有 📚 參考
+
+💡 **Step 1 同問題答不好 → 現在有引用 = 知識成長生效**
 
 ### 4.3 對比：Wiki 沒有的
 
 📱 問「PG Soft 的 Mahjong Ways 怎麼玩？」
 
-✅ 預期：沒有「📚 參考」→ 坦白說不知道
+✅ 預期：沒有 📚 → 坦白說不知道
 
-💡 **能回答的有引用，不能的坦白說 = 可信任的 AI。**
+💡 **能回答有引用，不能的坦白說 = 可信任的 AI。**
 
 ---
 
-## Step 5：健康檢查 — TG + Admin 後台（42-50 min）
+## Step 5：Admin 後台看全貌（40-45 min）
 
-### 5.1 TG 請 Agent 檢查
-
-📱 TG → Admin → 「幫我檢查 Wiki 健康度」
-
-✅ 預期：Agent 回報知識庫狀態（healthy 或列出問題）
-
-💡 不只能問問題，還能請 Agent 做維護。
-
-### 5.2 Admin 後台總覽
+**做什麼**：開 Admin 後台確認一切正常
 
 🌐 瀏覽器開 http://localhost:8000/admin
 
 ✅ 看到：
-- KPI 卡片：知識庫 4 篇 / Wiki 健康度 ✅
-- ⬆️ Ingest 按鈕（一鍵匯入）
-- 🔍 Lint 按鈕（一鍵檢查）
-- 知識庫檔案列表
+- 知識庫：4 篇 + ✅ 健康
+- Agent 列表：8 個在線
+- ⬆️ Ingest / 🔍 Lint 按鈕可用
 
-### 5.3 三種管理方式
+🌐 也可以開 http://localhost:8000/wiki 看 Wiki 瀏覽器
 
-| 方式 | 用途 | 場景 |
-|------|------|------|
-| IDE curl | 開發時快速確認 | 剛 ingest 完確認成功（Step 2-3） |
-| TG 問 Agent | 隨時隨地檢查 | 不在電腦前也能管 |
-| Admin 後台 | 全盤總覽 + 一鍵操作 | 管理者日常監控 |
+💡 **三種管理方式**：IDE 對話 / TG 問 Agent / Admin 後台 — 看你方便用哪個。
 
 ---
 
