@@ -1,6 +1,6 @@
 # AI Agent 機器人 — 簡易安裝與使用教學
 
-> 10 分鐘在 Kiro IDE 裡建好一個有人格、有能力、有記憶的 AI Bot，部署到 Telegram 馬上能用。
+> 10 分鐘下載 → IDE 對話了解系統 → Telegram 驗證 Agent 能上網產出競品分析。
 
 ---
 
@@ -13,196 +13,224 @@
 
 ---
 
-## 開始：打開 Kiro IDE 對話
-
-啟動 Kiro IDE，開啟你的專案資料夾，進入 Chat 對話框。
-
----
-
-## Phase 1：給它靈魂（SOUL）
-
-複製以下整段文字，貼到對話框送出：
-
-```
-1. 幫我建立 .kiro/steering/SOUL.md，角色是「遊戲產業 AI 助手」，擅長競品分析、市場趨勢、玩法設計，回答簡潔有條理，用繁體中文。
-2. 幫我下載 https://github.com/igs-paddyyang-tw/ai-workshop/tree/main/samples/ai-bot 的完整專案結構到當前目錄
-3. 建立 .env 檔案，內容留空讓我填：TELEGRAM_BOT_TOKEN= 和 GEMINI_API_KEY=
-```
-
-> 💡 一段話 3 件事：建立人格 → 下載 Bot 骨架 → 準備環境設定。
->
-> ✏️ 角色描述換成你想要的，例如：
-> - 「專業客服，親切有禮，回答附上文件連結」
-> - 「資深後端工程師，擅長 Python，回答精準附程式碼」
-> - 「行銷企劃專家，語氣活潑，擅長文案和市場分析」
->
-> 改這段就好：`角色是「___」，擅長___，回答時___。`
-
-完成後你的專案有了 **靈魂**：
-
-```
-your-project/
-├── .kiro/steering/SOUL.md    ← Agent 人格（決定語氣和風格）
-├── .env                       ← Token 和 Key（你要填）
-├── src/                       ← Bot 程式碼
-└── start.py                   ← 啟動入口
-```
-
-| 產出 | 用途 |
-|------|------|
-| `SOUL.md` | 改一句話 → Bot 行為就變（不用改程式碼） |
-| `.env` | 放你的 Token 和 Key |
-
----
-
-## Phase 2：給它能力（SKILL）
-
-貼到對話框送出：
-
-```
-1. 幫我下載 https://github.com/igs-paddyyang-tw/ark-agent-skills/blob/main/ark-wiki-engine/SKILL.md 放到 .kiro/skills/ark-wiki-engine/SKILL.md
-2. 幫我下載 https://github.com/igs-paddyyang-tw/ark-agent-skills/blob/main/ark-web-scraper/SKILL.md 放到 .kiro/skills/ark-web-scraper/SKILL.md
-3. 幫我下載 https://github.com/igs-paddyyang-tw/ark-agent-skills/blob/main/ark-grill-me/SKILL.md 放到 .kiro/skills/ark-grill-me/SKILL.md
-```
-
-> 💡 SKILL.md = Agent 的 SOP。有了它，Agent 就知道「遇到什麼需求要按什麼步驟做」。
-
-完成後你的專案有了 **能力**：
-
-```
-.kiro/skills/
-├── ark-wiki-engine/SKILL.md    ← 知識庫管理（ingest/query/lint）
-├── ark-web-scraper/SKILL.md    ← 網頁抓取（搜尋+整理資訊）
-└── ark-grill-me/SKILL.md       ← 拷問設計（釐清需求）
-```
-
-| Skill | 一句話 |
-|-------|--------|
-| ark-wiki-engine | 讓 Agent 能記住你的知識、能引用回答 |
-| ark-web-scraper | 讓 Agent 能搜尋網路、抓取資料 |
-| ark-grill-me | 讓 Agent 能拷問你的想法，幫你想清楚 |
-
----
-
-## Phase 3：給它記憶（WIKI）
-
-貼到對話框送出：
-
-```
-1. 幫我用 ark-wiki-engine 建立 knowledge/ 知識庫目錄結構（含 raw/ wiki/ schema.md index.md log.md）
-2. 幫我在 knowledge/raw/ 建立一份「老虎機市場趨勢 2024-2025」的範例知識文件（搜尋真實資料）
-3. 把 knowledge/raw/ 的檔案匯入 knowledge/wiki/
-```
-
-> 💡 raw/ = 你放原始素材（AI 只讀不改）→ ingest → wiki/ = AI 整理好的知識頁面。
-
-完成後你的專案有了 **記憶**：
-
-```
-knowledge/
-├── raw/                          ← 你丟素材的地方（唯讀）
-│   └── slot-market-trends.md     ← 範例：老虎機市場趨勢
-├── wiki/                          ← AI 整理後的知識頁面
-│   └── slot-market-trends.md     ← 有 frontmatter 的結構化版本
-├── schema.md                      ← 知識庫規則
-├── index.md                       ← 索引目錄
-└── log.md                         ← 操作日誌
-```
-
----
-
-## Phase 4：啟動 Bot
-
-### 填入 Token
-
-打開 `.env`，填入你的 Token 和 Key：
-
-```
-TELEGRAM_BOT_TOKEN=你的_Telegram_Bot_Token
-GEMINI_API_KEY=你的_Gemini_API_Key
-```
-
-### 啟動
+## Step 1：下載 ai-bot 專案
 
 在 Kiro IDE 終端執行：
 
 ```bash
-python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-python start.py
+git clone https://github.com/igs-paddyyang-tw/ai-workshop.git
+cd ai-workshop/samples/ai-bot
 ```
 
-### 確認成功
-
-看到以下訊息 = 成功：
+下載完成，你已經有了完整的 8 Agent 系統：
 
 ```
-══════════════════════════════════════════════════
-  🤖 AI Agent Bot
-══════════════════════════════════════════════════
-  🧠 SOUL: ✅ 已載入
-  📦 Skills: 已註冊
-  📚 知識庫: ✅ 已載入
-  🤖 Bot: @your_bot_name 已連線
-══════════════════════════════════════════════════
+samples/ai-bot/
+├── .kiro/
+│   ├── steering/SOUL.md              ← 主 Agent 人格
+│   └── skills/                        ← 5 個 IDE 技能（已內建）
+│       ├── ark-wiki-engine/           ← 知識庫管理
+│       ├── ark-grill-me/              ← 拷問設計
+│       ├── ark-superpowers/           ← 規格書產出
+│       ├── ark-skill-creator/         ← Skill 產出
+│       └── ark-code-spec-validator/   ← 品質驗證
+├── agents/                            ← 8 個 Agent（各有 SOUL + Skills + Wiki）
+│   ├── admin-agent/
+│   ├── market-agent/                  ← 市場研究員（能上網搜尋）
+│   ├── coder-agent/
+│   ├── data-agent/
+│   ├── pm-agent/
+│   ├── qa-agent/
+│   ├── report-agent/
+│   └── ai-dev-agent/
+├── knowledge/shared/                  ← 共用知識庫（已預放 3 篇競品分析）
+│   ├── raw/                           ← 原始素材
+│   └── wiki/                          ← AI 整理後的知識頁面
+├── src/                               ← Bot 程式碼
+└── start.py                           ← 啟動入口
 ```
 
-📱 **Telegram 驗證**：對你的 Bot 發送 `/start` → 收到歡迎訊息 = ✅ 成功
+> 💡 **5 個 Skill 已經裝好在根目錄 `.kiro/skills/`，不需要另外下載。**
 
 ---
 
-## 使用方式
+## Step 2：IDE 對話 — 了解三層架構
 
-### 問知識庫有的問題
+在 Kiro IDE 開啟 `samples/ai-bot/` 資料夾，進入 Chat 對話框。
 
-```
-老虎機市場最近有什麼趨勢？
-```
+### 靈魂（SOUL）— 它是誰
 
-✅ 預期：有引用 📚 的回答（來自你的 wiki/）
-
-### 增加新知識
-
-在 Kiro IDE 對話框說：
+📝 貼到對話框：
 
 ```
-幫我搜尋「2025 捕魚機遊戲市場分析」，整理成知識文件存到 knowledge/raw/ 並匯入 wiki
+列出這個專案有哪些 Agent，各自的角色和人格是什麼？
 ```
 
-→ Agent 搜尋 → 整理 → 匯入 → 下次問就能引用
+✅ 預期：Kiro 列出 8 個 Agent 各自的身份定位
 
-### 拷問你的設計
+📝 再問：
 
 ```
-拷問我的設計：我想做一個「每日遊戲新聞」自動推播功能
+讀取 agents/market-agent/.kiro/steering/SOUL.md，介紹這個 Agent 的人格特質
 ```
 
-→ Agent 一次問一題，幫你想清楚需求
+✅ 預期：市場研究員 — 好奇敏銳、像調查記者、資訊必須有來源
 
-### 切換人格
-
-在 Kiro IDE 修改 `.kiro/steering/SOUL.md` → Bot 重啟後行為就變。
+> 💡 **SOUL.md = 改一句話，Agent 行為就變。** 不用改程式碼。
 
 ---
 
-## 三層架構一句話
+### 能力（SKILL）— 它會什麼
+
+📝 貼到對話框：
+
+```
+列出根目錄 .kiro/skills/ 有哪些技能，各自做什麼用？
+```
+
+✅ 預期：5 個技能一覽
+
+| Skill | 做什麼 |
+|-------|--------|
+| ark-wiki-engine | 知識庫管理（匯入/查詢/健康檢查） |
+| ark-grill-me | 拷問你的設計，逼你想清楚 |
+| ark-superpowers | 把決策寫成可驗證的規格書 |
+| ark-skill-creator | 依規格產出新 Skill |
+| ark-code-spec-validator | 驗證程式碼跟規格一致（打分數） |
+
+📝 看 Agent 層級的 Skill：
+
+```
+列出 agents/market-agent/.kiro/skills/ 有什麼能力
+```
+
+✅ 預期：`ark-market-research`（多源搜尋 → 交叉驗證 → 洞察摘要）
+
+> 💡 **根目錄 Skill = IDE 開發用（設計/拷問/產出）。Agent 目錄 Skill = 業務用（搜尋/分析）。**
+
+---
+
+### 記憶（WIKI）— 它知道什麼
+
+📝 貼到對話框：
+
+```
+列出 knowledge/shared/wiki/ 有哪些知識頁面
+```
+
+✅ 預期：3 篇預裝知識
+
+| 檔案 | 內容 |
+|------|------|
+| ocean-king-analysis.md | Ocean King 捕魚機分析 |
+| super-ace-analysis.md | Super Ace 老虎機分析 |
+| fishing-vs-slot-comparison.md | 捕魚機 vs 老虎機比較 |
+
+📝 體驗知識引用：
+
+```
+讀取 knowledge/shared/wiki/ 的內容，用 market-agent 的人格回答：
+「Ocean King 3 跟 Super Ace 比較，各自的優劣勢是什麼？」
+```
+
+✅ 預期：有結構的比較分析 + 引用 wiki 知識
+
+> 💡 **raw/ = 你丟原始素材 → ingest → wiki/ = AI 整理好能查的。** 知識越多，回答越準。
+
+---
+
+### 三層一句話總結
 
 ```
 ┌─────────────────────────────────────────────┐
 │                                             │
 │   SOUL（靈魂）= 它是誰                      │
-│   改人格 → 行為就變                          │
+│   → agents/*/SOUL.md                        │
 │                                             │
 │   SKILL（能力）= 它會什麼                    │
-│   加 SKILL.md → 新功能就有                   │
+│   → .kiro/skills/ + agents/*/skills/        │
 │                                             │
 │   WIKI（記憶）= 它知道什麼                   │
-│   丟素材 + ingest → 知識就長                 │
+│   → knowledge/shared/wiki/                  │
 │                                             │
 └─────────────────────────────────────────────┘
 ```
 
-**全程在 Kiro IDE 對話框操作，不需要手寫程式碼。**
+---
+
+## Step 3：啟動 Bot + TG 驗證
+
+### 3.1 設定環境
+
+```bash
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env
+```
+
+📝 在 Kiro IDE 打開 `.env`，填入：
+
+```
+TELEGRAM_BOT_TOKEN=你的_Token
+GEMINI_API_KEY=你的_Key
+```
+
+### 3.2 啟動
+
+```bash
+python start.py
+```
+
+✅ 看到以下 = 成功：
+
+```
+══════════════════════════════════════════════════
+  🤖 課程 A — 個體 Agent
+══════════════════════════════════════════════════
+  Tier 0: ✅ Skills + Wiki + API（永遠可用）
+  Tier 1: ✅ Telegram Bot
+  Tier 2: ✅ Gemini AI + RAG
+══════════════════════════════════════════════════
+  📦 Skills: 5 個
+  📚 知識庫: 3 篇
+  🧠 SOUL: ✅ 已載入
+  🤖 Bot: @your_bot_name 已連線
+══════════════════════════════════════════════════
+```
+
+### 3.3 TG 驗證：Market Agent 上網產出競品分析
+
+📱 Telegram 操作：
+
+1. 對 Bot 發送 `/start` → 收到歡迎訊息 ✅
+2. 發送 `/agents` → 出現 8 個 Agent 按鈕
+3. 點選「🗺️ Market」切換到市場研究員
+4. 發送：
+
+```
+幫我搜尋 2025 年老虎機市場最新動態，產出競品情報摘要
+```
+
+✅ 預期結果：
+
+```
+🗺️ 市場情報
+├── 主題: 2025 老虎機市場動態
+├── 發現:
+│   1. [高信心] Pragmatic Play 推出 Megaways 系列...
+│   2. [中信心] PG Soft 亞洲市佔率持續成長...
+│   3. ...
+├── 來源: Google Search + 產業新聞
+└── 建議: 關注 xxx 趨勢
+```
+
+📱 再試一個（用 Wiki 知識 + 網路搜尋結合）：
+
+```
+Ocean King 系列跟 2025 年市場新進的捕魚機相比有什麼優劣？
+```
+
+✅ 預期：引用 wiki 的 Ocean King 知識 + 搜尋網路新資訊 → 整合比較
 
 ---
 
@@ -210,12 +238,12 @@ python start.py
 
 | 你想做什麼 | 在 Kiro IDE 說 |
 |-----------|---------------|
-| 改 Bot 語氣 | 「把 SOUL.md 改成幽默風格」 |
-| 加新能力 | 「幫我建立一個『每日報表』Skill」 |
-| 加新知識 | 「搜尋 XXX 存到 raw/ 並匯入 wiki」 |
-| 檢查知識品質 | 「檢查 knowledge/wiki/ 健康度」 |
-| 產出規格書 | 「拷問我的設計，然後幫我寫 spec」 |
+| 改 Agent 語氣 | 「把 market-agent 的 SOUL 改成像分析師簡報風格」 |
+| 增加知識 | 「搜尋 PG Soft 2025 產品線，存到 knowledge/shared/raw/ 並匯入 wiki」 |
+| 拷問設計 | 「拷問我的設計：我想為 market-agent 加一個自動日報功能」 |
+| 產出新 Skill | 「根據拷問結果幫我寫 spec，然後建立 Skill」 |
 | 驗證品質 | 「驗證 code 跟 spec 一致嗎」 |
+| 切換人格 | TG 發 `/agents` → 點其他 Agent |
 
 ---
 
@@ -224,29 +252,16 @@ python start.py
 | 問題 | 解法 |
 |------|------|
 | Bot 無回應 | 確認 `.env` 的 TELEGRAM_BOT_TOKEN 正確 |
-| 回答沒引用知識 | 確認 `knowledge/wiki/` 有檔案 + 重啟 Bot |
-| `ModuleNotFoundError` | 執行 `pip install -r requirements.txt` |
-| Gemini 403 | 確認 GEMINI_API_KEY 正確且有額度 |
-| port 被佔用 | `python start.py --port 8001` |
-
----
-
-## 總結
-
-```
-Phase 1: SOUL（靈魂）→ 它是誰
-Phase 2: SKILL（能力）→ 它會什麼
-Phase 3: WIKI（記憶）→ 它知道什麼
-Phase 4: 啟動 → Telegram 馬上能用
-```
-
-**10 分鐘，4 個 Phase，一個有人格、有能力、有記憶的 AI Bot。**
+| Tier 2 顯示 ⬚ | 確認 GEMINI_API_KEY 正確且有額度 |
+| Market 搜不到東西 | 確認網路正常 + Gemini Key 有效 |
+| `ModuleNotFoundError` | `pip install -r requirements.txt` |
+| 回答沒引用知識 | 確認 `knowledge/shared/wiki/` 有檔案 |
 
 ---
 
 ## 知識成長循環
 
-Bot 上線後，持續餵它知識：
+Bot 上線後，持續餵它知識讓它越來越聰明：
 
 ```
 你丟素材（raw/）→ AI 整理（wiki/）→ Agent 引用回答
@@ -254,6 +269,24 @@ Bot 上線後，持續餵它知識：
      └──── 你覺得缺什麼就再丟 ←────────────┘
 ```
 
+📝 在 Kiro IDE 隨時說：
+
+```
+幫我搜尋「XXX」，整理成知識文件存到 knowledge/shared/raw/ 並匯入 wiki
+```
+
 知識越多 → 回答越準 → 你越信任 → 丟更多 → ♻️
 
-> 🔗 完整課程：[QUICKSTART-01 Agent](../course-ai-bot/QUICKSTART-01-agent.md) / [QUICKSTART-02 Skills](../course-ai-bot/QUICKSTART-02-skills.md) / [QUICKSTART-03 Wiki](../course-ai-bot/QUICKSTART-03-wiki.md)
+---
+
+## 總結
+
+```
+Step 1: 下載 ai-bot（clone 就有完整系統）
+Step 2: IDE 對話了解 SOUL + SKILL + WIKI 三層架構
+Step 3: 啟動 → TG 驗證 Market Agent 能上網產出競品分析
+```
+
+**10 分鐘，3 步，一個能上網搜尋、有知識記憶、能產出競品分析的 AI Agent 系統。**
+
+> 🔗 進階課程：[01-Agent 人格設計](../course-ai-bot/QUICKSTART-01-agent.md) / [02-Skills 開發](../course-ai-bot/QUICKSTART-02-skills.md) / [03-Wiki 知識庫](../course-ai-bot/QUICKSTART-03-wiki.md)
