@@ -74,6 +74,15 @@ header nav a.active { color: var(--accent); font-weight: 600; }
 .fm-item .value { color: var(--accent); }
 .fm-tag { background: var(--accent); color: var(--bg); border-radius: 12px; padding: 0.2rem 0.6rem; font-size: 0.75rem; font-weight: 600; display: inline-block; margin: 0.1rem; }
 
+/* Search results */
+.search-results { margin-top: 1rem; }
+.search-result-item { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.2rem; margin-bottom: 0.8rem; cursor: pointer; transition: all 0.2s; }
+.search-result-item:hover { border-color: var(--accent); background: rgba(34,211,238,0.05); }
+.search-result-title { font-size: 1rem; font-weight: 600; color: var(--text); margin-bottom: 0.3rem; }
+.search-result-path { font-size: 0.75rem; color: var(--muted); margin-bottom: 0.5rem; }
+.search-result-snippet { font-size: 0.88rem; color: var(--muted); line-height: 1.6; }
+.search-result-snippet mark, .search-result-title mark { background: rgba(251, 191, 36, 0.3); color: var(--yellow); border-radius: 2px; padding: 0 2px; }
+
 @media (max-width: 768px) {
   .wiki-layout { grid-template-columns: 1fr; }
   .sidebar { max-height: 280px; }
@@ -379,19 +388,170 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
-// ─── Search ─────────────────────────────────────────
+// ─── Highlight keywords ─────────────────────────────
+function highlightKeywords(text, query) {
+  if (!query || !text) return escapeHtml(text);
+  const escaped = escapeHtml(text);
+  const keywords = query.trim().split(/\s+/).filter(k => k.length > 0);
+  if (keywords.length === 0) return escaped;
+  // Build regex matching all keywords (case-insensitive)
+  const pattern = keywords.map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
+  const regex = new RegExp(`(${pattern})`, 'gi');
+  return escaped.replace(regex, '<mark>$1</mark>');
+}
+
+// Extract a paragraph snippet around the first keyword match
+function extractSnippet(content, query, maxLen = 150) {
+  if (!query || !content) return '';
+  // Remove frontmatter
+  let text = content;
+  if (text.startsWith('---')) {
+    const endIdx = text.indexOf('---', 3);
+    if (endIdx !== -1) text = text.substring(endIdx + 3);
+  }
+  // Clean markdown syntax for plain-text search
+  const plain = text
+    .replace(/```[\s\S]*?```/g, '')
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/\*\*(.+?)\*\*/g, '$1')
+    .replace(/\*(.+?)\*/g, '$1')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/^[>\-|]/gm, '')
+    .trim();
+
+  const keywords = query.trim().split(/\s+/).filter(k => k.length > 0);
+  const lowerPlain = plain.toLowerCase();
+  let bestIdx = -1;
+
+  // Find the first keyword occurrence in the plain text
+  for (const kw of keywords) {
+    const idx = lowerPlain.indexOf(kw.toLowerCase());
+    if (idx !== -1 && (bestIdx === -1 || idx < bestIdx)) {
+      bestIdx = idx;
+    }
+  }
+
+  if (bestIdx === -1) {
+    // No match in content, return first paragraph as fallback
+    const lines = plain.split('\n').filter(l => l.trim().length > 10);
+    return lines.length > 0 ? lines[0].substring(0, maxLen) : plain.substring(0, maxLen);
+  }
+
+  // Extract snippet around the match
+  const start = Math.max(0, bestIdx - 40);
+  const end = Math.min(plain.length, bestIdx + maxLen - 40);
+  let snippet = plain.substring(start, end).replace(/\n/g, ' ').trim();
+  if (start > 0) snippet = '...' + snippet;
+  if (end < plain.length) snippet = snippet + '...';
+  return snippet;
+}
+
+// ─── Search with content results ────────────────────
 let searchTimeout = null;
+let searchCache = {}; // Cache loaded page contents for search
+
+async function performContentSearch(query) {
+  if (!query) {
+    document.getElementById('contentArea').innerHTML = `
+      <div class="empty">
+        <div class="icon">📖</div>
+        <p style="font-size:1.1rem; margin-bottom:0.5rem;">歡迎使用 Wiki 知識庫瀏覽器</p>
+        <p style="font-size:0.9rem;">選擇左側的檔案來閱讀內容，或使用搜尋框查找知識</p>
+        <p style="font-size:0.8rem; margin-top:1rem; color:var(--accent);">📁 支援資料夾展開收合 &nbsp;|&nbsp; 🔍 即時搜尋過濾 &nbsp;|&nbsp; 📝 Markdown 渲染</p>
+      </div>`;
+    return;
+  }
+
+  // Collect all file paths from tree
+  const files = collectFiles(treeData);
+  const results = [];
+
+  // Search through file contents
+  for (const file of files) {
+    // Check title match first
+    const titleMatch = (file.title || '').toLowerCase().includes(query.toLowerCase()) ||
+                       (file.filename || '').toLowerCase().includes(query.toLowerCase());
+
+    // Try to get content for snippet
+    let content = searchCache[file.filename];
+    if (!content) {
+      try {
+        const resp = await fetch(`/api/v1/wiki/pages/${file.filename}`);
+        const data = await resp.json();
+        content = data.content || '';
+        searchCache[file.filename] = content;
+      } catch (e) {
+        content = '';
+      }
+    }
+
+    const contentMatch = content.toLowerCase().includes(query.toLowerCase());
+
+    if (titleMatch || contentMatch) {
+      const snippet = extractSnippet(content, query);
+      results.push({ ...file, snippet, titleMatch, contentMatch });
+    }
+  }
+
+  // Render search results
+  renderSearchResults(results, query);
+}
+
+function collectFiles(items) {
+  let files = [];
+  for (const item of items) {
+    if (item.type === 'file') files.push(item);
+    else if (item.children) files = files.concat(collectFiles(item.children));
+  }
+  return files;
+}
+
+function renderSearchResults(results, query) {
+  const area = document.getElementById('contentArea');
+  if (results.length === 0) {
+    area.innerHTML = `
+      <div class="empty">
+        <div class="icon">🔍</div>
+        <p style="font-size:1.1rem; margin-bottom:0.5rem;">沒有找到匹配「${escapeHtml(query)}」的結果</p>
+        <p style="font-size:0.9rem; color:var(--muted);">試試不同的關鍵字</p>
+      </div>`;
+    return;
+  }
+
+  let html = `<div class="page-title">🔍 搜尋結果</div>`;
+  html += `<div class="page-path">找到 ${results.length} 個匹配「${escapeHtml(query)}」的頁面</div>`;
+  html += `<div class="search-results">`;
+
+  for (const r of results) {
+    const title = highlightKeywords(r.title || r.filename, query);
+    const snippet = r.snippet ? highlightKeywords(r.snippet, query) : '<span style="color:var(--muted);">無摘要</span>';
+    html += `
+      <div class="search-result-item" onclick="loadPage('${r.filename.replace(/'/g, "\\'")}'); document.getElementById('searchInput').value='';">
+        <div class="search-result-title">📄 ${title}</div>
+        <div class="search-result-path">${escapeHtml(r.filename)}</div>
+        <div class="search-result-snippet">${snippet}</div>
+      </div>`;
+  }
+
+  html += `</div>`;
+  area.innerHTML = html;
+}
+
 document.getElementById('searchInput').addEventListener('input', (e) => {
   clearTimeout(searchTimeout);
+  const query = e.target.value.trim();
   searchTimeout = setTimeout(() => {
-    renderTree(treeData, e.target.value.trim());
-  }, 200);
+    renderTree(treeData, query);
+    performContentSearch(query);
+  }, 300);
 });
 
 document.getElementById('searchInput').addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     e.target.value = '';
     renderTree(treeData, '');
+    performContentSearch('');
   }
 });
 
