@@ -130,7 +130,7 @@ agents/designer-agent/
 │   │   ├── SOUL.md                   ← 人格定義
 │   │   ├── MEMORY.md                 ← 記憶策略
 │   │   └── USER.md                   ← 使用者資訊
-│   └── skills/                       ← Skill 目錄
+│   └── skills/                       ← Skill 目錄（.kiro/skills/ark-*/SKILL.md）
 └── knowledge/
     ├── raw/ui-design-principles.md   ← 種子知識
     └── wiki/                         ← RAG 用（ingest 後產出）

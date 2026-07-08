@@ -117,7 +117,7 @@ python start.py
 💻 技術補充：
 ```
 .kiro/steering/SOUL.md           = 人格檔案
-agents/*/skills/SKILL.md         = 能力宣告（Markdown SOP）
+agents/*/.kiro/skills/SKILL.md    = 能力宣告（Markdown SOP）
 src/skills/internal/*.py         = 實際執行的 Python 程式碼
 knowledge/raw/ → wiki/           = 知識庫
 ```

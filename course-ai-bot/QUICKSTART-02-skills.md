@@ -63,7 +63,7 @@ ark-grill-me → ark-superpowers → ark-skill-creator → ark-code-spec-validat
 
 📝 Kiro IDE 輸入：
 ```
-列出 agents/market-agent/skills/ 目前有什麼 SKILL.md
+列出 agents/market-agent/.kiro/skills/ 目前有什麼 SKILL.md
 ```
 
 ✅ 預期：只有 `ark-market-research`（通用研究 SOP，沒有「SWOT 競品簡報」的專屬流程）
@@ -164,14 +164,14 @@ ark-grill-me → ark-superpowers → ark-skill-creator → ark-code-spec-validat
 ```
 建立新 Skill：競品簡報，
 根據 docs/specs/competitor-brief-spec.md 的規格實作，
-放在 agents/market-agent/skills/ark-competitor-brief/
+放在 agents/market-agent/.kiro/skills/ark-competitor-brief/
 ```
 
 → 產出 SKILL.md（依照 Spec 的驗收條件自動包含多格式產出）
 
 📝 確認產出：
 ```
-打開 agents/market-agent/skills/ark-competitor-brief/SKILL.md，
+打開 agents/market-agent/.kiro/skills/ark-competitor-brief/SKILL.md，
 確認步驟跟 Spec 的驗收條件一一對應
 ```
 
@@ -238,7 +238,7 @@ Score 由 ark-code-spec-validator 產出（Drift Report）
 📝 Kiro IDE 輸入：
 ```
 讀取 agents/market-agent/.kiro/steering/SOUL.md 和
-agents/market-agent/skills/ark-competitor-brief/SKILL.md，
+agents/market-agent/.kiro/skills/ark-competitor-brief/SKILL.md，
 用這個人格和 Skill 回答：「幫我做 Ocean King 3 的 SWOT 分析」
 ```
 

@@ -28,7 +28,7 @@ python start.py
 | Phase | sample 中對應 |
 |-------|-------------|
 | 1 Agent | `src/agent/` + `.kiro/steering/SOUL.md` + `src/bot/` |
-| 2 Skills | `src/skills/` + `agents/*/skills/ark-*/SKILL.md` |
+| 2 Skills | `src/skills/` + `agents/*/.kiro/skills/ark-*/SKILL.md` |
 | 3 Wiki | `src/wiki/` + `knowledge/` |
 
 ---
@@ -200,7 +200,7 @@ AI 會一次問一個問題（8-15 題），你回答後產出「決策摘要」
 
 產出：
 ```
-agents/market-agent/skills/ark-news-scraper/
+agents/market-agent/.kiro/skills/ark-news-scraper/
 ├── SKILL.md          ← Ark Skill 格式
 ├── scripts/          ← 可執行程式碼（選配）
 └── references/       ← 參考文件（選配）
@@ -292,7 +292,7 @@ Agent 完成任務 → memory.py 寫入 knowledge/raw/
 | 有對話（Gemini） | 1 | `src/llm/gemini_chat.py` |
 | 有路由（Planner） | 1 | `src/agent/planner.py` |
 | 8 Agent 可切換 | 1 | `agents/` + Inline Button |
-| 有品質的 Skills | 2 | `agents/*/skills/ark-*/SKILL.md` |
+| 有品質的 Skills | 2 | `agents/*/.kiro/skills/ark-*/SKILL.md` |
 | 有記憶（Memory） | 1+3 | `src/agent/memory.py` + `knowledge/` |
 | 有知識（Wiki RAG） | 3 | `src/wiki/engine.py` |
 | 自演化（ingest） | 3 | `raw/ → wiki/` 循環 |
