@@ -228,7 +228,7 @@ async def get_graph():
                 nodes.append({"id": f"agent:{agent_id}", "type": "agent", "label": f"{agent_id}-agent", "meta": soul_desc})
 
                 # Skill 節點
-                skills_dir = d / "skills"
+                skills_dir = d / ".kiro" / "skills"
                 if skills_dir.exists():
                     for skill_dir in sorted(skills_dir.iterdir()):
                         if skill_dir.is_dir() and (skill_dir / "SKILL.md").exists():
