@@ -15,94 +15,46 @@
 
 啟動 Kiro IDE，開啟你的專案資料夾，進入 Chat 對話框。
 
-### Step 0-1：下載 Skill 到專案
+### 初始化（一次貼完，AI 全部跑完）
 
-在對話框輸入：
-
-```
-📂 .kiro/skills/
-
-幫我下載 https://github.com/igs-paddyyang-tw/ark-agent-skills/blob/main/ark-wiki-engine/SKILL.md
-放到 .kiro/skills/ark-wiki-engine/SKILL.md
-```
-
-完成後：
+複製以下整段文字，貼到對話框送出：
 
 ```
-your-project/
-└── .kiro/
-    └── skills/
-        └── ark-wiki-engine/
-            └── SKILL.md    ← Kiro IDE 會自動識別這份 Skill
+1. 幫我下載 https://github.com/igs-paddyyang-tw/ark-agent-skills/blob/main/ark-wiki-engine/SKILL.md 放到 .kiro/skills/ark-wiki-engine/SKILL.md
+2. 幫我建立 .kiro/steering/SOUL.md，角色是「遊戲產業知識管理專家」，擅長整理競品分析、市場趨勢、玩法設計等知識，回答時引用知識庫來源。
+3. 幫我用 ark-wiki-engine 建立 Wiki 知識庫系統
+4. 幫我下載 https://github.com/igs-paddyyang-tw/ai-workshop/blob/main/docs/quickstart-llm-wiki.md 放到 knowledge/raw/quickstart-llm-wiki.md
 ```
 
-> 💡 Skill 放在 `.kiro/skills/` 後，Kiro IDE 在對話中會自動參考它來產出程式碼。
+> 💡 一段話 4 件事，AI 會依序完成：下載 Skill → 建立角色 → 產出知識庫目錄 → 下載範例素材。
 
-### Step 0-2：建立 SOUL.md（給 Agent 一個角色）
-
-在對話框輸入：
-
-```
-📂 .kiro/steering/
-
-幫我建立 SOUL.md，角色是「遊戲產業知識管理專家」，擅長整理競品分析、市場趨勢、玩法設計等知識，回答時引用知識庫來源。
-```
-
-完成後：
-
-```
-your-project/
-└── .kiro/
-    ├── steering/
-    │   └── SOUL.md         ← Agent 的人格設定
-    └── skills/
-        └── ark-wiki-engine/
-            └── SKILL.md
-```
-
-> 💡 SOUL.md 決定 Agent「用什麼語氣、什麼角度」回答問題。沒有它 Agent 就是通用助手，有了它就變成你的領域專家。
-
-### Step 0-3：用 Skill 建立知識庫目錄
-
-在對話框輸入：
-
-```
-📂 專案根目錄/
-
-幫我用 ark-wiki-engine 建立 Wiki 知識庫系統
-```
-
-> 💡 因為 `.kiro/skills/ark-wiki-engine/SKILL.md` 已存在，Kiro IDE 會根據這份規格自動產出完整的目錄結構和程式碼。
-
-完成後你的專案會多出：
+完成後你的專案結構：
 
 ```
 your-project/
 ├── .kiro/
-│   ├── steering/SOUL.md
-│   └── skills/ark-wiki-engine/SKILL.md
+│   ├── steering/
+│   │   └── SOUL.md                 ← Agent 人格（遊戲產業知識管理專家）
+│   └── skills/
+│       └── ark-wiki-engine/
+│           └── SKILL.md            ← Wiki 知識庫 Skill 規格
 ├── knowledge/
-│   ├── raw/          ← 放原始資料（教學檔案放這裡）
-│   ├── wiki/         ← AI 整理後的知識頁面
-│   ├── schema.md     ← 知識庫規則
-│   ├── index.md      ← 索引目錄
-│   └── log.md        ← 操作日誌
+│   ├── raw/
+│   │   └── quickstart-llm-wiki.md  ← 範例素材（就是這份教學）
+│   ├── wiki/                        ← AI 整理後的知識頁面
+│   ├── schema.md                    ← 知識庫規則
+│   ├── index.md                     ← 索引目錄
+│   └── log.md                       ← 操作日誌
 └── src/
-    └── ...           ← Wiki 引擎程式碼
+    └── ...                          ← Wiki 引擎程式碼
 ```
 
-### Step 0-4：下載教學檔案當範例素材
-
-在對話框輸入：
-
-```
-📂 knowledge/raw/
-
-幫我下載 https://github.com/igs-paddyyang-tw/ai-workshop/blob/main/docs/quickstart-llm-wiki.md
-放到 knowledge/raw/quickstart-llm-wiki.md
-```
-
-> 💡 就是你現在看的這份文件！把它當作第一個知識素材來練習匯入流程。
+| 產出 | 用途 |
+|------|------|
+| `SOUL.md` | 決定 Agent「用什麼語氣、什麼角度」回答問題 |
+| `SKILL.md` | Kiro IDE 對話時自動參考的 Wiki 建構規格 |
+| `knowledge/raw/` | 你放原始素材的地方（AI 只讀不改） |
+| `knowledge/wiki/` | AI 整理後的結構化知識頁面 |
 
 ---
 
@@ -118,9 +70,7 @@ knowledge/raw/
 想加更多？在對話框說：
 
 ```
-📂 knowledge/raw/
-
-幫我建立一份「Ocean King 捕魚機競品分析」的範例文件
+📂 knowledge/raw/ 幫我建立一份「Ocean King 捕魚機競品分析」的範例文件
 ```
 
 > ⚠️ `raw/` 是唯讀區 — AI 只讀不改。這是你的「原始素材庫」。
@@ -132,9 +82,7 @@ knowledge/raw/
 在 Kiro IDE 對話框輸入：
 
 ```
-📂 knowledge/
-
-把 raw 資料夾的檔案匯入 wiki
+📂 knowledge/ 把 raw 資料夾的檔案匯入 wiki
 ```
 
 或簡單說：
@@ -171,17 +119,15 @@ knowledge/wiki/
 在 Kiro IDE 對話框直接問問題：
 
 ```
-📂 knowledge/
-
-Wiki 知識庫怎麼使用？
+📂 knowledge/ Wiki 知識庫怎麼使用？
 ```
 
 ```
-raw 和 wiki 的差別是什麼？
+📂 knowledge/ raw 和 wiki 的差別是什麼？
 ```
 
 ```
-怎麼匯入新的知識？
+📂 knowledge/ 怎麼匯入新的知識？
 ```
 
 Kiro IDE 會：
