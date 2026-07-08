@@ -15,22 +15,72 @@
 
 啟動 Kiro IDE，開啟你的專案資料夾，進入 Chat 對話框。
 
-### 用 Skill 建立專案目錄
+### Step 0-1：下載 Skill 到專案
+
+在對話框輸入：
+
+```
+📂 .kiro/skills/
+
+幫我下載 https://github.com/igs-paddyyang-tw/ark-agent-skills/blob/main/ark-wiki-engine/SKILL.md
+放到 .kiro/skills/ark-wiki-engine/SKILL.md
+```
+
+完成後：
+
+```
+your-project/
+└── .kiro/
+    └── skills/
+        └── ark-wiki-engine/
+            └── SKILL.md    ← Kiro IDE 會自動識別這份 Skill
+```
+
+> 💡 Skill 放在 `.kiro/skills/` 後，Kiro IDE 在對話中會自動參考它來產出程式碼。
+
+### Step 0-2：建立 SOUL.md（給 Agent 一個角色）
+
+在對話框輸入：
+
+```
+📂 .kiro/steering/
+
+幫我建立 SOUL.md，角色是「遊戲產業知識管理專家」，擅長整理競品分析、市場趨勢、玩法設計等知識，回答時引用知識庫來源。
+```
+
+完成後：
+
+```
+your-project/
+└── .kiro/
+    ├── steering/
+    │   └── SOUL.md         ← Agent 的人格設定
+    └── skills/
+        └── ark-wiki-engine/
+            └── SKILL.md
+```
+
+> 💡 SOUL.md 決定 Agent「用什麼語氣、什麼角度」回答問題。沒有它 Agent 就是通用助手，有了它就變成你的領域專家。
+
+### Step 0-3：用 Skill 建立知識庫目錄
 
 在對話框輸入：
 
 ```
 📂 專案根目錄/
 
-幫我用 https://github.com/igs-paddyyang-tw/ark-agent-skills/blob/main/ark-wiki-engine/SKILL.md 建立 Wiki 知識庫系統
+幫我用 ark-wiki-engine 建立 Wiki 知識庫系統
 ```
 
-> 💡 Kiro IDE 會根據這份 Skill 規格，自動產出完整的目錄結構和程式碼。
+> 💡 因為 `.kiro/skills/ark-wiki-engine/SKILL.md` 已存在，Kiro IDE 會根據這份規格自動產出完整的目錄結構和程式碼。
 
 完成後你的專案會多出：
 
 ```
 your-project/
+├── .kiro/
+│   ├── steering/SOUL.md
+│   └── skills/ark-wiki-engine/SKILL.md
 ├── knowledge/
 │   ├── raw/          ← 放原始資料（教學檔案放這裡）
 │   ├── wiki/         ← AI 整理後的知識頁面
@@ -41,7 +91,7 @@ your-project/
     └── ...           ← Wiki 引擎程式碼
 ```
 
-### 下載教學檔案當範例素材
+### Step 0-4：下載教學檔案當範例素材
 
 在對話框輸入：
 
