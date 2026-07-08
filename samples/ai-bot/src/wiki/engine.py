@@ -9,27 +9,41 @@ from pathlib import Path
 import httpx
 
 BASE_DIR = Path(__file__).resolve().parents[2]
-GLOBAL_RAW = BASE_DIR / "knowledge" / "raw"
-GLOBAL_WIKI = BASE_DIR / "knowledge" / "wiki"
-INDEX_PATH = BASE_DIR / "knowledge" / "index.md"
-LOG_PATH = BASE_DIR / "knowledge" / "log.md"
+KNOWLEDGE_DIR = BASE_DIR / "knowledge"
+GLOBAL_SHARED = KNOWLEDGE_DIR / "shared"
+INDEX_PATH = GLOBAL_SHARED / "index.md"
+LOG_PATH = GLOBAL_SHARED / "log.md"
 
 REQUIRED_FIELDS = {"title", "type", "tags", "created", "updated"}
 
 
 class WikiEngine:
-    """兩層 Wiki 引擎：查詢時先私有再全域，ingest 支援指定目標。"""
+    """三層 Wiki 引擎：查詢時 私有 → shared → 其他 scope。"""
 
     def __init__(self, agent_id: str | None = None):
         self.agent_id = agent_id
-        self.global_raw = GLOBAL_RAW
-        self.global_wiki = GLOBAL_WIKI
+
+        # Layer 1: Agent 私有
         if agent_id:
-            self.agent_raw = BASE_DIR / "agents" / agent_id / "knowledge" / "raw"
-            self.agent_wiki = BASE_DIR / "agents" / agent_id / "knowledge" / "wiki"
+            agent_name = agent_id if agent_id.endswith("-agent") else f"{agent_id}-agent"
+            self.agent_raw = BASE_DIR / "agents" / agent_name / "knowledge" / "raw"
+            self.agent_wiki = BASE_DIR / "agents" / agent_name / "knowledge" / "wiki"
         else:
             self.agent_raw = None
             self.agent_wiki = None
+
+        # Layer 2: 共用 (knowledge/shared/)
+        self.global_raw = GLOBAL_SHARED / "raw"
+        self.global_wiki = GLOBAL_SHARED / "wiki"
+
+        # Layer 3: 其他 scope（掃 knowledge/ 下非 shared 的目錄）
+        self.project_wikis: list[tuple[str, Path]] = []
+        if KNOWLEDGE_DIR.exists():
+            for d in sorted(KNOWLEDGE_DIR.iterdir()):
+                if d.is_dir() and d.name not in ("shared", ".index") and not d.name.startswith("."):
+                    wiki_dir = d / "wiki"
+                    if wiki_dir.exists():
+                        self.project_wikis.append((d.name, wiki_dir))
 
     # ─── query ───────────────────────────────────────────
 
