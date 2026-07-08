@@ -158,9 +158,45 @@ samples/ai-bot/
 
 ---
 
-## Step 3：啟動 Bot + TG 驗證
+## Step 3：Market Agent 上網搜尋產出競品分析
 
-### 3.1 設定環境
+### 3.1 先在 IDE 產出（不需啟動 Bot）
+
+📝 貼到 Kiro IDE 對話框：
+
+```
+讀取 agents/market-agent/.kiro/steering/SOUL.md 和
+agents/market-agent/.kiro/skills/ark-market-research/SKILL.md，
+用 market-agent 的人格和技能，上網搜尋 2025 年老虎機市場最新動態，產出競品情報摘要
+```
+
+✅ 預期結果：
+
+```
+🗺️ 市場情報
+├── 主題: 2025 老虎機市場動態
+├── 發現:
+│   1. [高信心] Pragmatic Play 推出 Megaways 系列...
+│   2. [中信心] PG Soft 亞洲市佔率持續成長...
+│   3. ...
+├── 來源: Google Search + 產業新聞
+└── 建議: 關注 xxx 趨勢
+```
+
+📝 再試結合 Wiki 知識：
+
+```
+讀取 knowledge/shared/wiki/ 的內容，
+用 market-agent 的人格上網搜尋後，比較 Ocean King 系列跟 2025 年市場新進的捕魚機各自優劣
+```
+
+✅ 預期：引用 wiki 的 Ocean King 知識 + 搜尋網路新資訊 → 整合比較分析
+
+> 💡 **IDE 驗證 = 秒回、不重啟。確認 Agent 能搜尋+引用 → 再上 TG。**
+
+---
+
+### 3.2 啟動 Bot
 
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
@@ -174,8 +210,6 @@ cp .env.example .env
 TELEGRAM_BOT_TOKEN=你的_Token
 GEMINI_API_KEY=你的_Key
 ```
-
-### 3.2 啟動
 
 ```bash
 python start.py
@@ -198,7 +232,9 @@ python start.py
 ══════════════════════════════════════════════════
 ```
 
-### 3.3 TG 驗證：Market Agent 上網產出競品分析
+---
+
+### 3.3 TG 產出驗證
 
 📱 Telegram 操作：
 
@@ -211,26 +247,17 @@ python start.py
 幫我搜尋 2025 年老虎機市場最新動態，產出競品情報摘要
 ```
 
-✅ 預期結果：
+✅ 預期：跟 IDE 一樣的搜尋結果，但這次是透過 Telegram 對話
 
-```
-🗺️ 市場情報
-├── 主題: 2025 老虎機市場動態
-├── 發現:
-│   1. [高信心] Pragmatic Play 推出 Megaways 系列...
-│   2. [中信心] PG Soft 亞洲市佔率持續成長...
-│   3. ...
-├── 來源: Google Search + 產業新聞
-└── 建議: 關注 xxx 趨勢
-```
-
-📱 再試一個（用 Wiki 知識 + 網路搜尋結合）：
+📱 再試結合 Wiki：
 
 ```
 Ocean King 系列跟 2025 年市場新進的捕魚機相比有什麼優劣？
 ```
 
-✅ 預期：引用 wiki 的 Ocean King 知識 + 搜尋網路新資訊 → 整合比較
+✅ 預期：引用 wiki 知識 + 網路搜尋 → 整合比較（附 📚 參考來源）
+
+> 💡 **IDE = 開發驗證（快、能看全貌）。TG = 上線體驗（使用者真正用的介面）。**
 
 ---
 
