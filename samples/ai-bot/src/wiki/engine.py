@@ -34,25 +34,98 @@ class WikiEngine:
     # ─── query ───────────────────────────────────────────
 
     async def query(self, q: str, *, use_rag: bool = False) -> dict:
-        """兩層查詢：先搜私有 wiki，再搜全域 wiki，合併結果。"""
-        private_results = self._search_dir(self.agent_wiki, q) if self.agent_wiki else []
-        global_results = self._search_dir(self.global_wiki, q)
+        """四層金字塔查詢：metadata → BM25 → hybrid → rerank。
 
-        # 標記來源
-        for r in private_results:
-            r["scope"] = "private"
-        for r in global_results:
-            r["scope"] = "global"
+        介面不變：回傳 {results, answer, sources}。
+        """
+        from src.wiki.indexer import load_metadata
+        from src.wiki.search.layer0_exact import search_exact, search_substring, extract_summary
+        from src.wiki.search.layer1_bm25 import is_available as bm25_available, search_bm25
+        from src.wiki.search.layer2_hybrid import search_hybrid
+        from src.wiki.search.layer3_rerank import is_available as rerank_available, rerank
 
-        results = private_results + global_results
+        metadata = load_metadata()
+        keywords = self._tokenize(q)
+
+        # ── Layer 0: 精確匹配 ──
+        exact_hits = search_exact(q, metadata) if metadata else []
+        if exact_hits and exact_hits[0].get("score", 0) >= 1.0:
+            # 完全命中，直接回
+            results = self._format_hits(exact_hits, keywords)
+            if not use_rag:
+                return {"results": results, "answer": None, "sources": []}
+            answer = await self._rag_answer(q, results)
+            return {"results": results, "answer": answer, "sources": [r["file"] for r in results[:5]]}
+
+        # ── Layer 1: BM25 ──
+        bm25_hits = []
+        if bm25_available() and metadata:
+            bm25_hits = search_bm25(q, metadata, top_k=10)
+
+        # ── Layer 2: 三路混合（BM25 + 語意 + 圖譜）→ RRF ──
+        if bm25_hits and metadata:
+            hybrid_hits = search_hybrid(q, bm25_hits, metadata, top_k=10)
+        else:
+            hybrid_hits = bm25_hits
+
+        # ── Layer 0 兜底：如果上面都沒結果 ──
+        if not hybrid_hits and not exact_hits:
+            if metadata:
+                hybrid_hits = search_substring(q, metadata, max_results=10)
+            else:
+                # 無 metadata（索引未建），走舊邏輯
+                private_results = self._search_dir(self.agent_wiki, q) if self.agent_wiki else []
+                global_results = self._search_dir(self.global_wiki, q)
+                for r in private_results:
+                    r["scope"] = "private"
+                for r in global_results:
+                    r["scope"] = "global"
+                results = private_results + global_results
+                if not use_rag or not results:
+                    return {"results": results, "answer": None, "sources": []}
+                answer = await self._rag_answer(q, results)
+                return {"results": results, "answer": answer, "sources": [r["file"] for r in results[:5]]}
+
+        # 合併：exact_hits（低分的） + hybrid_hits，去重
+        all_hits = exact_hits + hybrid_hits
+        seen_paths = set()
+        deduped = []
+        for h in all_hits:
+            if h["path"] not in seen_paths:
+                seen_paths.add(h["path"])
+                deduped.append(h)
+
+        # ── Layer 3: Rerank（選配）──
+        results = self._format_hits(deduped, keywords)
+        if rerank_available() and len(results) > 3:
+            results = await rerank(q, results, top_k=5)
 
         if not use_rag or not results:
             return {"results": results, "answer": None, "sources": []}
 
-        # Tier 2: Gemini RAG
         answer = await self._rag_answer(q, results)
         sources = [r["file"] for r in results[:5]]
         return {"results": results, "answer": answer, "sources": sources}
+
+    def _format_hits(self, hits: list[dict], keywords: list[str]) -> list[dict]:
+        """把 search layer 的 hits 格式化為前端可用的結果。"""
+        from src.wiki.search.layer0_exact import extract_summary
+
+        results = []
+        for h in hits[:10]:
+            wiki_path = self.global_wiki / h["path"]
+            if not wiki_path.exists() and self.agent_wiki:
+                wiki_path = self.agent_wiki / h["path"]
+
+            summary = extract_summary(wiki_path, keywords) if wiki_path.exists() else ""
+            results.append({
+                "file": h["path"],
+                "title": h["title"],
+                "snippet": summary,
+                "score": h.get("score", 0),
+                "match_type": h.get("match_type", ""),
+            })
+        return results
 
     def _search_dir(self, wiki_dir: Path | None, q: str) -> list[dict]:
         """搜尋指定 wiki 目錄。"""
@@ -205,6 +278,16 @@ class WikiEngine:
         if scope == "global":
             self._update_index()
         self._append_log(ingested, scope)
+
+        # 觸發搜尋索引重建
+        if ingested:
+            try:
+                from src.wiki.indexer import rebuild_index
+                rebuild_index()
+            except Exception as e:
+                import logging
+                logging.getLogger("wiki.engine").warning("Index rebuild failed: %s", e)
+
         return ingested
 
     def _update_index(self) -> None:

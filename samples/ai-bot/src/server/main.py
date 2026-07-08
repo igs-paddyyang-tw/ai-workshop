@@ -334,3 +334,22 @@ async def wiki_ingest():
 async def wiki_lint():
     issues = engine.lint()
     return {"issues": issues, "healthy": len(issues) == 0}
+
+
+@app.post("/api/v1/wiki/rebuild-index")
+async def wiki_rebuild_index():
+    """手動觸發搜尋索引重建。"""
+    from src.wiki.indexer import rebuild_index
+    manifest = rebuild_index()
+    return {"status": "ok", "manifest": manifest}
+
+
+@app.get("/api/v1/wiki/index-status")
+async def wiki_index_status():
+    """查看搜尋索引狀態。"""
+    import json
+    manifest_path = Path("knowledge/.index/manifest.json")
+    if not manifest_path.exists():
+        return {"status": "not_built", "manifest": None}
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    return {"status": "ok", "manifest": manifest}
