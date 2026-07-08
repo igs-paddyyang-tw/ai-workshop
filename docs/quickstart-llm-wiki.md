@@ -20,36 +20,39 @@
 在對話框輸入：
 
 ```
-幫我用 ark-wiki-engine 建立 Wiki 知識庫系統
+📂 專案根目錄/
+
+幫我用 https://github.com/igs-paddyyang-tw/ark-agent-skills/blob/main/ark-wiki-engine/SKILL.md 建立 Wiki 知識庫系統
 ```
 
-> 💡 **Skill 來源**：https://github.com/igs-paddyyang-tw/ark-agent-skills/blob/main/ark-wiki-engine/SKILL.md
->
-> Kiro IDE 會根據這份 Skill 規格，自動產出完整的目錄結構和程式碼。
+> 💡 Kiro IDE 會根據這份 Skill 規格，自動產出完整的目錄結構和程式碼。
 
 完成後你的專案會多出：
 
 ```
-knowledge/
-├── raw/          ← 放原始資料（教學檔案放這裡）
-├── wiki/         ← AI 整理後的知識頁面
-├── schema.md     ← 知識庫規則
-├── index.md      ← 索引目錄
-└── log.md        ← 操作日誌
+your-project/
+├── knowledge/
+│   ├── raw/          ← 放原始資料（教學檔案放這裡）
+│   ├── wiki/         ← AI 整理後的知識頁面
+│   ├── schema.md     ← 知識庫規則
+│   ├── index.md      ← 索引目錄
+│   └── log.md        ← 操作日誌
+└── src/
+    └── ...           ← Wiki 引擎程式碼
 ```
 
-### 下載教學檔案
+### 下載教學檔案當範例素材
 
 在對話框輸入：
 
 ```
-幫我下載以下教學範例放到 knowledge/raw/：
-1. Ocean King 捕魚機競品分析
-2. Super Ace 老虎機競品分析
-3. 捕魚機 vs 老虎機比較
+📂 knowledge/raw/
+
+幫我下載 https://github.com/igs-paddyyang-tw/ai-workshop/blob/main/docs/quickstart-llm-wiki.md
+放到 knowledge/raw/quickstart-llm-wiki.md
 ```
 
-或手動放入任何 `.md` 檔案到 `knowledge/raw/` 資料夾。
+> 💡 就是你現在看的這份文件！把它當作第一個知識素材來練習匯入流程。
 
 ---
 
@@ -59,12 +62,16 @@ knowledge/
 
 ```
 knowledge/raw/
-├── ocean-king-analysis.md
-├── super-ace-analysis.md
-└── fishing-vs-slot-comparison.md
+└── quickstart-llm-wiki.md    ← 剛才下載的這份教學
 ```
 
-如果要自己加資料，直接把任何 `.md` 拖進 `knowledge/raw/` 即可。
+想加更多？在對話框說：
+
+```
+📂 knowledge/raw/
+
+幫我建立一份「Ocean King 捕魚機競品分析」的範例文件
+```
 
 > ⚠️ `raw/` 是唯讀區 — AI 只讀不改。這是你的「原始素材庫」。
 
@@ -75,13 +82,15 @@ knowledge/raw/
 在 Kiro IDE 對話框輸入：
 
 ```
-匯入知識
-```
+📂 knowledge/
 
-或更具體：
-
-```
 把 raw 資料夾的檔案匯入 wiki
+```
+
+或簡單說：
+
+```
+匯入知識
 ```
 
 Kiro IDE 會：
@@ -94,10 +103,15 @@ Kiro IDE 會：
 完成後會回覆類似：
 
 ```
-✅ 匯入完成：3 篇
-• ocean-king-analysis.md
-• super-ace-analysis.md
-• fishing-vs-slot-comparison.md
+✅ 匯入完成：1 篇
+• quickstart-llm-wiki.md
+```
+
+你可以在檔案樹看到新增的 wiki 頁面：
+
+```
+knowledge/wiki/
+└── quickstart-llm-wiki.md    ← AI 整理後的版本（有 frontmatter）
 ```
 
 ---
@@ -107,15 +121,17 @@ Kiro IDE 會：
 在 Kiro IDE 對話框直接問問題：
 
 ```
-Ocean King 的核心玩法是什麼？
+📂 knowledge/
+
+Wiki 知識庫怎麼使用？
 ```
 
 ```
-老虎機和捕魚機的目標玩家有什麼差異？
+raw 和 wiki 的差別是什麼？
 ```
 
 ```
-Super Ace 的 RTP 是多少？
+怎麼匯入新的知識？
 ```
 
 Kiro IDE 會：
@@ -129,7 +145,7 @@ Kiro IDE 會：
 [回答內容...]
 
 ---
-📚 參考：ocean-king-analysis, fishing-vs-slot-comparison
+📚 參考：quickstart-llm-wiki
 ```
 
 ---
@@ -138,9 +154,9 @@ Kiro IDE 會：
 
 | 在對話框說 | 做什麼 |
 |-----------|--------|
-| `檢查 Wiki` 或 `lint` | 健康檢查 — 找出缺少欄位、孤立頁面 |
+| `📂 knowledge/` + `檢查 Wiki` | 健康檢查 — 找出缺少欄位、孤立頁面 |
 | `Wiki 有沒有 XXX` | 搜尋知識庫 |
-| `記錄：[任何內容]` | 新增一頁知識到 wiki |
+| `📂 knowledge/wiki/` + `記錄：[內容]` | 新增一頁知識 |
 | `更新 [頁面名稱]` | 修改現有知識頁面 |
 
 ---
@@ -164,3 +180,11 @@ Kiro IDE 會：
 ```
 
 **全程在 Kiro IDE 對話框操作，不需要打指令、不需要寫程式。**
+
+---
+
+## 本文件作為範例素材
+
+這份 `quickstart-llm-wiki.md` 本身就是一份知識文件。把它放進 `knowledge/raw/` 後匯入 Wiki，未來你問「怎麼用 Wiki」時，AI 就能直接引用這份教學來回答。
+
+> 🔗 來源：https://github.com/igs-paddyyang-tw/ai-workshop/blob/main/docs/quickstart-llm-wiki.md
