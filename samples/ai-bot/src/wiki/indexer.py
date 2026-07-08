@@ -139,10 +139,23 @@ def build_bm25_index(pages: list[dict]) -> None:
     retriever = bm25s.BM25()
     retriever.index(corpus_tokens)
 
-    bm25_dir = INDEX_DIR / "bm25s"
+    bm25_dir = (INDEX_DIR / "bm25s").resolve()
+
+    # 清空舊索引（避免 Windows mmap 鎖定問題）
+    if bm25_dir.exists():
+        import shutil
+        try:
+            shutil.rmtree(bm25_dir)
+        except OSError:
+            pass
+
     bm25_dir.mkdir(parents=True, exist_ok=True)
-    retriever.save(str(bm25_dir))
-    log.info("bm25s index: %d documents", len(corpus_tokens))
+
+    try:
+        retriever.save(str(bm25_dir))
+        log.info("bm25s index: %d documents", len(corpus_tokens))
+    except OSError as e:
+        log.warning("bm25s save failed (index still in memory): %s", e)
 
 
 def _tokenize_for_bm25(page: dict) -> list[str]:
@@ -189,7 +202,7 @@ def write_manifest(page_count: int) -> dict:
         "version": "1.0.0",
         "rebuilt_at": datetime.now(timezone.utc).isoformat(),
         "page_count": page_count,
-        "has_bm25": (INDEX_DIR / "bm25s").exists(),
+        "has_bm25": (INDEX_DIR / "bm25s" / "params.index.json").exists(),
     }
     out = INDEX_DIR / "manifest.json"
     out.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")

@@ -7,5 +7,6 @@ python-dotenv==1.0.1
 pyyaml==6.0.1
 
 # 選配：Wiki 搜尋優化（沒裝也能跑，graceful fallback）
-bm25s>=0.2
-jieba>=0.42
+bm25s>=0.3.0
+jieba>=0.42.1
+PyStemmer>=2.2.0

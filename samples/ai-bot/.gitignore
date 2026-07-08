@@ -2,7 +2,7 @@
 __pycache__/
 *.pyc
 .env
-knowledge/.index/
+knowledge/**/.index/
 knowledge/wiki/slot-market-trends.md
 !knowledge/wiki/ocean-king-analysis.md
 !knowledge/wiki/super-ace-analysis.md

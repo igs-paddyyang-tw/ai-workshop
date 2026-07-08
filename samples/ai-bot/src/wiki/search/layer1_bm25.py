@@ -19,7 +19,7 @@ def is_available() -> bool:
     """檢查 BM25 索引是否可用。"""
     try:
         import bm25s
-        return BM25_DIR.exists()
+        return (BM25_DIR / "params.index.json").exists()
     except ImportError:
         return False
 
