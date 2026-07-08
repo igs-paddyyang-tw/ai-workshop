@@ -1,0 +1,37 @@
+# ═══════════════════════════════════════════════════════
+# 遊戲開發團隊（分散式）— 跨機模式
+# 用途：多台機器協作開發遊戲
+# 啟用：cp team-distributed.yaml team.yaml && python start.py
+#
+# 本地測試：所有 endpoint 指向 127.0.0.1
+# 實際部署：改成各台機器的 IP
+# ═══════════════════════════════════════════════════════
+
+name: "遊戲開發團隊（分散式）"
+
+instances:
+  pm-agent:
+    working_directory: agents/pm-agent
+    role: leader
+    transport: local
+    description: "專案經理 — 需求分析、派工、驗收"
+
+  market-agent:
+    working_directory: agents/market-agent
+    role: worker
+    transport: local
+    description: "市場研究員 — 競品分析、玩家回饋"
+
+  coder-agent:
+    role: worker
+    transport: http
+    endpoint: http://127.0.0.1:8000
+    auth_token_env: CODER_AGENT_TOKEN
+    description: "工程師 — Pixijs + Go 開發，H5 老虎機實作"
+
+  qa-agent:
+    role: worker
+    transport: http
+    endpoint: http://127.0.0.1:8000
+    auth_token_env: QA_AGENT_TOKEN
+    description: "測試工程師 — 自動化測試、Code Review、品質驗證"

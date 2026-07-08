@@ -1,7 +1,8 @@
 @echo off
-:: restart_bot.bat — 重啟 Bot（Windows）
+chcp 65001 >nul 2>&1
+:: restart_bot.bat — Restart Bot (Windows)
 
 echo Restarting bot...
 call stop_bot.bat
-timeout /t 2 /nobreak > nul
+timeout /t 3 /nobreak >nul
 call start_bot.bat

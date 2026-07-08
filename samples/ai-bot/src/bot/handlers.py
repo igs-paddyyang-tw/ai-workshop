@@ -212,6 +212,18 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             await update.message.reply_text(header + reply, parse_mode="Markdown", disable_web_page_preview=True)
             return
 
+    if plan.intent == IntentType.TEAM:
+        # 團隊派工 — 走 A2ARouter
+        reply = await _handle_team_dispatch(text, update, context)
+        if reply:
+            reply = _clean_output(reply)
+            session.add_turn("agent", reply)
+            await save_memory(current_agent, user_id, text, reply)
+            await _set_reaction(update.message, "👍")
+            header = f"🤝 [team]\n"
+            await update.message.reply_text(header + reply, disable_web_page_preview=True)
+            return
+
     if plan.intent == IntentType.WIKI:
         # Wiki 查詢優先
         pass  # 繼續到下面的 Wiki RAG 段落
@@ -561,3 +573,146 @@ async def _handle_news() -> str | None:
         return f"⚠️ {result.error}"
     except Exception as e:
         return f"⚠️ 新聞抓取失敗: {e}"
+
+
+# ── Team Dispatch ────────────────────────────────────────
+
+
+async def _handle_team_dispatch(text: str, update: Update, context: ContextTypes.DEFAULT_TYPE) -> str | None:
+    """團隊派工處理 — 走 A2ARouter.dispatch()。
+
+    只有 team.yaml 存在（_TEAM_MODE=1）時才啟用。
+    """
+    import os
+    if os.getenv("_TEAM_MODE") != "1":
+        return "⚠️ 團隊模式未啟用（需要 team.yaml）"
+
+    # 清除關鍵字前綴
+    clean_text = text
+    for prefix in ("派工", "assign", "分配", "指派", "@pm"):
+        clean_text = clean_text.replace(prefix, "").strip()
+
+    if not clean_text:
+        return "⚠️ 請描述要派工的任務，例如：`派工 分析老虎機競品數據`"
+
+    try:
+        from src.coordinator.a2a.router import A2ARouter
+        from src.coordinator.a2a.graph import TaskGraph
+        from src.coordinator.a2a.shared_memory import SharedMemory
+        from src.coordinator.a2a.discovery import AgentDiscovery
+        from src.coordinator.a2a.protocol import TaskHandoff
+        from datetime import datetime, timezone
+
+        # 組裝 Router（每次重建，讀最新的 profiles）
+        graph = TaskGraph()
+        memory = SharedMemory()
+        discovery = AgentDiscovery(memory)
+
+        # spawn_fn — 本地 Agent 用 agent_cli_chat
+        async def _spawn_fn(agent_name: str, message: str) -> str | None:
+            from src.agent.cli import agent_cli_chat
+            return await agent_cli_chat(message, agent_id=agent_name.replace("-agent", ""))
+
+        router = A2ARouter(graph, memory, discovery, spawn_fn=_spawn_fn)
+
+        # 建立 TaskHandoff
+        now = datetime.now(timezone.utc)
+        task_id = now.strftime("%Y-%m-%d") + f"_{now.hour:02d}{now.minute:02d}_{clean_text[:20].replace(' ', '-')}"
+        handoff = TaskHandoff(
+            task_id=task_id,
+            from_agent="user",
+            to_agent="auto",
+            title=clean_text,
+            context="",
+        )
+
+        # Discovery 匹配
+        target = discovery.match(handoff)
+        handoff.to_agent = target
+
+        # 通知使用者已派工
+        await update.message.reply_text(f"📋 已派工給 **{target}**\n任務：{clean_text[:100]}", parse_mode="Markdown")
+
+        # Dispatch（非同步執行）
+        await router.dispatch(handoff)
+
+        # 等結果（從 shared memory 讀）
+        task_path = memory.base / "tasks" / f"{task_id}.md"
+        if task_path.exists():
+            content = task_path.read_text(encoding="utf-8")
+            if "## Output" in content:
+                output_section = content.split("## Output")[-1].strip()
+                return f"✅ {target} 完成：\n\n{output_section[:2000]}"
+
+        return f"⏳ 任務 {task_id} 已提交給 {target}，可用 /board 查看進度"
+
+    except ImportError:
+        return "⚠️ coordinator 模組未安裝"
+    except Exception as e:
+        log.error("Team dispatch error: %s", e)
+        return f"⚠️ 派工失敗：{e}"
+
+
+# ── /assign /board Commands ──────────────────────────────
+
+
+async def cmd_assign(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """/assign <描述> — 派工給團隊 Agent。"""
+    text = update.message.text.strip()
+    # 移除 /assign 前綴
+    task_desc = text[len("/assign"):].strip() if text.startswith("/assign") else text
+
+    if not task_desc:
+        await update.message.reply_text(
+            "📋 用法：`/assign <任務描述>`\n\n"
+            "範例：\n"
+            "• `/assign 分析老虎機競品數據`\n"
+            "• `/assign review 主迴圈 performance`",
+            parse_mode="Markdown",
+        )
+        return
+
+    reply = await _handle_team_dispatch(f"派工 {task_desc}", update, context)
+    if reply:
+        # _handle_team_dispatch 已經回覆了中間訊息，這裡只處理最終結果
+        if not reply.startswith("📋"):  # 避免重複
+            await update.message.reply_text(reply)
+
+
+async def cmd_board(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """/board — 查看任務看板。"""
+    from pathlib import Path
+
+    tasks_dir = Path("knowledge/shared/tasks")
+    if not tasks_dir.exists() or not list(tasks_dir.glob("*.md")):
+        await update.message.reply_text("📋 任務看板為空\n\n使用 `/assign <描述>` 派工", parse_mode="Markdown")
+        return
+
+    lines = ["📋 **任務看板**\n"]
+    status_emoji = {
+        "pending": "⏳",
+        "running": "🔄",
+        "completed": "✅",
+        "failed": "❌",
+    }
+
+    tasks = sorted(tasks_dir.glob("*.md"), reverse=True)[:10]  # 最近 10 筆
+    for task_file in tasks:
+        content = task_file.read_text(encoding="utf-8")
+        # 解析 frontmatter
+        status = "pending"
+        assignee = ""
+        title = task_file.stem
+        for line in content.splitlines():
+            if line.startswith("status:"):
+                status = line.split(":", 1)[1].strip()
+            elif line.startswith("assigned_to:"):
+                assignee = line.split(":", 1)[1].strip()
+            elif line.startswith("# "):
+                title = line[2:].strip()
+
+        emoji = status_emoji.get(status, "❓")
+        assignee_str = f" → {assignee}" if assignee else ""
+        lines.append(f"{emoji} {title[:40]}{assignee_str}")
+
+    await update.message.reply_text("\n".join(lines), parse_mode="Markdown")

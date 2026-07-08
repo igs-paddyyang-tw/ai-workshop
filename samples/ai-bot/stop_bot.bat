@@ -1,19 +1,20 @@
 @echo off
-:: stop_bot.bat — 停止 Bot（Windows）
+chcp 65001 >nul 2>&1
+:: stop_bot.bat — Stop Bot (Windows)
 
-if not exist bot.pid (
-    echo No bot.pid found. Bot may not be running.
-    exit /b 1
+echo [%date% %time%] Stopping bot...
+
+:: Method 1: kill by window title
+taskkill /FI "WINDOWTITLE eq HOYEAH_BOT" /F >nul 2>&1
+
+:: Method 2: kill python processes with start.py in command line
+for /f "tokens=2 delims=," %%i in ('wmic process where "CommandLine like '%%start.py%%'" get ProcessId /format:csv 2^>nul ^| findstr /r "[0-9]"') do (
+    taskkill /PID %%i /T /F >nul 2>&1
 )
 
-set /p PID=<bot.pid
-echo [%date% %time%] Stopping bot (PID=%PID%)...
-taskkill /PID %PID% /T /F > nul 2>&1
-
-if %errorlevel% equ 0 (
-    echo Bot stopped.
-) else (
-    echo Bot process not found (may have already stopped).
+:: Method 3: kill python processes with src.bot.run in command line
+for /f "tokens=2 delims=," %%i in ('wmic process where "CommandLine like '%%src.bot.run%%'" get ProcessId /format:csv 2^>nul ^| findstr /r "[0-9]"') do (
+    taskkill /PID %%i /T /F >nul 2>&1
 )
 
-del bot.pid 2> nul
+echo Bot stopped.

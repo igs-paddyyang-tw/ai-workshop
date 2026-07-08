@@ -75,8 +75,84 @@ def main() -> None:
     else:
         print(f"  🧠 Agent 服務: ⬚（kiro-cli 未安裝，使用 Gemini fallback）")
 
+    # ── Team 模式偵測 ──
+    team_yaml_path = Path("team.yaml")
+    team_mode = team_yaml_path.exists()
+    if team_mode:
+        import yaml
+        team_data = yaml.safe_load(team_yaml_path.read_text(encoding="utf-8"))
+        team_name = team_data.get("name", "unnamed")
+        instances = team_data.get("instances", {})
+        local_count = sum(1 for v in instances.values() if v.get("transport", "local") == "local")
+        http_count = sum(1 for v in instances.values() if v.get("transport", "local") == "http")
+
+        print(f"\n  🤝 團隊模式: {team_name}")
+        print(f"     本地 Agent: {local_count} 個")
+        if http_count:
+            print(f"     遠端 Agent: {http_count} 個（跨機協作）")
+
+        # 組裝 A2A Router
+        from src.coordinator.a2a.router import A2ARouter
+        from src.coordinator.a2a.graph import TaskGraph
+        from src.coordinator.a2a.shared_memory import SharedMemory
+        from src.coordinator.a2a.discovery import AgentDiscovery
+        from src.coordinator.a2a.transport import AgentConfig, fetch_agent_card
+
+        graph = TaskGraph()
+        memory = SharedMemory()
+        discovery = AgentDiscovery(memory)
+
+        # 建立 AgentConfig 列表
+        agent_configs: dict[str, AgentConfig] = {}
+        for name, cfg in instances.items():
+            agent_configs[name] = AgentConfig(
+                name=name,
+                role=cfg.get("role", "worker"),
+                working_directory=cfg.get("working_directory", "."),
+                transport=cfg.get("transport", "local"),
+                endpoint=cfg.get("endpoint", ""),
+                auth_token_env=cfg.get("auth_token_env", ""),
+                description=cfg.get("description", ""),
+            )
+
+        # 存入環境供 handlers.py 使用
+        os.environ["_TEAM_MODE"] = "1"
+        os.environ["_TEAM_NAME"] = team_name
+
+        # 寫入 agent_profiles（供 discovery 用）
+        profiles_dir = Path("knowledge/shared/agent_profiles")
+        profiles_dir.mkdir(parents=True, exist_ok=True)
+        for name, cfg in agent_configs.items():
+            profile = {
+                "agent_id": name,
+                "role": cfg.role,
+                "skills": cfg.skills,
+                "description": cfg.description,
+                "transport": cfg.transport,
+                "current_load": 0,
+                "capacity": 3,
+            }
+            (profiles_dir / f"{name}.yaml").write_text(
+                yaml.dump(profile, allow_unicode=True), encoding="utf-8"
+            )
+
+        # 配置 A2A Server
+        from src.coordinator.a2a.server import configure as configure_a2a_server
+        configure_a2a_server(agent_card={
+            "name": os.getenv("AGENT_NAME", "ai-bot"),
+            "description": "",
+            "skills": [],
+            "status": "idle",
+        })
+
+        print(f"     A2A Router: ✅ 已組裝")
+    else:
+        print(f"\n  📌 個體模式（無 team.yaml）")
+
     print(f"\n  🚀 API:  http://localhost:8000")
     print(f"  📖 Docs: http://localhost:8000/api-docs")
+    if team_mode:
+        print(f"  🔗 A2A:  http://localhost:8000/api/v1/a2a/card")
     print()
 
     # API Server

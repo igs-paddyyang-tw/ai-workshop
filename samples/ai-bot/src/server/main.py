@@ -12,6 +12,12 @@ TEMPLATES_DIR = Path(__file__).resolve().parents[2] / "templates"
 app = FastAPI(title="AI Agent 專家平台 API")
 engine = WikiEngine()
 
+# ── A2A Router（團隊模式才掛載）──
+import os as _os
+if _os.getenv("_TEAM_MODE") == "1":
+    from src.coordinator.a2a.server import router as a2a_router
+    app.include_router(a2a_router)
+
 
 # ─── Web UI ──────────────────────────────────────────
 
