@@ -23,7 +23,7 @@ class Scheduler:
         if not p.exists():
             return 0
         data = yaml.safe_load(p.read_text(encoding="utf-8"))
-        self._jobs = data.get("schedules", []) if data else []
+        self._jobs = data.get("jobs", data.get("schedules", [])) if data else []
         return len(self._jobs)
 
     def start(self) -> None:
