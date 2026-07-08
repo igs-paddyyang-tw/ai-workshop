@@ -144,17 +144,9 @@ async def main() -> None:
             await tg_reply_fn(agent_name, _summarize_for_tg(agent_name, text))
 
     log.info("啟動 %d agents...", len(team_config.instances))
-    shared_knowledge = Path("knowledge/shared").resolve()
     for name, ic in team_config.instances.items():
-        # 建立 symlink: {working_dir}/knowledge → knowledge/shared
         agent_cwd = Path(ic.working_directory).resolve()
         agent_cwd.mkdir(parents=True, exist_ok=True)
-        link = agent_cwd / "knowledge"
-        if not link.exists():
-            try:
-                link.symlink_to(shared_knowledge)
-            except OSError:
-                log.debug("Symlink already exists or failed: %s", link)
         proc = AgentProcess(
             name=name, working_dir=ic.working_directory,
             model=ic.model, skip_resume=ic.skip_resume,
