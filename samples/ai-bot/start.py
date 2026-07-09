@@ -41,6 +41,9 @@ def main() -> None:
     soul_path = Path(".kiro/steering/SOUL.md")
     print(f"  🧠 SOUL: {'✅ 已載入' if soul_path.exists() else '⚠️ 未找到'}")
 
+    # ── 自我成長系統自檢 ──
+    _self_growth_check()
+
     # Bot 子進程
     bot_proc = None
     if tg_token:
@@ -163,6 +166,49 @@ def main() -> None:
         if bot_proc:
             bot_proc.terminate()
             bot_proc.wait(timeout=5)
+
+
+def _self_growth_check() -> None:
+    """啟動自檢：驗證 steering 4 檔制 + memory/ 目錄。"""
+    agents_dir = Path("agents")
+    if not agents_dir.exists():
+        return
+
+    warnings: list[str] = []
+    agents = [d.name for d in agents_dir.iterdir() if d.is_dir() and d.name.endswith("-agent")]
+
+    for agent in agents:
+        agent_path = agents_dir / agent
+
+        # Steering 必備檔
+        steering_dir = agent_path / ".kiro" / "steering"
+        required_steering = ["SOUL.md", "BRAIN.md", "GUARDRAILS.md", "USER.md"]
+        for f in required_steering:
+            if not (steering_dir / f).exists():
+                warnings.append(f"  ⚠️  {agent}: 缺少 steering/{f}")
+
+        # Memory 目錄
+        memory_dir = agent_path / "memory"
+        if not memory_dir.exists():
+            memory_dir.mkdir(parents=True, exist_ok=True)
+            (memory_dir / "daily").mkdir(exist_ok=True)
+            (memory_dir / "memory.md").write_text(
+                f"# {agent} 持久事實\n\n> 上限 2000 tokens。\n", encoding="utf-8"
+            )
+            (memory_dir / "recent.md").write_text(
+                "# 最近經驗\n\n（尚無記錄）\n", encoding="utf-8"
+            )
+            warnings.append(f"  📁 {agent}: memory/ 已自動初始化")
+        else:
+            if not (memory_dir / "daily").exists():
+                (memory_dir / "daily").mkdir(exist_ok=True)
+
+    if warnings:
+        print(f"  🔍 自檢:")
+        for w in warnings:
+            print(w)
+    else:
+        print(f"  🔍 自檢: ✅ 8 Agent steering + memory 完整")
 
 
 if __name__ == "__main__":

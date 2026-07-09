@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wiki 取用路徑分析 — kiro-cli vs WikiEngine</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: system-ui, -apple-system, sans-serif;
+    background: #0d1117;
+    color: #e6edf3;
+    padding: 2rem;
+    line-height: 1.6;
+  }
+  .container { max-width: 1100px; margin: 0 auto; }
+
+  h1 {
+    color: #ffd700;
+    font-size: 1.8rem;
+    margin-bottom: 0.5rem;
+    text-shadow: 0 0 10px rgba(255,215,0,0.3);
+  }
+  .subtitle { color: #8b949e; margin-bottom: 2rem; }
+  h2 {
+    color: #58a6ff;
+    font-size: 1.3rem;
+    margin: 2rem 0 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #30363d;
+  }
+  h3 { color: #79c0ff; margin: 1rem 0 0.5rem; font-size: 1.1rem; }
+
+  /* Flow diagram */
+  .flow {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 0.85rem;
+    white-space: pre;
+    overflow-x: auto;
+    line-height: 1.8;
+  }
+
+  /* Two-column layout */
+  .paths {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin: 1.5rem 0;
+  }
+  @media (max-width: 768px) {
+    .paths { grid-template-columns: 1fr; }
+  }
+
+  .path-card {
+    background: #161b22;
+    border-radius: 12px;
+    padding: 1.5rem;
+    border: 1px solid #30363d;
+    position: relative;
+    overflow: hidden;
+  }
+  .path-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+  .path-a::before { background: linear-gradient(90deg, #f97583, #ff7b72); }
+  .path-b::before { background: linear-gradient(90deg, #56d364, #3fb950); }
+
+  .path-card h3 { margin-top: 0; }
+  .path-card .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+  .badge-priority { background: #f97583; color: #0d1117; }
+  .badge-fallback { background: #3fb950; color: #0d1117; }
+
+  .step-list {
+    list-style: none;
+    padding: 0;
+    margin: 1rem 0;
+  }
+  .step-list li {
+    padding: 0.4rem 0 0.4rem 1.5rem;
+    position: relative;
+    border-left: 2px solid #30363d;
+    margin-left: 0.5rem;
+  }
+  .step-list li::before {
+    content: '→';
+    position: absolute;
+    left: 0.4rem;
+    color: #8b949e;
+  }
+
+  /* Comparison table */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+    font-size: 0.9rem;
+  }
+  th {
+    background: #21262d;
+    color: #58a6ff;
+    padding: 0.7rem 1rem;
+    text-align: left;
+    border-bottom: 2px solid #30363d;
+  }
+  td {
+    padding: 0.6rem 1rem;
+    border-bottom: 1px solid #21262d;
+  }
+  tr:hover td { background: #161b22; }
+
+  /* Highlight boxes */
+  .highlight {
+    background: #1c2128;
+    border-left: 4px solid #ffd700;
+    padding: 1rem 1.2rem;
+    margin: 1rem 0;
+    border-radius: 0 8px 8px 0;
+  }
+  .highlight.green { border-left-color: #3fb950; }
+  .highlight.blue { border-left-color: #58a6ff; }
+
+  /* Shared layer diagram */
+  .shared-diagram {
+    text-align: center;
+    margin: 2rem 0;
+    padding: 2rem;
+    background: #161b22;
+    border-radius: 12px;
+    border: 1px solid #30363d;
+  }
+  .shared-diagram .layer {
+    display: inline-block;
+    padding: 0.8rem 1.5rem;
+    margin: 0.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+  }
+  .layer-file { background: #1f6feb33; border: 1px solid #1f6feb; color: #79c0ff; }
+  .layer-a { background: #f9758333; border: 1px solid #f97583; color: #ff7b72; }
+  .layer-b { background: #3fb95033; border: 1px solid #3fb950; color: #56d364; }
+  .arrow-down {
+    display: block;
+    color: #8b949e;
+    font-size: 1.5rem;
+    margin: 0.3rem 0;
+  }
+  .split-arrows {
+    display: flex;
+    justify-content: center;
+    gap: 6rem;
+    margin: 0.5rem 0;
+  }
+
+  .tag { color: #8b949e; font-size: 0.8rem; }
+  code {
+    background: #21262d;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+  }
+  .footer {
+    margin-top: 3rem;
+    padding-top: 1rem;
+    border-top: 1px solid #30363d;
+    color: #8b949e;
+    font-size: 0.8rem;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>🔍 Wiki 取用路徑分析</h1>
+<p class="subtitle">kiro-cli vs WikiEngine — Bot 對話時如何取得知識庫資料</p>
+
+<h2>📐 整體架構</h2>
+<div class="flow">使用者 TG 訊息
+    ↓
+handlers.py handle_message()
+    ↓
+┌─ L1: /reset → 清空 session
+├─ L2: /skill_id → 直接執行 Skill
+├─ L3: keyword → Planner 路由
+└─ L4: 進入主對話處理 ←── 這裡觸發 Wiki
+         ↓
+    ┌────┴────┐
+    ↓         ↓
+  4a.       4b.       4c.        4d.
+ kiro-cli  WikiEngine  Memory    Gemini
+ (優先)    (fallback)  Search    fallback</div>
+
+<h2>🔀 兩條路徑詳解</h2>
+<div class="paths">
+  <div class="path-card path-a">
+    <h3>路徑 A：kiro-cli <span class="badge badge-priority">優先</span></h3>
+    <p class="tag">觸發：系統有裝 kiro-cli</p>
+    <ul class="step-list">
+      <li>spawn kiro-cli 進程<br><code>cwd = agents/market-agent/</code></li>
+      <li>kiro-cli 載入 SOUL.md + SKILL.md</li>
+      <li>AI 自行判斷是否需要讀 wiki</li>
+      <li>用 <code>read</code> 工具讀 knowledge/*.md</li>
+      <li>用 <code>glob</code> 工具搜尋檔案</li>
+      <li>可能用 <code>web_search</code> 搜外部</li>
+      <li>組合資訊 → stdout 輸出</li>
+      <li>process.py 收 → _clean_output()</li>
+    </ul>
+    <div class="highlight">
+      <strong>特點：</strong>獨立 LLM 進程，有完整工具鏈，品質最高但速度慢（30-120s）
+    </div>
+  </div>
+
+  <div class="path-card path-b">
+    <h3>路徑 B：WikiEngine <span class="badge badge-fallback">Fallback</span></h3>
+    <p class="tag">觸發：kiro-cli 沒裝或沒回覆</p>
+    <ul class="step-list">
+      <li>建立 <code>WikiEngine(agent_id="market")</code></li>
+      <li>_tokenize(q) → bigram 中文分詞</li>
+      <li>搜私有 wiki → 搜全域 wiki</li>
+      <li>逐檔 <code>rglob("*.md")</code> 全文比對</li>
+      <li>取 title + snippet（200 chars）</li>
+      <li>_rag_answer() → Gemini API</li>
+      <li>回傳 answer + 📚 參考來源</li>
+    </ul>
+    <div class="highlight green">
+      <strong>特點：</strong>純 Python，速度快（3-5s），但品質較低（只有 snippet 注入）
+    </div>
+  </div>
+</div>
+
+<h2>📊 比較表</h2>
+<table>
+  <thead>
+    <tr><th>維度</th><th>路徑 A (kiro-cli)</th><th>路徑 B (WikiEngine)</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>誰讀 wiki</td><td>kiro-cli 的 read/glob 工具</td><td>Python Path.rglob()</td></tr>
+    <tr><td>搜尋方式</td><td>AI 自行判斷（語意理解）</td><td>bigram 分詞 + 全文比對</td></tr>
+    <tr><td>合成答案</td><td>kiro-cli 內建 LLM + SOUL 人格</td><td>Gemini API + snippets context</td></tr>
+    <tr><td>讀取範圍</td><td>可讀整篇文件（完整理解）</td><td>只取 snippet 200 chars</td></tr>
+    <tr><td>品質</td><td>⭐⭐⭐⭐⭐</td><td>⭐⭐⭐</td></tr>
+    <tr><td>速度</td><td>30-120 秒</td><td>3-5 秒</td></tr>
+    <tr><td>外部搜尋</td><td>✅ 可用 web_search</td><td>❌ 只查本地檔案</td></tr>
+  </tbody>
+</table>
+
+<h2>🗂️ 搜尋範圍</h2>
+<div class="paths">
+  <div class="path-card" style="border-color: #1f6feb;">
+    <h3>🔒 私有知識（Agent 專屬）</h3>
+    <div class="flow" style="font-size:0.8rem; padding:1rem;">agents/{agent_id}-agent/knowledge/
+├── raw/    ← memory 自動寫入
+└── wiki/   ← ingest 後結構化</div>
+  </div>
+  <div class="path-card" style="border-color: #ffd700;">
+    <h3>🌐 全域知識（所有 Agent 共用）</h3>
+    <div class="flow" style="font-size:0.8rem; padding:1rem;">knowledge/
+├── raw/      ← 預放原始資料
+├── wiki/     ← 3 篇競品分析
+└── index.md  ← 索引目錄</div>
+  </div>
+</div>
+<div class="highlight blue">
+  <strong>查詢順序：</strong>先私有 → 再全域 → 合併結果
+</div>
+
+<h2>🎯 共用底層</h2>
+<div class="shared-diagram">
+  <div class="layer layer-file">📄 knowledge/wiki/*.md（同一批 .md 檔案）</div>
+  <span class="arrow-down">↓</span>
+  <div class="split-arrows">
+    <div>
+      <div class="layer layer-a">kiro-cli read 工具</div>
+      <span class="arrow-down">↓</span>
+      <div style="color:#ff7b72;">AI 消化整篇 → 完整理解</div>
+    </div>
+    <div>
+      <div class="layer layer-b">WikiEngine._search_dir()</div>
+      <span class="arrow-down">↓</span>
+      <div style="color:#56d364;">bigram 搜 → snippet 200 chars</div>
+    </div>
+  </div>
+</div>
+
+<h2>⚡ 目前 Bot 運作狀態</h2>
+<div class="highlight">
+  <p>Bot 有裝 kiro-cli → <strong>99% 走路徑 A</strong></p>
+  <p>WikiEngine 幾乎不被觸發（只在 kiro-cli timeout 或沒回覆時才 fallback）</p>
+  <p>kiro-cli 是否讀 wiki <strong>由 AI 自行判斷</strong>，不受 Python 控制</p>
+</div>
+
+<h2>🧠 kiro-cli 自身運作機制（進階）</h2>
+
+<div class="highlight blue">
+  <strong>核心概念：</strong>Skill 不是「全部」，而是「有就照做，沒有就自由發揮」。
+</div>
+
+<h3>啟動時載入的 Context</h3>
+<div class="flow">kiro-cli 收到訊息
+    ↓
+永遠載入（always in context）：
+  • .kiro/steering/SOUL.md          ← 人格（~200 字）
+  • .kiro/skills/*/description      ← 所有 Skill 觸發描述（~100 字/個）
+    ↓
+內建 LLM 判斷：「匹配哪個 Skill？」
+    ↓
+  ├── ✅ 匹配 → 載入 SKILL.md 全文 → 照 SOP 執行
+  └── ❌ 無匹配 → 自由發揮（通用能力 + SOUL 人格）</div>
+
+<h3>匹配 vs 未匹配的行為</h3>
+<table>
+  <thead>
+    <tr><th>使用者說的</th><th>匹配結果</th><th>kiro-cli 行為</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>「Ocean King SWOT」</td><td>→ ark-competitor-brief</td><td>按 SKILL.md Step 1-8 執行</td></tr>
+    <tr><td>「老虎機市場動態」</td><td>→ ark-market-research</td><td>按 SKILL.md 搜尋流程</td></tr>
+    <tr><td>「寫一個 spec」</td><td>→ ark-superpowers</td><td>按模板產出規格文件</td></tr>
+    <tr><td>「拷問我的設計」</td><td>→ ark-grill-me</td><td>進入逐題提問模式</td></tr>
+    <tr><td>「幫我看 start.py」</td><td style="color:#f97583;">❌ 無匹配</td><td>自己讀檔 + 分析程式碼</td></tr>
+    <tr><td>「今天天氣如何」</td><td style="color:#f97583;">❌ 無匹配</td><td>web_search + 通用回答</td></tr>
+  </tbody>
+</table>
+
+<h3>底層能力（不需要 Skill 也有的）</h3>
+<div class="paths">
+  <div class="path-card" style="border-color:#58a6ff;">
+    <h3>🔧 工具</h3>
+    <table style="font-size:0.85rem;">
+      <tr><td><code>read</code></td><td>讀取任何檔案</td></tr>
+      <tr><td><code>glob</code></td><td>搜尋檔案路徑</td></tr>
+      <tr><td><code>write</code></td><td>建立 / 修改檔案</td></tr>
+      <tr><td><code>shell</code></td><td>執行終端指令</td></tr>
+      <tr><td><code>web_search</code></td><td>搜尋網路</td></tr>
+      <tr><td><code>code</code></td><td>AST 搜尋、symbol lookup</td></tr>
+    </table>
+  </div>
+  <div class="path-card" style="border-color:#ffd700;">
+    <h3>🧠 LLM 推理</h3>
+    <table style="font-size:0.85rem;">
+      <tr><td>分析</td><td>程式碼、架構、資料</td></tr>
+      <tr><td>摘要</td><td>長文壓縮重點</td></tr>
+      <tr><td>翻譯</td><td>多語言轉換</td></tr>
+      <tr><td>問答</td><td>通用知識回覆</td></tr>
+      <tr><td>規劃</td><td>任務拆解 + 步驟</td></tr>
+      <tr><td>產出</td><td>程式碼、文件、報告</td></tr>
+    </table>
+  </div>
+</div>
+
+<h3>Skill 的本質</h3>
+<div class="shared-diagram">
+  <div style="display:flex; align-items:center; justify-content:center; gap:1rem; flex-wrap:wrap;">
+    <div class="layer" style="background:#ffd70033; border-color:#ffd700; color:#ffd700;">Skill</div>
+    <span style="font-size:1.5rem; color:#8b949e;">=</span>
+    <div class="layer" style="background:#58a6ff33; border-color:#58a6ff; color:#79c0ff;">底層能力</div>
+    <span style="font-size:1.5rem; color:#8b949e;">+</span>
+    <div class="layer" style="background:#3fb95033; border-color:#3fb950; color:#56d364;">流程指引（SOP）</div>
+  </div>
+  <p style="margin-top:1.5rem; color:#8b949e;">
+    有 Skill → 按 SOP 執行，產出格式固定，品質穩定<br>
+    沒 Skill → 自由發揮，能力一樣但沒有標準化流程
+  </p>
+</div>
+
+<h3>三層載入模式（漸進式揭露）</h3>
+<table>
+  <thead>
+    <tr><th>層級</th><th>何時載入</th><th>大小</th><th>內容</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>1. 後設資料</strong></td>
+      <td>永遠在 context</td>
+      <td>~100 字/Skill</td>
+      <td>name + description（觸發判斷用）</td>
+    </tr>
+    <tr>
+      <td><strong>2. SKILL.md 本體</strong></td>
+      <td>被觸發時</td>
+      <td>&lt;500 行</td>
+      <td>完整執行指令</td>
+    </tr>
+    <tr>
+      <td><strong>3. 附帶資源</strong></td>
+      <td>SKILL.md 指示時</td>
+      <td>無限制</td>
+      <td>references/ scripts/ assets/</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="flow" style="font-size:0.8rem;">例：ark-competitor-brief 觸發時
+
+Layer 1（已在 context）：description "競品 SWOT 簡報..." (~100 字)
+         ↓ 判斷匹配
+Layer 2（觸發後載入）：SKILL.md 全文（108 行）
+         ↓ Step 7 需要 HTML 模板
+Layer 3（按需載入）：references/swot-template.html（5KB）</div>
+
+<div class="footer">
+  ai-bot 架構文件 · 2026-07-07 · Powered by Market Agent 🗺️
+</div>
+
+</div>
+</body>
+</html>

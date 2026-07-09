@@ -175,6 +175,36 @@ class AgentProcess:
                 return None
 
             log.info("%s completed (%d chars, %d tokens)", self.name, len(output), usage.total)
+            # Daily log: 記錄情節記憶
+            try:
+                from src.memory.daily_log import write_daily_log
+                task_id = f"msg-{int(asyncio.get_event_loop().time())}"
+                # 背景執行，不阻塞回覆
+                asyncio.create_task(
+                    write_daily_log(
+                        agent_name=self.name,
+                        task_id=task_id,
+                        conversation=f"INPUT: {text[:500]}\nOUTPUT: {output[:500]}",
+                    )
+                )
+            except Exception as e:
+                log.debug("Daily log skipped for %s: %s", self.name, e)
+            # Skill 推薦：評估是否觸發
+            try:
+                from src.memory.recommend import recommend_skill
+                # 粗估 tool calls（從 output 中計算 tool 使用痕跡）
+                tool_call_count = len(re.findall(r"(?:Tool|tool|呼叫|execute|Running)", output))
+                if tool_call_count >= 5:
+                    asyncio.create_task(
+                        recommend_skill(
+                            agent_name=self.name,
+                            task_id=task_id,
+                            conversation=f"INPUT: {text[:800]}\nOUTPUT: {output[:1500]}",
+                            tool_call_count=tool_call_count,
+                        )
+                    )
+            except Exception as e:
+                log.debug("Skill recommend skipped for %s: %s", self.name, e)
             # Parse progress markers
             try:
                 from coordinator.a2a.progress_parser import parse_output

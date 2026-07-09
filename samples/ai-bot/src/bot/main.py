@@ -21,6 +21,12 @@ from src.bot.handlers import (
     cmd_start,
     handle_message,
 )
+from src.memory.tg_handlers import (
+    callback_skill_approval,
+    cmd_consolidate,
+    cmd_recall,
+    cmd_skills,
+)
 
 # Bot 指令選單（TG 左下角 / 按鈕）
 BOT_COMMANDS = [
@@ -49,9 +55,13 @@ def create_app():
     app.add_handler(CommandHandler("agents", cmd_agents))
     app.add_handler(CommandHandler("mode", cmd_mode))
     app.add_handler(CommandHandler("history", cmd_history))
+    app.add_handler(CommandHandler("recall", cmd_recall))
+    app.add_handler(CommandHandler("skills", cmd_skills))
+    app.add_handler(CommandHandler("consolidate", cmd_consolidate))
 
     # Inline Button 回調
     app.add_handler(CallbackQueryHandler(callback_switch_agent, pattern="^switch_agent:"))
+    app.add_handler(CallbackQueryHandler(callback_skill_approval, pattern="^skill_"))
 
     # 自然語言
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
