@@ -34,7 +34,9 @@ def main() -> None:
     print(f"\n  📦 Skills: {count} 個")
 
     # Wiki
-    wiki_files = list(Path("knowledge/wiki").rglob("*.md"))
+    wiki_files = list(Path("knowledge/shared/wiki").rglob("*.md"))
+    for agent_wiki in Path("agents").glob("*/knowledge/wiki"):
+        wiki_files.extend(agent_wiki.rglob("*.md"))
     print(f"  📚 知識庫: {len(wiki_files)} 篇")
 
     # SOUL
