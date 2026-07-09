@@ -59,7 +59,7 @@ samples/ai-bot/
 │   ├── ark-skill-creator/         ← Skill 建立
 │   └── ark-code-spec-validator/   ← 品質驗證
 ├── agents/                         ← 8 個 Agent（各有 SOUL + Skills + Wiki）
-├── knowledge/shared/               ← 共用知識庫（預裝 7 篇知識）
+├── knowledge/shared/               ← 共用知識庫（7 篇）
 ├── src/                            ← Bot 程式碼
 └── start.py                        ← 啟動入口
 ```
@@ -80,7 +80,7 @@ samples/ai-bot/
 你是誰？介紹一下你自己
 ```
 
-✅ 預期：Agent 自我介紹 — 通用 AI 助手，簡潔直接，善於歸納重點
+✅ 預期：Agent 自我介紹 — AI Agent 開發助手，專精 Agent 架構設計、記憶系統、Skill 機制
 
 ### 你會什麼？
 
@@ -108,7 +108,7 @@ samples/ai-bot/
 你知道什麼？知識庫裡有哪些資料？
 ```
 
-✅ 預期：7 篇預裝知識 — Ocean King 分析、Super Ace 分析、捕魚機 vs 老虎機比較、團隊角色、溝通規範等
+✅ 預期：40 篇知識（共用 7 篇 + 8 個 Agent 各自的私有知識 33 篇），包含 Ocean King 分析、Super Ace 分析、團隊角色、溝通規範等
 
 > 💡 三問三答，你已經認識了三層架構：
 > - **你是誰** = 靈魂（SOUL）
@@ -158,7 +158,7 @@ agents/market-agent/
   Tier 2: ✅ Gemini AI + RAG
 ══════════════════════════════════════════════════
   📦 Skills: 5 個
-  📚 知識庫: 7 篇
+  📚 知識庫: 40 篇
   🧠 SOUL: ✅ 已載入
   🤖 Bot: @your_bot_name 已連線
 ══════════════════════════════════════════════════
@@ -232,7 +232,7 @@ Ocean King 跟 Super Ace 比較，哪個比較好？
 現在知識庫有幾篇？比剛才多了什麼？
 ```
 
-✅ 預期：8 篇（原本 7 篇 + 剛才的報告）
+✅ 預期：41 篇（原本 40 篇 + 剛才的報告）
 
 > 💡 **完整循環：問知識 → 查新的 → 存起來 → 下次就知道了。**
 > 不用記路徑、不用打指令，說話就好。
