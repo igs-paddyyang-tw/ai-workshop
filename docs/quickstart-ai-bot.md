@@ -245,7 +245,7 @@ Ocean King 跟 Super Ace 比較，哪個比較好？
 使用者說「幫我查一下」時，系統自動判斷：
 1. 意圖解析 → 需要外部資訊 → 路由到搜尋流程
 2. web_search 工具執行 → 多源搜尋
-3. 依 market-agent 的 SKILL.md SOP → 整理結構化摘要
+3. 依意圖路由整理結構化摘要
 4. 回覆使用者
 
 使用者說「存進知識庫」時：
@@ -356,8 +356,7 @@ TG 內部路由流程：
 
 Agent 路由：
 - 預設走 admin-agent（通用助手）
-- `/agents` 可手動切換
-- 系統也會根據問題內容自動路由到合適 Agent
+- `/agents` 可手動切換到專屬 Agent（Market、Coder、Data 等）
 
 記憶層（L5）自動運作：
 - 每次對話自動記錄到 FTS5 索引
