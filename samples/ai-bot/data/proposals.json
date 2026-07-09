@@ -1,0 +1,13 @@
+[
+  {
+    "id": "cod-163844",
+    "agent": "coder-agent",
+    "skill_name": "ark-test-skill",
+    "gist": "測試用 Skill",
+    "source_task": "test-001",
+    "status": "approved",
+    "created": "2026-07-09T16:38:44.721748",
+    "content": "---\nname: ark-test-skill\ndescription: test\nversion: 0.1.0\n---\n# Test\n## 步驟\n1. test",
+    "approved_at": "2026-07-09T16:38:44.748431"
+  }
+]
