@@ -53,7 +53,7 @@ pip install -r requirements.txt
 samples/ai-bot/
 ├── .kiro/steering/SOUL.md         ← 主 Agent 人格
 ├── .kiro/skills/                   ← 5 個 IDE 技能（已內建）
-│   ├── ark-wiki-engine/           ← 知識庫管理（ingest/query/lint）
+│   ├── ark-wiki-engine/           ← 知識庫管理
 │   ├── ark-grill-me/              ← 拷問設計
 │   ├── ark-superpowers/           ← 規格書產出
 │   ├── ark-skill-creator/         ← Skill 建立
@@ -70,7 +70,7 @@ samples/ai-bot/
 
 ## Step 1：認識 Agent — 你是誰？你會什麼？你知道什麼？
 
-在 Kiro IDE 對話框，依序問三個問題：
+在 Kiro IDE 對話框，像跟新同事聊天一樣問：
 
 ### 你是誰？
 
@@ -90,7 +90,7 @@ samples/ai-bot/
 你會什麼？列出你的技能
 ```
 
-✅ 預期：列出 5 個技能
+✅ 預期：列出技能清單
 
 | 技能 | 做什麼 |
 |------|--------|
@@ -111,27 +111,26 @@ samples/ai-bot/
 ✅ 預期：3 篇預裝知識 — Ocean King 分析、Super Ace 分析、捕魚機 vs 老虎機比較
 
 > 💡 三問三答，你已經認識了三層架構：
-> - **你是誰** = SOUL（靈魂）
-> - **你會什麼** = SKILL（能力）
-> - **你知道什麼** = WIKI（記憶）
+> - **你是誰** = 靈魂（SOUL）
+> - **你會什麼** = 能力（SKILL）
+> - **你知道什麼** = 記憶（WIKI）
 
 <details>
 <summary>💻 技術補充（軟體人員）</summary>
 
+三層對應的檔案位置：
 ```
-# 人格定義
-.kiro/steering/SOUL.md                          ← 主 Agent
-agents/market-agent/.kiro/steering/SOUL.md      ← Market Agent
+SOUL  → .kiro/steering/SOUL.md（改人格 = 行為變）
+SKILL → .kiro/skills/*/SKILL.md（加 Skill = 新功能）
+WIKI  → knowledge/shared/wiki/*.md（加知識 = 回答更準）
+```
 
-# 技能定義（Markdown SOP）
-.kiro/skills/ark-wiki-engine/SKILL.md
-.kiro/skills/ark-grill-me/SKILL.md
-agents/market-agent/.kiro/skills/ark-market-research/SKILL.md
-
-# 知識庫
-knowledge/shared/wiki/ocean-king-analysis.md
-knowledge/shared/wiki/super-ace-analysis.md
-knowledge/shared/wiki/fishing-vs-slot-comparison.md
+每個 Agent 都有自己的三層：
+```
+agents/market-agent/
+├── .kiro/steering/SOUL.md              ← 市場研究員人格
+├── .kiro/skills/ark-market-research/   ← 多源搜尋 SOP
+└── knowledge/wiki/                     ← Agent 專屬知識
 ```
 
 </details>
@@ -177,7 +176,7 @@ python start.py
 
 # Tier 說明：
 # Tier 0: 純本地（Skills + Wiki + API）— 永遠可用
-# Tier 1: 需要 TELEGRAM_BOT_TOKEN
+# Tier 1: 需要 TELEGRAM_BOT_TOKEN — Bot 連線
 # Tier 2: 需要 GEMINI_API_KEY — AI 推理 + 上網搜尋
 
 # Web 介面：http://localhost:8000
@@ -187,66 +186,96 @@ python start.py
 
 ---
 
-## Step 3：IDE 給任務 — 產出競品報告
+## Step 3：IDE 對話 — 問問題 + 給任務
 
-### 3.1 請 Market Agent 搜尋 + 產出報告
+直接問，不需要指定 Agent 或路徑。像跟同事說話一樣。
 
-📝 貼到對話框：
-
-```
-用 market-agent 的角色，上網搜尋 2025 年老虎機市場最新動態，
-產出一份競品分析報告，存成 knowledge/shared/raw/slot-market-2025.md
-```
-
-✅ 預期：Market Agent 上網搜尋 → 整理成結構化報告 → 存到 raw/
-
-### 3.2 匯入知識庫
+### 問它知道的事
 
 📝 貼到對話框：
 
 ```
-把 knowledge/shared/raw/slot-market-2025.md 匯入 wiki
+Ocean King 跟 Super Ace 比較，哪個比較好？
+```
+
+✅ 預期：引用知識庫回答 + 附 📚 參考來源
+
+### 請它去查新資料
+
+📝 貼到對話框：
+
+```
+幫我查一下 2025 老虎機市場有什麼新動態
+```
+
+✅ 預期：上網搜尋 → 整理出重點摘要
+
+### 把結果存進知識庫
+
+📝 貼到對話框：
+
+```
+把剛才查到的結果整理成一份報告，存進知識庫
 ```
 
 ✅ 預期：
 
 ```
-✅ 匯入完成：1 篇
-• slot-market-2025.md → knowledge/shared/wiki/slot-market-2025.md
+✅ 已存入知識庫：slot-market-2025.md
 ```
 
-### 3.3 確認 Agent 能引用新知識
+### 確認知識長了
 
 📝 貼到對話框：
 
 ```
-2025 年老虎機市場有什麼新趨勢？
+現在知識庫有幾篇？比剛才多了什麼？
 ```
 
-✅ 預期：引用剛才產出的報告回答（附 📚 參考來源）
+✅ 預期：4 篇（原本 3 篇 + 剛才的報告）
 
-> 💡 **完整循環：搜尋 → 產出報告 → 存 raw → 匯入 wiki → Agent 能引用。**
-> 知識庫又長了一篇，以後問市場問題回答更準。
+> 💡 **完整循環：問知識 → 查新的 → 存起來 → 下次就知道了。**
+> 不用記路徑、不用打指令，說話就好。
 
 <details>
 <summary>💻 技術補充（軟體人員）</summary>
 
-Market Agent 搜尋流程：
-1. 讀取 `agents/market-agent/.kiro/steering/SOUL.md`（人格：像調查記者）
-2. 讀取 `agents/market-agent/.kiro/skills/ark-market-research/SKILL.md`（SOP：多源搜尋→交叉驗證→摘要）
-3. 執行 web_search → 多源搜尋
-4. 依 SOP 產出結構化報告（含來源標注）
-5. 存檔到 `knowledge/shared/raw/`
+**系統內部如何運作：**
 
-匯入流程（ark-wiki-engine）：
-1. 讀取 raw/ 的 .md
-2. 自動補 frontmatter（title/type/tags/created/updated）
-3. 存到 wiki/
-4. 更新 index.md + log.md
-5. 重建搜尋索引
+使用者說「幫我查一下」時，系統自動判斷：
+1. 意圖解析 → 需要外部資訊 → 路由到搜尋流程
+2. web_search 工具執行 → 多源搜尋
+3. 依 market-agent 的 SKILL.md SOP → 整理結構化摘要
+4. 回覆使用者
+
+使用者說「存進知識庫」時：
+1. 產出 .md 存到 `knowledge/shared/raw/`
+2. 自動觸發 ingest → 補 frontmatter → 存到 `knowledge/shared/wiki/`
+3. 更新 index.md + log.md
+4. 重建搜尋索引
+
+**架構說明（ai-bot 系統定位）：**
+
+ai-bot = 確定性路由外殼（L1–L3）+ ReAct 式迴圈核心（L4/Kiro）+ ReAct 沒有的記憶與成長層（memory/skills/審批）。
+
+不是「沒用 ReAct」，而是把 ReAct 放在它該在的位置，然後補上它天生缺的三樣東西：
+
+| 補上什麼 | 怎麼做 |
+|---------|--------|
+| **成本控制** | L1–L3 確定性路由先過濾，不是每句話都丟給 LLM |
+| **持久記憶** | knowledge/ 知識庫（raw → wiki → 搜尋索引） |
+| **程序沉澱** | SKILL.md 把成功經驗寫成 SOP，下次照做不靠猜 |
+
+```
+L1: 指令解析（/start、/agents → 確定性路由，零 LLM 成本）
+L2: 意圖分類（keyword 快速路由 → 命中直接執行）
+L3: Planner（LLM 判斷：知識問答 / 搜尋 / Skill 執行）
+L4: ReAct 迴圈（Kiro 核心：思考 → 工具呼叫 → 觀察 → 再思考）
+L5: 記憶與成長（知識沉澱 + Skill 進化 + 使用者建模）
+```
 
 ```bash
-# API 確認
+# API 確認 Wiki 正常
 curl -X POST http://localhost:8000/api/v1/wiki/query \
   -H "Content-Type: application/json" \
   -d '{"q":"2025 老虎機市場"}'
@@ -258,55 +287,82 @@ curl -X POST http://localhost:8000/api/v1/wiki/query \
 
 ## Step 4：TG 對話 — 兩種使用方式
 
-📱 Telegram 打開你的 Bot：
+📱 Telegram 打開你的 Bot，發送 `/start`。
 
-1. 發送 `/start` → 收到歡迎訊息 ✅
-2. 發送 `/agents` → 點選「🗺️ Market」
+直接問問題，不需要特殊指令。
 
-### 案例 A：問知識庫（引用已有知識）
-
-📱 發送：
-
-```
-Ocean King 跟 Super Ace 比較，各自優劣是什麼？
-```
-
-✅ 預期：引用 wiki 裡的知識 → 結構化比較 → 附 📚 參考來源
-
-> 💡 這是問「它已經知道的」— 回答快、有依據。
-
-### 案例 B：上網搜尋（即時找新資料）
+### 問它知道的事（引用知識庫）
 
 📱 發送：
 
 ```
-幫我搜尋 PG Soft 2025 年有什麼新遊戲上線
+Ocean King 的優勢是什麼？
 ```
 
-✅ 預期：Market Agent 上網搜尋 → 產出情報摘要（含來源連結）
+✅ 預期：引用知識庫回答，附 📚 參考來源
 
-> 💡 這是問「它不知道的」— Agent 自己去網路找 → 產出新情報。
+📱 再問：
 
-### 兩種的差異
+```
+捕魚機跟老虎機哪種比較賺錢？
+```
 
-| | 案例 A（問知識庫） | 案例 B（上網搜尋） |
-|---|---|---|
-| 來源 | knowledge/wiki/ | 網路即時搜尋 |
-| 速度 | 快（本地查詢） | 較慢（要上網） |
-| 標記 | 📚 參考：wiki 頁面 | 🔗 來源：網址 |
-| 適合 | 問已整理的知識 | 找最新動態 |
+✅ 預期：引用比較分析的知識頁面
+
+### 請它去找新的（上網搜尋）
+
+📱 發送：
+
+```
+最近有什麼新的捕魚機遊戲上線？
+```
+
+✅ 預期：上網搜尋 → 產出最新情報 + 附來源連結
+
+📱 再問：
+
+```
+PG Soft 2025 年推了什麼新遊戲？
+```
+
+✅ 預期：搜尋結果 + 結構化整理
+
+### 怎麼分辨兩種？
+
+你不用分辨。Agent 自己判斷：
+
+| 你問的問題 | Agent 做什麼 | 你看到的差別 |
+|-----------|-------------|------------|
+| 知識庫有答案的 | 查 wiki → 引用回答 | 附 📚 參考：頁面名稱 |
+| 知識庫沒有的 | 上網搜尋 → 整理回答 | 附 🔗 來源：網址 |
+
+> 💡 **像問同事：他知道的直接答，不知道的幫你查。你不用管他「怎麼找到的」。**
 
 <details>
 <summary>💻 技術補充（軟體人員）</summary>
 
-TG 內部流程：
-1. 使用者訊息 → Planner 判斷意圖
-2. 意圖 = 知識問答 → Wiki RAG 搜尋 `knowledge/shared/wiki/` → 回答
-3. 意圖 = 需要最新資料 → web_search 工具 → 搜尋 → 格式化回答
-4. Market Agent 的 SOUL 決定回答風格（資訊必須有來源）
+TG 內部路由流程：
+```
+使用者訊息
+  → L1: 是指令？（/start /agents）→ 確定性處理
+  → L2: keyword 快速路由？→ 命中就直接執行
+  → L3: Planner（LLM 意圖分類）
+      → 知識問答 → Wiki RAG 搜尋 → 回答
+      → 需要新資料 → web_search → 格式化回答
+      → 觸發 Skill → 執行對應 SOP
+  → L4: ReAct 迴圈（複雜任務多步推理）
+  → L5: 記憶寫入（對話記錄 + 使用者偏好）
+```
 
-Agent 切換：`/agents` → InlineKeyboard → 切換 session.active_agent
-每個 Agent 讀自己的 SOUL.md，所以回答風格不同。
+Agent 路由：
+- 預設走 admin-agent（通用助手）
+- `/agents` 可手動切換
+- 系統也會根據問題內容自動路由到合適 Agent
+
+記憶層（L5）自動運作：
+- 每次對話自動記錄到 FTS5 索引
+- 每 10 輪觸發使用者建模（偏好萃取）
+- knowledge/wiki/ 的知識持續累積 → RAG 查詢越來越準
 
 </details>
 
@@ -314,18 +370,13 @@ Agent 切換：`/agents` → InlineKeyboard → 切換 session.active_agent
 
 ## 日常使用
 
-| 你想做什麼 | 在 Kiro IDE 說 |
-|-----------|---------------|
-| 增加知識 | 「搜尋 XXX，產出報告存到 raw/ 並匯入 wiki」 |
-| 改 Agent 語氣 | 「把 market-agent 改成簡報風格」 |
-| 拷問設計 | 「拷問我的設計：我想加一個每日推播功能」 |
-| 產出新 Skill | 「根據拷問結果寫 spec，然後建立 Skill」 |
-
-| 你想做什麼 | 在 Telegram 說 |
-|-----------|---------------|
-| 切換 Agent | `/agents` → 點按鈕 |
-| 問知識庫 | 直接問（會引用 wiki） |
-| 找新資料 | 「搜尋 XXX」 |
+| 你想做什麼 | 怎麼說 |
+|-----------|--------|
+| 問已有知識 | 「Ocean King 怎麼樣？」 |
+| 查新資料 | 「幫我查 XXX」 |
+| 存進知識庫 | 「把這份整理存起來」 |
+| 改它的風格 | 「你以後回答用簡報風格」 |
+| 切換專家 | TG 發 `/agents` → 選 Agent |
 
 ---
 
@@ -343,9 +394,9 @@ Agent 切換：`/agents` → InlineKeyboard → 切換 session.active_agent
 ## 知識成長循環
 
 ```
-搜尋新資料 → 產出報告（raw/）→ 匯入 wiki → Agent 能引用
-     ↑                                          │
-     └──────── 你覺得缺什麼就再搜 ←────────────┘
+問問題 → 查新資料 → 存進知識庫 → 下次就知道了
+  ↑                                    │
+  └──────── 越用越聰明 ←──────────────┘
 ```
 
 **全程對話操作，不需要手寫程式碼。**
