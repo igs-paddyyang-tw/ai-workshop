@@ -159,7 +159,9 @@ ai-bot/
 │   └── proposals.json              ← Skill 審批狀態
 ├── .kiro/
 │   ├── steering/SOUL.md + USER.md + BRAIN.md
-│   └── skills/ark-wiki-engine/ + ark-grill-me/ + ...
+│   ├── agents/ai-agent.json        ← AI Agent 開發助手
+│   ├── prompts/route-message.md    ← 意圖路由
+│   └── skills/ark-wiki-engine/ + ark-superpowers/ + ark-grill-me/ + ...
 ├── agents/                         ← 8 Agent（.kiro/ + knowledge/ + memory/）
 │   └── {name}-agent/
 │       ├── .kiro/steering/         ← SOUL + USER + BRAIN + GUARDRAILS

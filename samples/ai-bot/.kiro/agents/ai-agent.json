@@ -1,7 +1,7 @@
 {
   "name": "ai-agent",
-  "display_name": "科技日報助手",
-  "description": "個體 AI Agent — 有人格的智能助手",
-  "role": "standalone",
+  "display_name": "AI Agent 開發助手",
+  "description": "專精 AI Agent 架構、記憶系統、Skill 機制、Prompt 工程、RAG、MCP 整合",
+  "role": "ai-agent-developer",
   "created": "2026-07-02"
 }

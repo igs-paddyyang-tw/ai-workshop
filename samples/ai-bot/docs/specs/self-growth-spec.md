@@ -137,7 +137,7 @@ agents/*-agent/.kiro/steering/  ← 各 Agent 獨立 cwd 層
 
 ```
 .kiro/steering/                        ← workspace 層（3 檔）
-├── SOUL.md      [不動]   我是誰（Kiro CLI 對話人格）
+├── SOUL.md      [已更新]  AI Agent 開發助手（專精 Agent 架構、記憶、Skill、Prompt、RAG、MCP）
 ├── USER.md      [不動]   我服務誰（使用者偏好）
 └── BRAIN.md     [新增]   資源操作準則 + 安全紅線
 
