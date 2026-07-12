@@ -15,6 +15,7 @@ from telegram.ext import (
 from src.bot.handlers import (
     callback_switch_agent,
     cmd_agents,
+    cmd_chat,
     cmd_help,
     cmd_history,
     cmd_mode,
@@ -32,6 +33,9 @@ from src.memory.tg_handlers import (
 BOT_COMMANDS = [
     BotCommand("start", "啟動 Bot"),
     BotCommand("agents", "切換 Agent"),
+    BotCommand("chat", "Gemini 快問"),
+    BotCommand("recall", "記憶搜尋"),
+    BotCommand("skills", "技能列表"),
     BotCommand("reset", "重置對話"),
     BotCommand("help", "指令說明"),
 ]
@@ -55,6 +59,7 @@ def create_app():
     app.add_handler(CommandHandler("agents", cmd_agents))
     app.add_handler(CommandHandler("mode", cmd_mode))
     app.add_handler(CommandHandler("history", cmd_history))
+    app.add_handler(CommandHandler("chat", cmd_chat))
     app.add_handler(CommandHandler("recall", cmd_recall))
     app.add_handler(CommandHandler("skills", cmd_skills))
     app.add_handler(CommandHandler("consolidate", cmd_consolidate))

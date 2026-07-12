@@ -150,6 +150,143 @@ async def cmd_history(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     await update.message.reply_text("\n".join(lines))
 
 
+# ── /chat — 強制 Gemini API（帶完整 context）──────────────
+
+
+async def cmd_chat(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """/chat <問題> — 強制使用 Gemini API 回答（帶完整記憶+知識+技能 context）。"""
+    text = " ".join(context.args) if context.args else ""
+    if not text:
+        await update.message.reply_text(
+            "用法：`/chat 你的問題`\n\n"
+            "此指令強制使用 Gemini API（2-3 秒回覆），"
+            "帶入完整 context：SOUL + 記憶 + 知識庫 + 技能清單 + 對話歷史。",
+            parse_mode="Markdown",
+        )
+        return
+
+    gemini_key = os.getenv("GEMINI_API_KEY", "")
+    if not gemini_key:
+        await update.message.reply_text("❌ GEMINI_API_KEY 未設定")
+        return
+
+    user_id = update.effective_user.id
+    session = session_manager.get_or_create(user_id)
+    current_agent = session.current_agent
+    agent_info = AVAILABLE_AGENTS[current_agent]
+
+    session.add_turn("user", text)
+    await _set_reaction(update.message, "🔥")
+
+    # ── 組裝完整 system prompt ──
+    system_prompt = await _build_rich_system_prompt(current_agent, text, session)
+
+    # ── 呼叫 Gemini ──
+    try:
+        from src.llm.gemini_chat import gemini_chat
+        reply = await gemini_chat(text, system=system_prompt)
+    except Exception as e:
+        log.error("Gemini chat error: %s", e)
+        reply = f"⚠️ Gemini 錯誤：{e}"
+
+    if reply:
+        if len(reply) > 3000:
+            reply = reply[-3000:]
+        session.add_turn("agent", reply)
+        await save_memory(current_agent, user_id, text, reply)
+        await _set_reaction(update.message, "👍")
+        header = f"⚡ [{current_agent}-agent] (Gemini)\n"
+        full_text = header + reply
+        for i in range(0, len(full_text), 4000):
+            await update.message.reply_text(full_text[i:i+4000])
+    else:
+        await _set_reaction(update.message, "💔")
+        await update.message.reply_text("⚠️ Gemini 無回應，請稍後再試。")
+
+
+async def _build_rich_system_prompt(agent_id: str, query: str, session) -> str:
+    """組裝完整 Gemini system prompt（6 層 context）。
+
+    注入順序：
+    1. SOUL.md — Agent 人格
+    2. memory.md — 持久事實（蒸餾記憶）
+    3. recent.md — 今+昨 daily log
+    4. FTS5 recall — 相關歷史記憶 top-3
+    5. Wiki context — 知識庫相關段落
+    6. Skills list — 可用技能清單
+    7. Session history — 對話歷史
+    """
+    parts: list[str] = []
+
+    # 1. SOUL
+    soul = _load_soul(agent_id)
+    if soul:
+        parts.append(soul)
+
+    # 2. memory.md（蒸餾持久事實）
+    memory_path = Path(f"agents/{agent_id}-agent/memory/memory.md")
+    if memory_path.exists():
+        content = memory_path.read_text(encoding="utf-8")
+        if content.strip() and len(content) > 20:
+            parts.append(f"\n## 持久記憶\n{content[:1500]}")
+
+    # 3. recent.md（最近經驗）
+    recent_path = Path(f"agents/{agent_id}-agent/memory/recent.md")
+    if recent_path.exists():
+        content = recent_path.read_text(encoding="utf-8")
+        if content.strip() and "（尚無記錄）" not in content:
+            parts.append(f"\n## 最近經驗\n{content[:1500]}")
+
+    # 4. FTS5 recall（相關歷史）
+    try:
+        from src.memory.recall import recall
+        results = recall(f"{agent_id}-agent", query, k=3)
+        if results:
+            recall_lines = ["\n## 相關歷史記憶"]
+            for r in results:
+                recall_lines.append(f"- [{r.date}] {r.title}: {r.body[:100]}")
+            parts.append("\n".join(recall_lines))
+    except Exception:
+        # FTS5 不可用時 fallback
+        memory_context = _search_memory(agent_id, query)
+        if memory_context:
+            parts.append(f"\n## 相關歷史記憶\n{memory_context}")
+
+    # 5. Wiki context（知識庫相關段落，不走 RAG 合成）
+    try:
+        from src.wiki.engine import WikiEngine
+        engine = WikiEngine(agent_id=agent_id)
+        wiki_result = await engine.query(query, use_rag=False)
+        if wiki_result.get("results"):
+            wiki_lines = ["\n## 知識庫參考"]
+            for r in wiki_result["results"][:3]:
+                wiki_lines.append(f"### {r['title']}\n{r['snippet'][:200]}")
+            parts.append("\n".join(wiki_lines))
+    except Exception:
+        pass
+
+    # 6. Skills list（可用技能）
+    try:
+        from src.skills.registry import SkillRegistry
+        registry = SkillRegistry()
+        registry.auto_discover("src.skills.internal")
+        skills = registry.list_skills()
+        if skills:
+            skill_lines = ["\n## 可用技能（使用者可用 /skill_id 觸發）"]
+            for s in skills[:10]:
+                skill_lines.append(f"- /{s['skill_id']} — {s['description'][:40]}")
+            parts.append("\n".join(skill_lines))
+    except Exception:
+        pass
+
+    # 7. Session history
+    context_str = session.get_context()
+    if context_str:
+        parts.append(f"\n{context_str}")
+
+    return "\n\n".join(parts)
+
+
 # ── 自然語言路由 ─────────────────────────────────────────
 
 
@@ -236,13 +373,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     )
 
     try:
-        # ── L4: CLI → Wiki RAG → Gemini fallback ──
+        # ── L4: 自然對話 = Agent CLI（不 fallback Gemini）──
+        # 強制 Gemini 請用 /chat 指令
         reply: str | None = None
-        memory_context: str | None = None
 
-        # 4a. Agent CLI（優先 — 有裝 kiro-cli 時用完整 .kiro/ 配置）
+        # 4a. Agent CLI（唯一自然對話路徑）
         if is_cli_available():
-            log.debug("  → trying Agent CLI...")
+            log.debug("  → Agent CLI...")
             try:
                 reply = await agent_cli_chat(text, agent_id=current_agent)
                 if reply:
@@ -251,49 +388,25 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 log.error("  ❌ CLI error: %s", e)
                 reply = None
 
-        # 4b. Wiki RAG（CLI 沒回或沒裝時）
-        if not reply:
-            log.debug("  → trying Wiki RAG...")
-            try:
-                from src.wiki.engine import WikiEngine
-                engine = WikiEngine(agent_id=current_agent)
-                wiki_result = await engine.query(text, use_rag=True)
-                if wiki_result.get("answer"):
-                    reply = wiki_result["answer"]
-                    log.info("  ✅ Wiki RAG reply (%d chars, sources=%s)", len(reply), wiki_result.get("sources", []))
-            except Exception as e:
-                log.error("  ❌ Wiki error: %s", e)
-
-        # 4c. Memory Search（引用歷史記憶，注入 Gemini context）
-        if not reply:
-            try:
-                memory_context = _search_memory(current_agent, text)
-            except Exception:
-                memory_context = None
-
-        # 4d. Gemini API fallback
-        if not reply:
+        # 4b. CLI 不可用 → 提示使用 /chat
+        if not reply and not is_cli_available():
             gemini_key = os.getenv("GEMINI_API_KEY", "")
             if gemini_key:
-                log.debug("  → trying Gemini API...")
-                try:
-                    from src.llm.gemini_chat import gemini_chat
-                    soul = _load_soul(current_agent)
-                    context_str = session.get_context()
-                    # 注入記憶（如果有）
-                    memory_str = f"\n\n## 相關歷史記憶\n{memory_context}" if memory_context else ""
-                    full_system = f"{soul}{memory_str}\n\n{context_str}" if context_str else f"{soul}{memory_str}"
-                    reply = await gemini_chat(text, system=full_system)
-                    if reply:
-                        log.info("  ✅ Gemini reply (%d chars)", len(reply))
-                except Exception as e:
-                    log.error("  ❌ Gemini error: %s", e)
-                    reply = f"⚠️ 錯誤: {e}"
+                reply = (
+                    "💡 Agent CLI 未安裝，自然對話不可用。\n\n"
+                    "替代方案：\n"
+                    "• `/chat 你的問題` — 強制使用 Gemini API\n"
+                    "• 安裝 kiro-cli：`npm i -g kiro-cli && kiro-cli login`"
+                )
             else:
                 reply = (
                     f"🔄 echo: {text}\n\n"
                     "💡 開啟 AI：填入 GEMINI_API_KEY 或安裝 kiro-cli"
                 )
+
+        # 4c. CLI 有回但為空（timeout 等）→ 簡短提示
+        if not reply and is_cli_available():
+            reply = "⚠️ Agent CLI 無回應（可能超時），請重試或用 `/chat` 走 Gemini。"
 
         # ── 回覆 + 記憶 + Reaction ──
         if reply:
