@@ -23,6 +23,15 @@ class EventType(str, Enum):
     # Cost
     COST_RECORDED = "cost.recorded"
     BUDGET_WARNING = "budget.warning"
+    # Memory
+    MEMORY_WRITTEN = "memory.written"
+    MEMORY_CONSOLIDATED = "memory.consolidated"
+    # Wiki
+    WIKI_INDEXED = "wiki.indexed"
+    # Skills
+    SKILL_EXECUTED = "skill.executed"
+    SKILL_PROPOSED = "skill.proposed"
+    SKILL_APPROVED = "skill.approved"
     # System
     HEALTH_CHECK = "system.health_check"
     SYSTEM_RESTART = "system.restart"

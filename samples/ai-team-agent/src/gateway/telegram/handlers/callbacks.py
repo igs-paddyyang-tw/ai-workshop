@@ -69,3 +69,29 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif data == "new_issue":
         await query.edit_message_text("請用 /assign 描述 來建立新任務")
+
+    # ── Skill 審批 callbacks ──
+
+    elif data.startswith("skill_approve:"):
+        proposal_id = data.split(":", 1)[1]
+        growth = context.bot_data.get("growth_detector")
+        if growth:
+            ok = await growth.approve(proposal_id)
+            if ok:
+                await query.edit_message_text(f"✅ Skill 已核准並落地 (id={proposal_id})")
+            else:
+                await query.edit_message_text(f"⚠️ 核准失敗：找不到提案 {proposal_id}")
+        else:
+            await query.edit_message_text("⚠️ 自我成長系統未啟動")
+
+    elif data.startswith("skill_reject:"):
+        proposal_id = data.split(":", 1)[1]
+        growth = context.bot_data.get("growth_detector")
+        if growth:
+            ok = await growth.reject(proposal_id)
+            if ok:
+                await query.edit_message_text(f"❌ Skill 已駁回 (id={proposal_id})")
+            else:
+                await query.edit_message_text(f"⚠️ 駁回失敗：找不到提案 {proposal_id}")
+        else:
+            await query.edit_message_text("⚠️ 自我成長系統未啟動")

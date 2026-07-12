@@ -28,6 +28,11 @@ async def main() -> None:
     logging.getLogger("uvicorn").setLevel(logging.WARNING)
     log = logging.getLogger("platform")
 
+    # ── Tier 偵測 ──
+    from runtime.tier import detect_tier, print_tier_banner
+    tier_status = detect_tier()
+    print_tier_banner(tier_status)
+
     # ── 1. DB + EventBus ──
     from coordinator.db.models import init_db, get_async_db, fetch_one, insert, now_iso
     from coordinator.events.bus import EventBus
@@ -56,8 +61,65 @@ async def main() -> None:
     bus.subscribe(EventType.AGENT_OUTPUT, on_agent_output)
     for et in EventType:
         bus.subscribe(et, on_any_event)
+
+    # ── Memory 子系統 ──
+    from coordinator.memory.daily_log import write_daily_log
+    from coordinator.memory.indexer import rebuild_memory_index
+
+    # Gemini LLM fn（供 memory 使用）
+    _gemini_fn = None
+    gemini_key = os.environ.get("GEMINI_API_KEY", "")
+    if gemini_key:
+        from gateway.gemini_chat import gemini_chat
+        _gemini_fn = gemini_chat
+
+    async def _on_agent_output_memory(event: Event):
+        """AGENT_OUTPUT → daily_log 自動寫入。"""
+        data = event.data
+        agent_name = data.get("agent_id") or data.get("agent", "")
+        output = data.get("output", "")
+        if not agent_name or not output or len(output) < 20:
+            return
+        try:
+            await write_daily_log(
+                agent_name=agent_name,
+                task_id=data.get("task_id", "auto"),
+                conversation=output[:3000],
+                gemini_fn=_gemini_fn,
+            )
+            await bus.emit(Event(
+                type=EventType.MEMORY_WRITTEN,
+                data={"agent": agent_name},
+            ))
+        except Exception as e:
+            log.warning("Memory write failed: %s", e)
+
+    bus.subscribe(EventType.AGENT_OUTPUT, _on_agent_output_memory)
+
+    # 啟動時重建記憶索引
+    try:
+        count = await rebuild_memory_index()
+        if count > 0:
+            log.info("Memory index: %d entries indexed", count)
+    except Exception as e:
+        log.warning("Memory index rebuild failed: %s", e)
+
     await bus.start()
-    log.info("DB + EventBus 已啟動")
+    log.info("DB + EventBus + Memory 已啟動")
+
+    # ── 1b. Skills 框架 ──
+    from business.skills import SkillRegistry, SkillTracker
+
+    skill_tracker = SkillTracker()
+    skill_registry = SkillRegistry(tracker=skill_tracker)
+    skill_count = skill_registry.auto_discover("business.skills.internal")
+    log.info("Skills: %d loaded", skill_count)
+
+    # ── 1c. GrowthDetector（自我成長）──
+    from coordinator.services.growth import GrowthDetector
+
+    growth = GrowthDetector(gemini_fn=_gemini_fn, event_bus=bus)
+    bus.subscribe(EventType.AGENT_OUTPUT, growth.on_agent_output)
 
     # ── 2. Backend API ──
     import uvicorn
@@ -271,6 +333,9 @@ async def main() -> None:
         tg_app.bot_data["api_base"] = f"http://127.0.0.1:{api_port}"
         tg_app.bot_data["agents"] = agents
         tg_app.bot_data["handled_agents"] = _tg_handled_agents
+        tg_app.bot_data["skill_registry"] = skill_registry
+        tg_app.bot_data["growth_detector"] = growth
+        tg_app.bot_data["gemini_fn"] = _gemini_fn
 
         # 註冊 handlers
         from gateway.telegram.handlers.commands import (
@@ -280,12 +345,17 @@ async def main() -> None:
         )
         from gateway.telegram.handlers.callbacks import handle_callback
         from gateway.telegram.handlers.messages import handle_message
+        from gateway.telegram.handlers.memory_commands import (
+            cmd_recall, cmd_consolidate, cmd_skills, cmd_mode,
+        )
 
         for name_cmd, fn in [
             ("start", cmd_start), ("status", cmd_status), ("agents", cmd_agents),
             ("board", cmd_board), ("costs", cmd_costs), ("queue", cmd_queue),
             ("assign", cmd_assign), ("stop", cmd_stop), ("retry", cmd_retry),
             ("logs", cmd_logs), ("help", cmd_help), ("restart", cmd_restart),
+            ("recall", cmd_recall), ("consolidate", cmd_consolidate),
+            ("skills", cmd_skills), ("mode", cmd_mode),
         ]:
             tg_app.add_handler(CommandHandler(name_cmd, fn))
         tg_app.add_handler(CallbackQueryHandler(handle_callback))
@@ -303,6 +373,8 @@ async def main() -> None:
             BotCommand("costs", "費用"), BotCommand("queue", "佇列"),
             BotCommand("assign", "派工"), BotCommand("stop", "停止 Agent"),
             BotCommand("restart", "重啟 Agent"), BotCommand("logs", "查看日誌"),
+            BotCommand("recall", "查詢記憶"), BotCommand("skills", "技能列表"),
+            BotCommand("consolidate", "蒸餾記憶"), BotCommand("mode", "執行模式"),
             BotCommand("help", "說明"),
         ])
         await tg_app.start()
