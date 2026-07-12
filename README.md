@@ -57,6 +57,27 @@
 2. 專家系統蒸餾的 Agent 能力（agents/ 資料夾）可以直接搬到遊戲開發平台用
 3. 遇到問題隨時回專家系統調整，不需要適配
 
+### Loop Engineering — 標配五件套
+
+兩個產品都預裝了 **Loop 五件套**（`.kiro/skills/`），形成從需求到交付的自動迴圈：
+
+```
+ark-grill-me → ark-superpowers → ark-spec-executor → ark-code-spec-validator
+   拷問釐清        文件產出          自動執行            品質驗證
+       ↑                                                    │
+       └────────────── score < 70 時回到拷問 ───────────────┘
+```
+
+| Skill | 功能 | 觸發方式 |
+|-------|------|----------|
+| ark-grill-me | 需求不清時逐一提問，達成共識 | 「拷問」、「grill me」 |
+| ark-superpowers | 產出 Spec / Design / Plan 標準化文件 | 「寫 spec」、「設計文件」 |
+| ark-spec-executor | 讀取 Plan 自動執行 + AC 驗收 + 報告 | `/execute plan.md` |
+| ark-code-spec-validator | 驗證 code 與 spec 一致性（Drift Report） | 「驗證 drift」 |
+| ark-wiki-engine | 知識庫四層搜尋 + RAG 問答 | 「查知識」、`/wiki` |
+
+> Skills 來源：[igs-paddyyang-tw/ark-agent-skills](https://github.com/igs-paddyyang-tw/ark-agent-skills)（57 個）
+
 ---
 
 ## 兩個獨立課程
