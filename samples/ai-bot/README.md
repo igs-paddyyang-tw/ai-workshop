@@ -129,12 +129,21 @@ team.yaml 含 transport: http → 跨機模式（遠端派工）
 |------|------|
 | `/start` | 啟動 + 清空 |
 | `/agents` | Inline Button 選 Agent |
+| `/chat <問題>` | 強制 Gemini API（帶 6 層完整 context，2-3s） |
 | `/recall <query>` | 查詢 Agent 歷史經驗（FTS5） |
 | `/skills` | 列出已生效 Skills |
 | `/skills pending` | 待審 Skill 提案 |
 | `/consolidate` | 手動蒸餾 daily → memory.md |
 | `/mode` | 執行模式 |
 | `/help` | 指令清單 |
+
+### 對話模式
+
+| 模式 | 觸發 | 後端 | Context |
+|------|------|------|---------|
+| 自然對話 | 直接打字 | Agent CLI | 完整 .kiro/ workspace |
+| 快問快答 | `/chat 問題` | Gemini API | SOUL + memory + recall + wiki + skills + history |
+| Skill 執行 | `/skill_id` 或關鍵字 | 本地 Python | Skill 內部邏輯 |
 
 ### Reaction 動態
 
