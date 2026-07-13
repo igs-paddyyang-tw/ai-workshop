@@ -67,7 +67,9 @@ async def build_default_system_prompt(query: str = "", session=None) -> str:
         "查詢事實/比較/評價的流程（強制，不可跳過）：\n"
         "1. 先用 search_wiki tool 搜尋知識庫\n"
         "2. 知識庫查無 → 用 web_search tool 搜尋外部資訊\n"
-        "3. 兩者都查無 → 回覆「📚 知識庫與外部搜尋皆無相關資料」\n"
+        "3. web_search 有回傳內容 → 直接根據回傳內容整理回答，附上 🔗 來源\n"
+        "4. 兩者都確實無結果（web_search 回傳含 'Error' 或 '無結果'）→ 回覆「📚 知識庫與外部搜尋皆無相關資料」\n"
+        "重要：web_search 回傳的文字就是搜尋結果，直接使用它來回答使用者。\n"
         "需要寫入知識時使用 save_to_wiki tool（使用者明確要求時）。"
     )
 
