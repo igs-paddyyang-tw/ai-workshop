@@ -60,7 +60,8 @@ header nav a.active { color: var(--accent); }
 </header>
 
 <div class="agent-bar" id="agentBar">
-  <button class="agent-btn active" data-agent="admin">👑 Admin</button>
+  <button class="agent-btn active" data-agent="default">🚀 Ark Agent</button>
+  <button class="agent-btn" data-agent="admin">👑 Admin</button>
   <button class="agent-btn" data-agent="pm">📋 PM</button>
   <button class="agent-btn" data-agent="ai-dev">🧠 AI Dev</button>
   <button class="agent-btn" data-agent="coder">💻 Coder</button>
@@ -70,13 +71,13 @@ header nav a.active { color: var(--accent); }
   <button class="agent-btn" data-agent="report">📝 Report</button>
 </div>
 
-<div class="status" id="status">● 已連線 — Agent: 👑 Admin</div>
+<div class="status" id="status">● 已連線 — 🚀 Ark Agent（Gemini）</div>
 
 <div class="chat-container" id="chatContainer">
   <div class="message bot">
     <div class="avatar">🤖</div>
     <div>
-      <div class="bubble">你好！我是 AI Agent，選擇上方的角色跟我對話。試試問我「什麼是 Ocean King？」</div>
+      <div class="bubble">你好！我是 Ark Agent 🚀 選擇上方的角色跟我對話。預設走 Gemini，切到 Agent 分身走 kiro-cli。</div>
     </div>
   </div>
 </div>
@@ -87,7 +88,7 @@ header nav a.active { color: var(--accent); }
 </div>
 
 <script>
-let currentAgent = 'admin';
+let currentAgent = 'default';
 
 // Agent 切換
 document.querySelectorAll('.agent-btn').forEach(btn => {
@@ -95,7 +96,9 @@ document.querySelectorAll('.agent-btn').forEach(btn => {
     document.querySelectorAll('.agent-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     currentAgent = btn.dataset.agent;
-    document.getElementById('status').textContent = `● 已連線 — Agent: ${btn.textContent}`;
+    const label = btn.textContent;
+    const mode = currentAgent === 'default' ? '（Gemini）' : '（kiro-cli）';
+    document.getElementById('status').textContent = `● 已連線 — ${label}${mode}`;
   });
 });
 

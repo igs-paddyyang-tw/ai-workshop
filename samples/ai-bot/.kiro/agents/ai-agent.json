@@ -1,7 +1,7 @@
 {
   "name": "ai-agent",
-  "display_name": "通用 AI 助手",
-  "description": "預設對話模式（Gemini）— 記憶 + Skills + Wiki + 通用問答",
+  "display_name": "Ark Agent",
+  "description": "預設對話模式（Gemini）— 通用 AI 助手，帶記憶 + Skills + Wiki",
   "role": "default-assistant",
   "created": "2026-07-02"
 }

@@ -93,7 +93,7 @@ class QueryRequest(BaseModel):
 
 class ChatRequest(BaseModel):
     message: str
-    agent_id: str = "admin"
+    agent_id: str = "default"
 
 
 @app.post("/api/v1/chat")
@@ -249,10 +249,10 @@ async def get_graph():
                             links.append({"source": f"agent:{agent_id}", "target": f"skill:{skill_name}", "relation": "has_skill"})
 
     # Wiki 節點
-    wiki_dir = Path("knowledge/wiki")
+    wiki_dir = Path("knowledge/shared/wiki")
     wiki_tags = {}  # filename -> tags
     if wiki_dir.exists():
-        for md in sorted(wiki_dir.glob("*.md")):
+        for md in sorted(wiki_dir.rglob("*.md")):
             content = md.read_text(encoding="utf-8")
             title_match = re.search(r'^title:\s*["\']?(.+?)["\']?\s*$', content, re.MULTILINE)
             title = title_match.group(1) if title_match else md.stem
@@ -287,9 +287,8 @@ async def get_graph():
 
 @app.get("/api/v1/wiki/pages")
 async def list_wiki_pages():
-    """列出所有 wiki 頁面（含子資料夾，樹狀結構）。"""
+    """列出所有 wiki 頁面（shared + agents），含 scope 標記。"""
     import re as _re
-    wiki_dir = Path("knowledge/wiki")
 
     def extract_title(content: str) -> str:
         m = _re.search(r'^title:\s*["\']?(.+?)["\']?\s*$', content, _re.MULTILINE)
@@ -313,13 +312,46 @@ async def list_wiki_pages():
                 items.append({"type": "file", "filename": rel_path, "title": title})
         return items
 
-    return {"pages": scan_dir(wiki_dir)}
+    pages = []
+
+    # Shared wiki
+    shared_wiki = Path("knowledge/shared/wiki")
+    if shared_wiki.exists():
+        shared_items = scan_dir(shared_wiki, "shared")
+        if shared_items:
+            pages.append({"type": "folder", "name": "📚 共用知識", "path": "shared", "children": shared_items})
+
+    # Agent wiki
+    agents_dir = Path("agents")
+    if agents_dir.exists():
+        for agent_dir in sorted(agents_dir.iterdir()):
+            if agent_dir.is_dir() and agent_dir.name.endswith("-agent"):
+                wiki_dir = agent_dir / "knowledge" / "wiki"
+                if wiki_dir.exists():
+                    agent_items = scan_dir(wiki_dir, f"agents/{agent_dir.name}")
+                    if agent_items:
+                        pages.append({"type": "folder", "name": f"🤖 {agent_dir.name}", "path": f"agents/{agent_dir.name}", "children": agent_items})
+
+    return {"pages": pages}
 
 
 @app.get("/api/v1/wiki/pages/{filepath:path}")
 async def get_wiki_page(filepath: str):
-    """取得指定 wiki 頁面內容（支援子路徑）。"""
-    path = Path("knowledge/wiki") / filepath
+    """取得指定 wiki 頁面內容（支援 shared/ 和 agents/ 前綴）。"""
+    # 路由：shared/xxx → knowledge/shared/wiki/xxx
+    #       agents/{name}-agent/xxx → agents/{name}-agent/knowledge/wiki/xxx
+    if filepath.startswith("shared/"):
+        rel = filepath[len("shared/"):]
+        path = Path("knowledge/shared/wiki") / rel
+    elif filepath.startswith("agents/"):
+        parts = filepath.split("/", 2)  # agents/{name}/rest
+        if len(parts) >= 3:
+            path = Path(f"agents/{parts[1]}/knowledge/wiki/{parts[2]}")
+        else:
+            return {"error": "invalid path"}
+    else:
+        # Fallback：嘗試 shared
+        path = Path("knowledge/shared/wiki") / filepath
     if not path.exists() or not path.is_file():
         return {"error": "not found"}
     return {"filename": filepath, "content": path.read_text(encoding="utf-8")}

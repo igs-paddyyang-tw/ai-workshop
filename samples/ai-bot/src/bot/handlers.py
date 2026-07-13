@@ -44,7 +44,7 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     # 判斷當前模式
     if session.is_default_mode:
         mode_str = "⚡ Gemini（Default）"
-        agent_str = "🤖 通用 AI 助手"
+        agent_str = "🚀 Ark Agent"
     else:
         agent_name = session.agent_name
         info = AVAILABLE_AGENTS.get(agent_name, {})
@@ -68,7 +68,7 @@ async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "📋 **指令清單**\n\n"
         "**對話**\n"
         "💬 直接輸入文字 → 對話\n"
-        "/agents → 切換對話模式（Default / 8 Agent）\n\n"
+        "/agents → 切換對話模式（Ark Agent / 8 Agent）\n\n"
         "**記憶**\n"
         "/recall `關鍵詞` → 查歷史記憶\n"
         "/skills → 已學會的 Skill\n"
@@ -90,7 +90,7 @@ async def cmd_agents(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     # Default 按鈕
     default_prefix = "✓ " if session.is_default_mode else ""
     default_btn = InlineKeyboardButton(
-        f"{default_prefix}🤖 Default（Gemini）",
+        f"{default_prefix}🚀 Ark Agent（Gemini）",
         callback_data="switch_agent:default",
     )
 
@@ -109,15 +109,15 @@ async def cmd_agents(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
         [btn("ai-dev"), btn("coder")],
         [btn("qa"), btn("data")],
         [btn("market"), btn("report")],
-        [InlineKeyboardButton("🔙 回到 Default", callback_data="switch_agent:default")],
+        [InlineKeyboardButton("🔙 回到 Ark Agent", callback_data="switch_agent:default")],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    mode_str = "🤖 Default（Gemini）" if session.is_default_mode else f"{AVAILABLE_AGENTS[session.agent_name]['emoji']} {session.agent_name}-agent（kiro-cli）"
+    mode_str = "🚀 Ark Agent（Gemini）" if session.is_default_mode else f"{AVAILABLE_AGENTS[session.agent_name]['emoji']} {session.agent_name}-agent（kiro-cli）"
     await update.message.reply_text(
         f"當前：{mode_str}\n\n"
         "選擇對話模式：\n"
-        "• Default = Gemini API（零門檻）\n"
+        "• Ark Agent = Gemini API（零門檻）\n"
         "• Agent 分身 = kiro-cli（需安裝）",
         reply_markup=reply_markup,
     )
@@ -134,7 +134,7 @@ async def callback_switch_agent(update: Update, context: ContextTypes.DEFAULT_TY
     if agent_id == "default":
         session_manager.switch_agent(user_id, "default")
         await query.edit_message_text(
-            "✅ 已切換到 🤖 **Default**（Gemini）\n\n"
+            "✅ 已切換到 🚀 **Ark Agent**（Gemini）\n\n"
             "直接輸入文字即可對話。",
             parse_mode="Markdown",
         )
@@ -151,7 +151,7 @@ async def callback_switch_agent(update: Update, context: ContextTypes.DEFAULT_TY
             "安裝方式：\n"
             "```\nnpm i -g kiro-cli && kiro-cli login\n```\n\n"
             "未來將支援 Gemini CLI / Claude CLI。\n"
-            "目前請使用 🤖 Default 模式。",
+            "目前請使用 🚀 Ark Agent 模式。",
             parse_mode="Markdown",
         )
         return
@@ -560,7 +560,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                     "安裝方式：\n"
                     "```\nnpm i -g kiro-cli && kiro-cli login\n```\n\n"
                     "未來將支援 Gemini CLI / Claude CLI。\n"
-                    "請先用 `/agents` 切回 🤖 Default。"
+                    "請先用 `/agents` 切回 🚀 Ark Agent。"
                 )
 
         # ── 回覆 + 記憶 + Reaction ──
@@ -573,7 +573,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             await _set_reaction(update.message, "👍")
             # Header
             if session.is_default_mode:
-                header = "🤖 [Default]\n"
+                header = "🚀 [Ark Agent]\n"
             else:
                 agent_name = session.agent_name
                 info = AVAILABLE_AGENTS.get(agent_name, {})

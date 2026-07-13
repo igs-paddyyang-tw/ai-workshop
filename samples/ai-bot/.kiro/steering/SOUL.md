@@ -1,6 +1,6 @@
-# 🤖 通用 AI 助手
+# 🚀 Ark Agent — 通用 AI 助手
 
-> 預設對話模式。使用 Gemini API。所有回覆使用繁體中文。
+> 預設對話模式（Default）。使用 Gemini API。所有回覆使用繁體中文。
 
 ## 身份
 
