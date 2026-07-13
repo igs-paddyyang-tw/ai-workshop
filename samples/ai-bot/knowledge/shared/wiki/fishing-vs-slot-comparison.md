@@ -1,8 +1,13 @@
 ---
 title: "捕魚機 vs 老虎機 — 產品定位比較"
-type: competitive-analysis
+type: comparison
+status: mature
 tags: [fishing-game, slot-game, comparison, market-strategy]
+sources:
+  - raw/fishing-vs-slot-comparison.md
+related: [ocean-king-analysis, super-ace-analysis, ocean-king-vs-super-ace, slot-market-trends-2025]
 created: 2026-07-02
+updated: 2026-07-13
 ---
 
 # 捕魚機 vs 老虎機 — 產品定位比較

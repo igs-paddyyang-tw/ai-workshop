@@ -8,6 +8,9 @@ from pathlib import Path
 
 
 def main() -> None:
+    import time
+    _start_time = time.time()
+
     os.chdir(Path(__file__).parent)
 
     from dotenv import load_dotenv
@@ -25,19 +28,39 @@ def main() -> None:
     print(f"  Tier 0: ✅ Skills + Wiki + API（永遠可用）")
     print(f"  Tier 1: {'✅' if tg_token else '⬚'} Telegram Bot")
     print(f"  Tier 2: {'✅' if gemini_key else '⬚'} Gemini AI + RAG")
+
+    # Tier 3: kiro-cli
+    from src.agent.cli import is_cli_available
+    cli_available = is_cli_available()
+    print(f"  Tier 3: {'✅' if cli_available else '⬚'} kiro-cli Agent 常駐")
     print("═" * 50)
 
-    # Skills
+    # Skills（拆分類型）
     from src.skills.registry import SkillRegistry
     registry = SkillRegistry()
-    count = registry.auto_discover("src.skills.internal")
-    print(f"\n  📦 Skills: {count} 個")
+    internal_count = registry.auto_discover("src.skills.internal")
+    ide_skills = list(Path(".kiro/skills").glob("ark-*")) if Path(".kiro/skills").exists() else []
+    print(f"\n  📦 Skills: IDE {len(ide_skills)} | Internal {internal_count}")
 
-    # Wiki
-    wiki_files = list(Path("knowledge/shared/wiki").rglob("*.md"))
+    # Wiki（拆分知識庫數字）
+    shared_wiki = list(Path("knowledge/shared/wiki").rglob("*.md")) if Path("knowledge/shared/wiki").exists() else []
+    shared_raw = list(Path("knowledge/shared/raw").rglob("*.md")) if Path("knowledge/shared/raw").exists() else []
+    agent_wiki_count = 0
     for agent_wiki in Path("agents").glob("*/knowledge/wiki"):
-        wiki_files.extend(agent_wiki.rglob("*.md"))
-    print(f"  📚 知識庫: {len(wiki_files)} 篇")
+        agent_wiki_count += len(list(agent_wiki.rglob("*.md")))
+    print(f"  📚 Wiki:   shared {len(shared_wiki)} | raw {len(shared_raw)} | agents {agent_wiki_count}")
+
+    # Wiki lint
+    try:
+        from src.wiki.engine import WikiEngine
+        engine = WikiEngine()
+        lint_issues = engine.lint()
+        if lint_issues:
+            print(f"  🔍 Lint:   ⚠️ {len(lint_issues)} issues")
+        else:
+            print(f"  🔍 Lint:   ✅ 0 issues")
+    except Exception:
+        print(f"  🔍 Lint:   ⚠️ 無法執行")
 
     # SOUL
     soul_path = Path(".kiro/steering/SOUL.md")
@@ -46,16 +69,23 @@ def main() -> None:
     # ── 自我成長系統自檢 ──
     _self_growth_check()
 
-    # ── Output 清理（刪除 30 天前的暫存檔）──
+    # ── Output 清理（僅提醒，不主動刪除）──
     try:
         from src.tools.cleanup import cleanup_output
         deleted = cleanup_output(max_age_days=30)
         if deleted:
-            print(f"  🧹 Output 清理: 刪除 {len(deleted)} 個過期檔案")
+            print(f"  🧹 Output:  ⚠️ {len(deleted)} 個檔案超過 30 天，建議清理")
         else:
-            print(f"  🧹 Output 清理: ✅ 無過期檔案")
+            print(f"  🧹 Output:  ✅ 無過期檔案")
     except Exception as e:
-        print(f"  🧹 Output 清理: ⚠️ {e}")
+        print(f"  🧹 Output:  ⚠️ {e}")
+
+    # Memory 統計
+    daily_dir = Path("memory/daily") if Path("memory/daily").exists() else None
+    daily_count = len(list(daily_dir.glob("*.md"))) if daily_dir else 0
+    memory_md = Path("memory/memory.md")
+    memory_size = f"{len(memory_md.read_text(encoding='utf-8').split())}" if memory_md.exists() else "0"
+    print(f"  🧠 Memory: daily {daily_count}d | memory.md ~{memory_size} words")
 
     # Bot 子進程
     bot_proc = None
@@ -85,11 +115,10 @@ def main() -> None:
             print(f"  ⚠️  無 TG Token → 僅 API 模式")
 
     # Agent 服務
-    from src.agent.cli import is_cli_available
-    if is_cli_available():
-        print(f"  🧠 Agent 服務: 由 Bot 子進程管理")
+    if cli_available:
+        print(f"  🧠 Agent:  8 active (kiro-cli) | 由 Bot 子進程管理")
     else:
-        print(f"  🧠 Agent 服務: ⬚（kiro-cli 未安裝，使用 Gemini fallback）")
+        print(f"  🧠 Agent:  8 active (gemini fallback)")
 
     # ── Team 模式偵測 ──
     team_yaml_path = Path("team.yaml")
@@ -165,10 +194,19 @@ def main() -> None:
     else:
         print(f"\n  📌 個體模式（無 team.yaml）")
 
-    print(f"\n  🚀 API:  http://localhost:8000")
-    print(f"  📖 Docs: http://localhost:8000/api-docs")
+    print(f"\n  ── Web UI ──────────────────────────────────────")
+    print(f"  💬 Chat:      http://localhost:8000")
+    print(f"  ⚙️  Dashboard: http://localhost:8000/admin")
+    print(f"  📖 Wiki:      http://localhost:8000/wiki")
+    print(f"  🕸️  Graph:     http://localhost:8000/graph")
+    print(f"  🏗️  Builder:   http://localhost:8000/builder")
+    print(f"\n  ── API ─────────────────────────────────────────")
+    print(f"  📡 API Docs:  http://localhost:8000/api-docs")
+    print(f"  ❤️  Health:    http://localhost:8000/health")
     if team_mode:
-        print(f"  🔗 A2A:  http://localhost:8000/api/v1/a2a/card")
+        print(f"  🔗 A2A:      http://localhost:8000/api/v1/a2a/card")
+    print()
+    print(f"  ⏱️  Ready in {time.time() - _start_time:.1f}s")
     print()
 
     # API Server

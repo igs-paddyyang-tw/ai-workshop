@@ -23,17 +23,32 @@ start_bot.bat
   Tier 0: ✅ Skills + Wiki + API（永遠可用）
   Tier 1: ✅ Telegram Bot
   Tier 2: ✅ Gemini AI + RAG
+  Tier 3: ✅ kiro-cli Agent 常駐
 ══════════════════════════════════════════════════
 
-  📦 Skills: 5 個
-  📚 知識庫: 6 篇
-  🧠 SOUL: ✅ 已載入
-  🤖 Bot: @your_bot_name 已連線
-
+  📦 Skills: IDE 6 | Internal 4
+  📚 Wiki:   shared 12 | raw 5 | agents 28
+  🔍 Lint:   ✅ 0 issues
+  🧠 SOUL:   ✅ 已載入
+  🔍 自檢:   ✅ 8 Agent steering + memory 完整
+  🧹 Output: ✅ 無過期檔案
+  🧠 Memory: daily 5d | memory.md ~120 words
+  🤖 Bot:    @your_bot_name 已連線
+  🧠 Agent:  8 active (kiro-cli)
   📌 個體模式（無 team.yaml）
 
-  🚀 API:  http://localhost:8000
-  📖 Docs: http://localhost:8000/api-docs
+  ── Web UI ──────────────────────────────────────
+  💬 Chat:      http://localhost:8000
+  ⚙️  Dashboard: http://localhost:8000/admin
+  📖 Wiki:      http://localhost:8000/wiki
+  🕸️  Graph:     http://localhost:8000/graph
+  🏗️  Builder:   http://localhost:8000/builder
+
+  ── API ─────────────────────────────────────────
+  📡 API Docs:  http://localhost:8000/api-docs
+  ❤️  Health:    http://localhost:8000/health
+
+  ⏱️  Ready in 2.3s
 ```
 
 ---

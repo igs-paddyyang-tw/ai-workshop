@@ -1,8 +1,14 @@
 ---
 title: "Super Ace 超級王牌老虎機競品分析"
-type: competitive-analysis
+type: entity
+status: mature
 tags: [slot-game, super-ace, jili, competitive-analysis]
+sources:
+  - raw/super-ace-analysis.md
+related: [ocean-king-analysis, fishing-vs-slot-comparison, ocean-king-vs-super-ace, slot-market-trends-2025]
+aliases: [Super Ace, 超級王牌, JILI Super Ace]
 created: 2026-07-02
+updated: 2026-07-13
 ---
 
 # Super Ace 超級王牌老虎機競品分析

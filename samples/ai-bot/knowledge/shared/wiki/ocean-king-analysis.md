@@ -1,8 +1,14 @@
 ---
 title: "Ocean King 捕魚機系列競品分析"
-type: competitive-analysis
+type: entity
+status: mature
 tags: [fishing-game, arcade, ocean-king, competitive-analysis]
+sources:
+  - raw/ocean-king-analysis.md
+related: [super-ace-analysis, fishing-vs-slot-comparison, ocean-king-vs-super-ace]
+aliases: [Ocean King, OK2, OK3, OK4, 捕魚機]
 created: 2026-07-02
+updated: 2026-07-13
 ---
 
 # Ocean King 捕魚機系列競品分析
@@ -32,7 +38,7 @@ Ocean King 是 IGS 開發的街機捕魚遊戲系列，從 Ocean King 1 發展�
 ### Ocean King 4: Plus Brand New World
 - **定位**：次世代 3D 捕魚大作
 - **畫面**：電影級視覺效果
-- **特色**：超高爆率、兆級獎金（一砲破兆）
+- **特色**：高倍率獎金機制（最高萬倍以上）
 - **機台**：55 吋 LCD 高解析度螢幕
 
 ## 核心玩法機制
@@ -55,6 +61,6 @@ Ocean King 是 IGS 開發的街機捕魚遊戲系列，從 Ocean King 1 發展�
 | 競品 | 開發商 | 特色 |
 |------|--------|------|
 | 開心捕魚 3 | IGS（明星三缺一團隊） | 日韓經典機台移植、奇幻風格 |
-| 街機達人捕魚 | Third-party | 軍銜系統、禁砲技能 |
-| 捕魚派對 | Third-party | 新 3D 捕魚、電影級視覺 |
-| 3D 次世代捕魚大作戰 | Third-party | 精美 3D 建模、炫酷將軍 Boss |
+| 捕魚達人 | Tencent / 觸控科技 | 手遊移植先驅、龐大用戶基數 |
+| 千炮捕魚 | 博樂科技 | 高砲台等級、多人 PVP 模式 |
+| 3D 捕魚大作戰 | 各類中小廠 | 精美 3D 建模、Boss 機制模仿 OK 系列 |

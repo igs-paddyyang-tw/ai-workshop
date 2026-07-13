@@ -1,10 +1,11 @@
 ---
 title: "團隊角色職責定義"
 type: system
+status: mature
 tags: [team, roles, responsibility]
+related: [communication-protocol, coding-standards]
 created: 2026-07-08
 updated: 2026-07-08
-status: mature
 ---
 
 # 團隊角色職責定義
