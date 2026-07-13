@@ -1,160 +1,122 @@
-"""Gemini ReAct Agent Loop — 帶 Function Calling 的對話迴圈。
-
-架構：
-  1. 組裝 contents（history + user message）
-  2. 呼叫 Gemini API（帶 tools/function_declarations）
-  3. 若回應包含 functionCall → 執行 tool → 結果回傳 → 重複
-  4. 若回應為純文字 → 回傳最終回覆
-  5. 最多 MAX_ITERATIONS 次（防止無限迴圈）
-"""
+"""ReAct Agent Loop：LLM ↔ Tool 迴圈。"""
 from __future__ import annotations
 
 import logging
-import os
-from typing import Any
+from dataclasses import dataclass, field
+from typing import Callable
 
-import httpx
+from src.llm.provider import FunctionCall, LLMResponse, get_default_provider
+from src.llm.tool_registry import ToolRegistry, registry as default_registry
 
-from src.tools.registry import TOOL_DECLARATIONS
-from src.tools.handlers import dispatch_tool
+log = logging.getLogger(__name__)
 
-log = logging.getLogger("llm.agent_loop")
 
-MAX_ITERATIONS = 5
+@dataclass
+class AgentResult:
+    """Agent Loop 執行結果。"""
+    text: str
+    tool_calls_log: list[dict] = field(default_factory=list)
+    iterations: int = 0
+    token_usage: dict | None = None
 
 
 async def agent_loop(
-    prompt: str,
-    *,
-    system: str = "",
-    history: list[dict[str, Any]] | None = None,
-) -> str | None:
-    """執行 Gemini ReAct 迴圈。
+    user_message: str,
+    system_prompt: str,
+    session_history: list[dict] | None = None,
+    tools_registry: ToolRegistry | None = None,
+    max_iterations: int = 5,
+    on_tool_call: Callable | None = None,
+) -> AgentResult:
+    """ReAct 迴圈：呼叫 LLM → dispatch tools → loop → 回傳文字。
 
     Args:
-        prompt: 使用者訊息
-        system: system prompt（注入為首輪 user+model 交換）
-        history: 對話歷史（Gemini contents 格式）
+        user_message: 使用者訊息
+        system_prompt: system prompt（SOUL + BRAIN + memory + ...）
+        session_history: 之前的對話歷史（統一格式）
+        tools_registry: Tool Registry 實例（None = 用全域 registry）
+        max_iterations: 最大迭代次數
+        on_tool_call: callback（tool 被呼叫時通知，用於 TG typing indicator）
 
     Returns:
-        最終文字回覆，或 None（失敗）
+        AgentResult 包含最終回覆文字 + tool 執行記錄
     """
-    api_key = os.getenv("GEMINI_API_KEY", "")
-    if not api_key:
-        log.warning("GEMINI_API_KEY not set")
-        return None
+    provider = get_default_provider()
+    reg = tools_registry or default_registry
 
-    model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
-    url = (
-        f"https://generativelanguage.googleapis.com/v1beta/models/{model}"
-        f":generateContent?key={api_key}"
-    )
+    # 組裝 messages
+    messages: list[dict] = []
+    if session_history:
+        messages.extend(session_history)
+    messages.append({"role": "user", "content": user_message})
 
-    # ── 組裝 contents ──
-    contents: list[dict] = []
+    # Tool schemas
+    tool_schemas = reg.all_schemas() if reg.all_names() else None
+    tool_calls_log: list[dict] = []
+    total_usage = {"input_tokens": 0, "output_tokens": 0}
 
-    # System prompt 以首輪交換注入
-    if system:
-        contents.append({"role": "user", "parts": [{"text": f"[System]\n{system}"}]})
-        contents.append({"role": "model", "parts": [{"text": "了解，我會遵循以上指示。"}]})
+    for iteration in range(max_iterations):
+        log.debug("agent_loop iteration %d/%d", iteration + 1, max_iterations)
 
-    # 歷史對話
-    if history:
-        contents.extend(history)
-
-    # 當前使用者訊息
-    contents.append({"role": "user", "parts": [{"text": prompt}]})
-
-    # ── Tools 定義 ──
-    tools_payload = [{"function_declarations": TOOL_DECLARATIONS}]
-
-    # ── ReAct Loop ──
-    for iteration in range(MAX_ITERATIONS):
-        log.debug(
-            "agent_loop iteration %d/%d, contents=%d messages",
-            iteration + 1, MAX_ITERATIONS, len(contents),
+        # 呼叫 LLM
+        response: LLMResponse = await provider.chat(
+            messages=messages,
+            system=system_prompt,
+            tools=tool_schemas,
         )
 
-        async with httpx.AsyncClient(timeout=60) as client:
-            try:
-                response = await client.post(
-                    url,
-                    json={
-                        "contents": contents,
-                        "tools": tools_payload,
-                    },
-                )
-            except Exception as e:
-                log.error("Gemini API request failed: %s", e)
-                return None
+        # 累計 token
+        if response.usage:
+            total_usage["input_tokens"] += response.usage.get("input_tokens", 0)
+            total_usage["output_tokens"] += response.usage.get("output_tokens", 0)
 
-        if response.status_code != 200:
-            log.error(
-                "Gemini API error: status=%d body=%s",
-                response.status_code, response.text[:300],
+        # 無 function call → 純文字回覆，結束
+        if not response.function_calls:
+            return AgentResult(
+                text=response.text or "",
+                tool_calls_log=tool_calls_log,
+                iterations=iteration + 1,
+                token_usage=total_usage,
             )
-            return None
 
-        data = response.json()
+        # 有 function call → dispatch 每個 tool
+        for fc in response.function_calls:
+            log.info("Tool call: %s(%s)", fc.name, list(fc.args.keys()))
 
-        # 解析 candidate
-        candidates = data.get("candidates", [])
-        if not candidates:
-            log.error("Gemini returned no candidates")
-            return None
+            if on_tool_call:
+                await on_tool_call(fc.name)
 
-        candidate = candidates[0]
-        content = candidate.get("content", {})
-        parts = content.get("parts", [])
+            # Dispatch
+            result_str = await reg.dispatch(fc.name, fc.args)
 
-        if not parts:
-            log.error("Gemini returned empty parts")
-            return None
+            # 記錄
+            tool_calls_log.append({
+                "iteration": iteration + 1,
+                "tool": fc.name,
+                "args": fc.args,
+                "result_preview": result_str[:200],
+            })
 
-        # ── 檢查是否有 functionCall ──
-        function_calls = [p for p in parts if "functionCall" in p]
+            # Append to messages（Gemini 格式：model 的 function_call + user 的 function_response）
+            messages.append({
+                "role": "model",
+                "parts": [{"function_call": {"name": fc.name, "args": fc.args, "id": fc.id}}],
+            })
+            messages.append({
+                "role": "user",
+                "parts": [{"function_response": {"name": fc.name, "response": {"result": result_str}}}],
+            })
 
-        if function_calls:
-            # 加入 model 的回應到 contents
-            contents.append({"role": "model", "parts": parts})
+    # Max iterations 耗盡
+    log.warning("agent_loop max_iterations reached (%d)", max_iterations)
+    # 嘗試取最後一次有文字的 response
+    last_text = "⚠️ 任務太複雜（超過迭代上限），已完成的部分如上。"
+    if tool_calls_log:
+        last_text = f"⚠️ 已執行 {len(tool_calls_log)} 個工具呼叫，但未能完成最終回覆。請嘗試簡化問題。"
 
-            # 執行每個 function call
-            function_responses: list[dict] = []
-            for fc_part in function_calls:
-                fc = fc_part["functionCall"]
-                tool_name = fc["name"]
-                tool_args = fc.get("args", {})
-
-                log.info("  🔧 tool_call: %s(%s)", tool_name, str(tool_args)[:100])
-
-                # Dispatch
-                result = dispatch_tool(tool_name, tool_args)
-                log.info("  📋 tool_result: %s", result[:100])
-
-                function_responses.append({
-                    "functionResponse": {
-                        "name": tool_name,
-                        "response": {"result": result},
-                    }
-                })
-
-            # 回傳 function results 給 Gemini
-            contents.append({"role": "user", "parts": function_responses})
-            # 繼續迴圈
-            continue
-
-        # ── 純文字回覆 → 結束 ──
-        text_parts = [p.get("text", "") for p in parts if "text" in p]
-        final_text = "\n".join(text_parts).strip()
-
-        if final_text:
-            log.info("agent_loop completed in %d iteration(s), %d chars",
-                     iteration + 1, len(final_text))
-            return final_text
-        else:
-            log.warning("Gemini returned parts without text or functionCall")
-            return None
-
-    # 超過 max iterations
-    log.warning("agent_loop reached MAX_ITERATIONS (%d)", MAX_ITERATIONS)
-    return "⚠️ 處理步驟過多，已停止。請簡化需求後重試。"
+    return AgentResult(
+        text=last_text,
+        tool_calls_log=tool_calls_log,
+        iterations=max_iterations,
+        token_usage=total_usage,
+    )
