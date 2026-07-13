@@ -11,7 +11,7 @@ log = logging.getLogger("process")
 # 預設超時秒數（當沒有注入 config 時使用）
 DEFAULT_TIMEOUT = 3600
 
-# kiro-cli token usage 解析（支援多種格式）
+# Agent CLI token usage 解析（支援多種格式）
 _TOKEN_PATTERNS = [
     # "input_tokens: 1234, output_tokens: 5678"
     re.compile(r"input_tokens[:\s]+(\d+).*?output_tokens[:\s]+(\d+)"),
@@ -35,7 +35,7 @@ class TokenUsage:
 
 
 def parse_token_usage(text: str) -> TokenUsage | None:
-    """從 kiro-cli stderr/stdout 解析 token usage，解析失敗回傳 None。"""
+    """從 Agent CLI stderr/stdout 解析 token usage，解析失敗回傳 None。"""
     for pattern in _TOKEN_PATTERNS:
         m = pattern.search(text)
         if m:
@@ -52,7 +52,7 @@ def estimate_token_usage(input_text: str, output_text: str) -> TokenUsage:
 
 
 class AgentProcess:
-    """每次 send() spawn 一個 kiro-cli 進程，忙碌時排隊依序執行。"""
+    """每次 send() spawn 一個 Agent CLI 進程，忙碌時排隊依序執行。"""
 
     _shutting_down: bool = False  # 類別層級 shutdown flag
 
@@ -79,8 +79,10 @@ class AgentProcess:
             *([] if self.skip_resume else ["--resume"]),
             msg,
         ],
-        "gemini": lambda self, msg: [
-            "gemini", "-p", msg, "-m", self.model, "--skip-trust",
+        "agy": lambda self, msg: [
+            "agy", "-p", msg, "--dangerously-skip-permissions",
+            "--add-dir", str(Path(self.working_dir).resolve()),
+            *(["--model", self.model] if self.model != "auto" else []),
         ],
         "claude": lambda self, msg: [
             "claude", "-p", msg, "--model", self.model,
@@ -91,7 +93,16 @@ class AgentProcess:
         builder = self.BACKENDS.get(self.backend)
         if not builder:
             builder = self.BACKENDS["kiro"]
-        return builder(self, message)
+        cmd = builder(self, message)
+        # 解析完整路徑（處理不在 PATH 的情況）
+        try:
+            from src.agent.cli import _resolve_cmd
+            resolved = _resolve_cmd(self.backend)
+            if resolved:
+                cmd[0] = resolved
+        except ImportError:
+            pass
+        return cmd
 
     async def start(self, _retries: int = 3) -> None:
         """標記為可用，啟動佇列消費 worker（失敗 retry 最多 3 次）。"""
@@ -141,7 +152,7 @@ class AgentProcess:
             return None
 
     async def _execute(self, text: str) -> str | None:
-        """Spawn kiro-cli 處理一則訊息，完成後回傳 output。"""
+        """Spawn Agent CLI 處理一則訊息，完成後回傳 output。"""
         self._busy = True
         cwd = Path(self.working_dir).resolve()
         cmd = self._build_cmd(text)

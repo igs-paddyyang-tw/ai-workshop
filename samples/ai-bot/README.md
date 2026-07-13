@@ -23,7 +23,7 @@ start_bot.bat
   Tier 0: ✅ Skills + Wiki + API（永遠可用）
   Tier 1: ✅ Telegram Bot
   Tier 2: ✅ Gemini AI + RAG
-  Tier 3: ✅ kiro-cli Agent 常駐
+  Tier 3: ✅ Agent CLI 常駐
 ══════════════════════════════════════════════════
 
   📦 Skills: IDE 6 | Internal 4
@@ -34,7 +34,7 @@ start_bot.bat
   🧹 Output: ✅ 無過期檔案
   🧠 Memory: daily 5d | memory.md ~120 words
   🤖 Bot:    @your_bot_name 已連線
-  🧠 Agent:  8 active (kiro-cli)
+  🧠 Agent:  8 active (Agent CLI)
   📌 個體模式（無 team.yaml）
 
   ── Web UI ──────────────────────────────────────
@@ -158,7 +158,7 @@ team.yaml 含 transport: http → 跨機模式（遠端派工）
 |------|------|------|---------|
 | 自然對話（Default） | 直接打字 | Gemini ReAct Agent Loop | SOUL + BRAIN + memory + recall + wiki + skills + tools |
 | 快問快答 | `/chat 問題` | Gemini ReAct Agent Loop | 同上（帶 Function Calling） |
-| Agent 分身 | `/agents` 切換 | kiro-cli | 完整 .kiro/ workspace |
+| Agent 分身 | `/agents` 切換 | Agent CLI | 完整 .kiro/ workspace |
 | Skill 執行 | `/skill_id` 或關鍵字 | 本地 Python | Skill 內部邏輯 |
 
 ### 對話路由架構（L1 → L4）
@@ -190,8 +190,8 @@ L4: 自然語言（統一走 ReAct Agent Loop）
      │    recall_memory, save_memory, execute_skill）
      │    LLM 自主判斷用哪個 tool
      │
-     └── Agent 分身（kiro-cli）
-          spawn kiro-cli → 完整 .kiro/ 環境
+     └── Agent 分身（Agent CLI）
+          spawn CLI backend → 完整 .kiro/ 環境
 ```
 
 | 層 | 觸發 | 速度 | 用途 |
@@ -357,7 +357,7 @@ Agent 具備跨 session 記憶 + Skill 自動推薦能力：
 | 0 | 零設定 | Skills + Wiki + API + Web UI |
 | 1 | + TG Token | Bot + Inline Button + 8 Agent |
 | 2 | + Gemini Key | AI 對話 + RAG + SOUL |
-| 3 | + kiro-cli | 8 Agent 常駐 + 完整 .kiro/ |
+| 3 | + Agent CLI | 8 Agent 常駐 + 完整 .kiro/ |
 | 4 | + team.yaml | 團隊派工 + A2A 跨機 |
 
 ---

@@ -132,12 +132,12 @@ async def cmd_agents(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    mode_str = "🚀 Ark Agent（Gemini）" if session.is_default_mode else f"{AVAILABLE_AGENTS[session.agent_name]['emoji']} {session.agent_name}-agent（kiro-cli）"
+    mode_str = "🚀 Ark Agent（Gemini）" if session.is_default_mode else f"{AVAILABLE_AGENTS[session.agent_name]['emoji']} {session.agent_name}-agent（Agent CLI）"
     await update.message.reply_text(
         f"當前：{mode_str}\n\n"
         "選擇對話模式：\n"
         "• Ark Agent = Gemini API（零門檻）\n"
-        "• Agent 分身 = kiro-cli（需安裝）",
+        "• Agent 分身 = Agent CLI（需安裝）",
         reply_markup=reply_markup,
     )
 
@@ -163,13 +163,14 @@ async def callback_switch_agent(update: Update, context: ContextTypes.DEFAULT_TY
         await query.edit_message_text("❌ 無效的 Agent")
         return
 
-    # 檢查 kiro-cli
+    # 檢查 Agent CLI
     if not is_cli_available():
         await query.edit_message_text(
-            f"⚠️ **{agent_id}-agent** 需要 kiro-cli\n\n"
-            "安裝方式：\n"
-            "```\nnpm i -g kiro-cli && kiro-cli login\n```\n\n"
-            "未來將支援 Gemini CLI / Claude CLI。\n"
+            f"⚠️ **{agent_id}-agent** 需要 Agent CLI\n\n"
+            "安裝任一即可：\n"
+            "• agy: `irm https://antigravity.google/cli/install.ps1 | iex`\n"
+            "• kiro-cli: `npm i -g kiro-cli && kiro-cli login`\n"
+            "• claude: `npm i -g @anthropic-ai/claude-cli`\n\n"
             "目前請使用 🚀 Ark Agent 模式。",
             parse_mode="Markdown",
         )
@@ -178,7 +179,7 @@ async def callback_switch_agent(update: Update, context: ContextTypes.DEFAULT_TY
     session_manager.switch_agent(user_id, agent_id)
     info = AVAILABLE_AGENTS[agent_id]
     await query.edit_message_text(
-        f"✅ 已切換到 {info['emoji']} **{info['name']}**（kiro-cli）\n\n"
+        f"✅ 已切換到 {info['emoji']} **{info['name']}**（Agent CLI）\n\n"
         f"{info['desc']}\n\n"
         f"現在開始對話吧！",
         parse_mode="Markdown",
@@ -188,11 +189,13 @@ async def callback_switch_agent(update: Update, context: ContextTypes.DEFAULT_TY
 async def cmd_mode(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """顯示當前執行模式。"""
     if is_cli_available():
+        from src.agent.cli import get_available_backend
+        backend = get_available_backend()
         await update.message.reply_text(
             "🧠 **Agent CLI 模式**\n\n"
-            "• kiro-cli 已安裝 ✅\n"
+            f"• Backend: {backend} ✅\n"
             "• .kiro/ 配置全部生效\n"
-            "• 對話由 kiro-cli 驅動",
+            f"• 對話由 {backend} 驅動",
             parse_mode="Markdown",
         )
     else:
@@ -201,7 +204,7 @@ async def cmd_mode(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             f"⚡ **Gemini API 模式**\n\n"
             f"• Gemini Key: {has_key}\n"
             f"• SOUL.md 作為 system prompt\n\n"
-            "升級：`npm i -g kiro-cli && kiro-cli login`",
+            "升級：安裝 Agent CLI（agy / kiro-cli / claude）",
             parse_mode="Markdown",
         )
 
@@ -631,10 +634,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 reply = (
                     f"🔄 echo: {text}\n\n"
                     "💡 開啟 AI：填入 GEMINI_API_KEY 或設定 LLM_PROVIDER\n"
-                    "或用 `/agents` 切換到 Agent 分身（需 kiro-cli）"
+                    "或用 `/agents` 切換到 Agent 分身（需 Agent CLI）"
                 )
         else:
-            # === Agent 模式：kiro-cli ===
+            # === Agent 模式：Agent CLI ===
             agent_name = session.agent_name
             if is_cli_available():
                 log.debug("  → Agent CLI (%s)...", agent_name)
@@ -649,10 +652,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                     reply = "⚠️ Agent CLI 無回應（可能超時），請重試。"
             else:
                 reply = (
-                    f"⚠️ **{agent_name}-agent** 需要 kiro-cli\n\n"
-                    "安裝方式：\n"
-                    "```\nnpm i -g kiro-cli && kiro-cli login\n```\n\n"
-                    "未來將支援 Gemini CLI / Claude CLI。\n"
+                    f"⚠️ **{agent_name}-agent** 需要 Agent CLI\n\n"
+                    "安裝任一即可：\n"
+                    "• agy: `irm https://antigravity.google/cli/install.ps1 | iex`\n"
+                    "• kiro-cli: `npm i -g kiro-cli && kiro-cli login`\n"
+                    "• claude: `npm i -g @anthropic-ai/claude-cli`\n\n"
                     "請先用 `/agents` 切回 🚀 Ark Agent。"
                 )
 
@@ -728,7 +732,7 @@ _TOOL_LINE_RE = re.compile(
 
 
 def _clean_output(raw: str) -> str:
-    """從 kiro-cli 輸出提取最終結論，過濾工具過程 + ANSI codes。
+    """從 Agent CLI 輸出提取最終結論，過濾工具過程 + ANSI codes。
 
     策略：
     1. 有 [DONE] 標記 → 用 summary
@@ -739,7 +743,7 @@ def _clean_output(raw: str) -> str:
     text = _ANSI_RE.sub("", raw)
     # 清殘留 [0m 等
     text = re.sub(r"\[(?:\d+;)*\d*m", "", text)
-    # 清 kiro-cli '> ' 引用前綴
+    # 清 CLI '> ' 引用前綴
     text = re.sub(r"^>\s?", "", text, flags=re.MULTILINE)
 
     # 策略 1: [DONE] 標記

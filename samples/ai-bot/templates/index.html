@@ -77,7 +77,7 @@ header nav a.active { color: var(--accent); }
   <div class="message bot">
     <div class="avatar">🤖</div>
     <div>
-      <div class="bubble">你好！我是 Ark Agent 🚀 選擇上方的角色跟我對話。預設走 Gemini，切到 Agent 分身走 kiro-cli。</div>
+      <div class="bubble">你好！我是 Ark Agent 🚀 選擇上方的角色跟我對話。預設走 Gemini，切到 Agent 分身走 Agent CLI。</div>
     </div>
   </div>
 </div>
@@ -97,7 +97,7 @@ document.querySelectorAll('.agent-btn').forEach(btn => {
     btn.classList.add('active');
     currentAgent = btn.dataset.agent;
     const label = btn.textContent;
-    const mode = currentAgent === 'default' ? '（Gemini）' : '（kiro-cli）';
+    const mode = currentAgent === 'default' ? '（Gemini）' : '（Agent CLI）';
     document.getElementById('status').textContent = `● 已連線 — ${label}${mode}`;
   });
 });

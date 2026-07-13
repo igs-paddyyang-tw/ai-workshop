@@ -32,10 +32,14 @@ def main() -> None:
     print(f"  Tier 1: {'✅' if tg_token else '⬚'} Telegram Bot")
     print(f"  Tier 2: {'✅' if gemini_key else '⬚'} Gemini AI + RAG")
 
-    # Tier 3: kiro-cli
-    from src.agent.cli import is_cli_available
+    # Tier 3: CLI Agent backend
+    from src.agent.cli import is_cli_available, get_available_backend
     cli_available = is_cli_available()
-    print(f"  Tier 3: {'✅' if cli_available else '⬚'} kiro-cli Agent 常駐")
+    if cli_available:
+        backend_name = get_available_backend()
+        print(f"  Tier 3: ✅ CLI Agent 常駐（backend: {backend_name}）")
+    else:
+        print(f"  Tier 3: ⬚ CLI Agent（未偵測到 kiro-cli / agy / claude）")
     print("═" * 50)
 
     # Skills（拆分類型）
@@ -119,7 +123,7 @@ def main() -> None:
 
     # Agent 服務
     if cli_available:
-        print(f"  🧠 Agent:  8 active (kiro-cli) | 由 Bot 子進程管理")
+        print(f"  🧠 Agent:  8 active ({backend_name}) | 由 Bot 子進程管理")
     else:
         print(f"  🧠 Agent:  8 active (gemini fallback)")
 
