@@ -58,6 +58,10 @@ async def agent_loop(
     for iteration in range(max_iterations):
         log.debug("agent_loop iteration %d/%d", iteration + 1, max_iterations)
 
+        # Context 壓縮（超限保護）
+        from src.llm.compression import compress_messages
+        messages = compress_messages(messages)
+
         # 呼叫 LLM
         response: LLMResponse = await provider.chat(
             messages=messages,
