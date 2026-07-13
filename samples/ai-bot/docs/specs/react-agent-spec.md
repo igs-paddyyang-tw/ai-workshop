@@ -46,7 +46,7 @@ source: "knowledge/shared/raw/react-agent-architecture.md"
 | terminal tool（執行 shell） | 安全風險太高，不開放 |
 | 自動 streaming（逐字回傳） | 先做 batch 回覆，streaming 是 UX 優化 |
 | Agent 模式也走 agent_loop | Agent 分身走 kiro-cli，不需自建 loop |
-| Context Compression（自動壓縮） | 先用 max_turns + recent.md 截斷，觀察超限後再做 |
+| Context Compression（自動壓縮） | ✅ 已完成（Phase D：85% 閾值自動壓縮中間段） |
 
 ## 4. 使用者故事（User Stories）
 
