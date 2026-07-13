@@ -40,11 +40,13 @@ source: "knowledge/shared/raw/react-agent-architecture.md"
 
 | 排除項 | 理由 |
 |--------|------|
-| web_search tool | 需外部 API key + 額外成本，留 Phase E |
+| web_search tool | 交給 kiro-cli Agent 模式（內建 web search，品質穩定） |
+| create_skill_proposal tool | 交給 kiro-cli（recommend.py 閉環已就緒） |
+| delegate_to_agent tool | 交給 kiro-cli（spawn 子 Agent 比 Gemini tool 可靠） |
 | terminal tool（執行 shell） | 安全風險太高，不開放 |
 | 自動 streaming（逐字回傳） | 先做 batch 回覆，streaming 是 UX 優化 |
-| Agent 模式也走 agent_loop | Agent 分身走 kiro-cli，不需要自建 loop |
-| Context Compression（自動壓縮） | 先用 max_turns + recent.md 截斷，壓縮留 Phase D |
+| Agent 模式也走 agent_loop | Agent 分身走 kiro-cli，不需自建 loop |
+| Context Compression（自動壓縮） | 先用 max_turns + recent.md 截斷，觀察超限後再做 |
 
 ## 4. 使用者故事（User Stories）
 

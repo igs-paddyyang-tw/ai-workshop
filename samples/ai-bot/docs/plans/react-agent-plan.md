@@ -87,13 +87,18 @@ A+B+C 一天可完成，Ark Agent 即具備 Tool Calling 能力。
 
 ---
 
-### Phase E: 擴展 Tools（未來）
+### Phase E: 進階 Tools（留待 kiro-cli 可用時）
 
-| 任務 | 依賴 | 說明 |
-|------|------|------|
-| E1: web_search tool | 外部 API key | Google Custom Search / SerpAPI |
-| E2: create_skill_proposal tool | Phase A-C | LLM 自己提出 Skill 提案（不走 recommend.py） |
-| E3: delegate_to_agent tool | A2A 機制 | Ark Agent 把子任務派給專屬 Agent |
+> **決策**：Phase E 全部交給 kiro-cli Agent 模式處理。
+> Default 模式（Gemini）專注 5 個 core tools，進階需求由使用者切到 Agent 分身。
+
+| Tool | 為什麼交給 kiro-cli | 現狀替代 |
+|------|-------------------|----------|
+| `web_search` | kiro-cli 內建 web search，品質穩定、不需額外 API key | 使用者手動提供資訊 |
+| `create_skill_proposal` | CLI session 中 recommend.py + 審批閉環已就緒 | process.py 自動觸發推薦 |
+| `delegate_to_agent` | kiro-cli spawn 子 Agent 比 Gemini tool 更可靠 | 使用者手動 /agents 切換 |
+
+**觸發條件**：當 kiro-cli 安裝率穩定 + Agent 分身使用量 > 30% 時再評估。
 
 ---
 

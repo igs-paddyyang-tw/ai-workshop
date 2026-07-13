@@ -289,15 +289,27 @@ async def build_system_prompt(
 
 ### 執行分期
 
-| Phase | 內容 | 預估 | 交付物 | 驗收 |
-|-------|------|------|--------|------|
-| **A** | agent_loop + tool_registry + gemini_chat 改寫 | 3-4h | 核心迴圈可跑 | Gemini 能呼叫 tool + 收結果 + 再回覆 |
-| **B** | save_to_wiki + recall_memory + search_wiki + save_memory | 2-3h | 4 個 handler | 對話中說「把這個寫入知識庫」→ wiki 出現新 .md |
-| **C** | handlers.py + server/main.py 對接 | 1-2h | 上線生效 | TG + Web UI Default 模式走 agent_loop |
-| **D** | compression.py（messages 超限壓縮） | 2h | 長對話穩定 | 超 10 輪對話不爆 context |
-| **E** | web_search + create_skill_proposal | 未來 | 擴展能力 | — |
+| Phase | 內容 | 預估 | 交付物 | 驗收 | 狀態 |
+|-------|------|------|--------|------|------|
+| **A** | agent_loop + tool_registry + gemini_chat 改寫 | 3-4h | 核心迴圈可跑 | Gemini 能呼叫 tool + 收結果 + 再回覆 | ✅ 完成 |
+| **B** | save_to_wiki + recall_memory + search_wiki + save_memory + execute_skill | 2-3h | 5 個 handler | 對話中說「把這個寫入知識庫」→ wiki 出現新 .md | ✅ 完成 |
+| **C** | handlers.py + server/main.py 對接 | 1-2h | 上線生效 | TG + Web UI Default 模式走 agent_loop | ✅ 完成 |
+| **D** | compression.py（messages 超限壓縮） | 2h | 長對話穩定 | 超 10 輪對話不爆 context | 🔄 觀察後再做 |
+| **E** | web_search + create_skill_proposal + delegate_to_agent | — | 進階能力 | — | ⏸ 留待 kiro-cli 可用時實作 |
 
-**A+B+C = 一天可完成**，Ark Agent 就能在對話中主動查詢記憶、搜尋知識庫、寫入新知識。
+**A+B+C 已完成**，Ark Agent 已具備 Tool Calling 能力。
+
+### Phase E 決策：交給 kiro-cli
+
+Phase E 的三個 Tool（web_search、create_skill_proposal、delegate_to_agent）全部**延後到 kiro-cli 可用時**實作。理由：
+
+| Tool | 為什麼交給 kiro-cli |
+|------|-------------------|
+| `web_search` | kiro-cli 內建 web search tool，品質比自建 REST 呼叫穩定，不需額外 API key |
+| `create_skill_proposal` | kiro-cli Agent 模式下 Skill 自建閉環已就緒（recommend.py + 審批），在 CLI session 中自然運作 |
+| `delegate_to_agent` | kiro-cli 能直接 spawn 子 Agent，A2A 協作在 CLI 層處理比 Gemini tool 更可靠 |
+
+**策略**：Default 模式（Gemini）專注在 5 個 core tools（wiki 讀寫 + 記憶 + Skill 執行）。進階需求由使用者切到 Agent 分身（kiro-cli）處理。
 
 ## 6. ai-bot 與 Hermes 架構對照表
 
