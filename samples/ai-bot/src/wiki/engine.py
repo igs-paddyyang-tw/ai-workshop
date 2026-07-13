@@ -369,7 +369,6 @@ class WikiEngine:
         return issues
 
     @staticmethod
-    @staticmethod
     def _check_frontmatter(content: str) -> list[str]:
         """檢查必要 frontmatter 欄位。"""
         # Strip UTF-8 BOM（Windows PowerShell 產生的）
@@ -377,9 +376,10 @@ class WikiEngine:
             content = content[1:]
         if not content.startswith("---"):
             return list(REQUIRED_FIELDS)
-        end = content.find("---", 3)
-        if end == -1:
+        # 找行首的 --- 作為 frontmatter 結束標記（避免 URL 中的 --- 誤判）
+        m = re.search(r"\r?\n---\s*(?:\r?\n|$)", content[3:])
+        if not m:
             return list(REQUIRED_FIELDS)
-        fm_block = content[3:end]
-        found = {m.group(1) for m in re.finditer(r"^(\w+):", fm_block, re.MULTILINE)}
+        fm_block = content[3:3 + m.start()]
+        found = {mg.group(1) for mg in re.finditer(r"^(\w+):", fm_block, re.MULTILINE)}
         return sorted(REQUIRED_FIELDS - found)
