@@ -303,13 +303,241 @@ async def build_system_prompt(
 
 | 概念 | Hermes | ai-bot 對應 |
 |------|--------|------------|
-| Agent Loop | `agent_loop.py`（無限迴圈 + max_iter） | `src/llm/agent_loop.py`（待建，max 5） |
+| Agent Loop | `agent_loop.py`（無限迴圈 + max_iter） | `src/llm/agent_loop.py`（max 5） |
 | System Prompt | SOUL + Skills + Memory + Tool schemas | SOUL + BRAIN + memory.md + recent + recall + wiki + skills |
-| Tool Registry | `registry.register()` + AST 掃描 | `src/skills/registry.py` + function_declarations |
+| Tool Registry | `registry.register()` + AST 掃描 | `src/llm/tool_registry.py` + function_declarations |
 | Skill | SKILL.md（指令文件） | `.kiro/skills/*/SKILL.md`（相同概念） |
+| Skill 執行 | Agent 直接讀 SKILL.md 照做 | `execute_skill` tool（載入 → LLM 按步驟執行） |
 | Memory | `MEMORY.md` / `USER.md`（agent-level tool） | `memory/memory.md`（BRAIN 規則約束） |
 | Session | turns 累積 + compression | `session.py` history + max_turns |
 | Tool: write_file | filesystem tool | `save_to_wiki` handler |
 | Tool: terminal | 執行 shell | 未開放（安全考量） |
 | Self-improving | `skill_manage(action='create')` | `src/memory/recommend.py`（自動推薦 → 審批） |
 | Context Compression | 85% 時摘要 | `prepare_context.py`（recent.md 截斷） |
+| LLM Provider | 單一模型（固定） | Provider 抽象層（Gemini / OpenAI / Anthropic 可切） |
+
+## 7. Skill Tool 化設計
+
+### 概念
+
+Skill 不再只是「放在 system prompt 裡的清單」，而是一個可被 LLM 呼叫的 Tool：
+
+```
+LLM 判斷需要用某 Skill
+     ↓
+tool_call: execute_skill(name="ark-spine-batch-convert")
+     ↓
+Tool handler:
+  1. 載入 .kiro/skills/{name}/SKILL.md 完整內容
+  2. 回傳給 LLM 作為 tool result
+     ↓
+LLM 讀到 SKILL.md 的步驟 → 按步驟呼叫其他 tools 完成任務
+```
+
+### 為什麼 Tool 化？
+
+| | System Prompt 塞清單 | Tool 化 |
+|---|---|---|
+| 常駐 token | 所有 Skill description 常駐（Skill 多了很貴） | 只放 name + 一句 description（省 90%） |
+| 載入本體 | 不載入（LLM 只知道名字） | 按需載入完整 SKILL.md |
+| 執行 | LLM 憑記憶猜步驟 | LLM 照文件步驟精確執行 |
+| 新增 Skill | 下次對話自動出現在清單 | 同上 |
+
+### execute_skill Tool 介面
+
+```python
+Tool(
+    name="execute_skill",
+    description="載入並執行指定的 Skill。呼叫前先確認 skill name 在清單中。",
+    parameters={
+        "type": "object",
+        "properties": {
+            "skill_name": {
+                "type": "string",
+                "description": "Skill 名稱（如 ark-spine-batch-convert）",
+            },
+        },
+        "required": ["skill_name"],
+    },
+    handler=handle_execute_skill,
+)
+```
+
+### handler 實作
+
+```python
+async def handle_execute_skill(args: dict) -> str:
+    name = args["skill_name"]
+    # 搜尋路徑：根 .kiro/skills/ + agents/*/. kiro/skills/
+    skill_path = find_skill(name)
+    if not skill_path:
+        return f"Skill '{name}' 不存在。可用的 Skills：{list_skill_names()}"
+    content = skill_path.read_text(encoding="utf-8")
+    return f"## Skill: {name}\n\n以下是執行步驟，請照做：\n\n{content}"
+```
+
+### Skill 落地後的生效 SOP
+
+```
+新 Skill 審批通過
+     ↓
+1. SKILL.md 寫入 .kiro/skills/{name}/  ← approve() 已做
+2. 重建 FTS5 索引                       ← approve() 已做
+3. 重新掃描 skills 清單 → 更新 context_builder 的摘要
+4. 下一輪 agent_loop 自動看到新 Skill（system prompt 含更新後清單）
+5. TG 通知「✅ 新 Skill 已生效：{name}」← approve() callback 已做
+
+不需重啟。context_builder 每次呼叫都重新掃描 .kiro/skills/。
+```
+
+## 8. LLM Provider 抽象層設計
+
+### 架構
+
+```
+┌──────────────────────────────────────────┐
+│            agent_loop.py                  │
+│                                          │
+│  provider = get_default_provider()       │
+│  response = await provider.chat(...)     │
+└──────────────────┬───────────────────────┘
+                   │
+        ┌──────────┼──────────┐
+        ▼          ▼          ▼
+┌────────────┐ ┌────────────┐ ┌────────────────┐
+│  Gemini    │ │  OpenAI    │ │  Anthropic     │
+│  Provider  │ │  Provider  │ │  Provider      │
+└────────────┘ └────────────┘ └────────────────┘
+```
+
+### Provider 介面
+
+```python
+# src/llm/provider.py
+
+class LLMProvider(Protocol):
+    """LLM 提供者介面。所有 Provider 實作此協議。"""
+
+    name: str  # "gemini" | "openai" | "anthropic"
+
+    async def chat(
+        self,
+        messages: list[dict],
+        system: str = "",
+        tools: list[dict] | None = None,
+        temperature: float = 0.7,
+    ) -> LLMResponse: ...
+
+@dataclass
+class LLMResponse:
+    text: str | None                      # 純文字回覆（無 tool call 時）
+    function_calls: list[FunctionCall]    # tool calls（空 = 純文字）
+    usage: dict | None                    # {"input_tokens": x, "output_tokens": y}
+
+@dataclass
+class FunctionCall:
+    name: str
+    args: dict
+    id: str = ""  # OpenAI 需要 tool_call_id
+```
+
+### 三個 Provider 實作
+
+| Provider | SDK | Function Calling 格式 |
+|----------|-----|----------------------|
+| `GeminiProvider` | `google-generativeai` | `function_declarations` + `function_call` / `function_response` |
+| `OpenAIProvider` | `openai` | `tools` + `tool_calls` / `{"role": "tool"}` |
+| `AnthropicProvider` | `anthropic` | `tools` + `tool_use` / `tool_result` |
+
+每個 Provider 負責：
+1. 把統一格式轉成各家 API 格式
+2. 呼叫 API
+3. 把回傳轉回統一的 `LLMResponse`
+
+### .env 設定
+
+```env
+# ─── LLM Provider（全域，Bot 啟動時讀取）───
+
+# Default 模式用哪個 Provider
+LLM_PROVIDER=gemini                   # gemini | openai | anthropic
+LLM_MODEL=gemini-2.0-flash           # 模型名稱（各 provider 自己的格式）
+LLM_TEMPERATURE=0.7
+
+# Gemini
+GEMINI_API_KEY=your-gemini-key
+
+# OpenAI（選配）
+OPENAI_API_KEY=
+OPENAI_MODEL=gpt-4o                  # 覆蓋 LLM_MODEL（如果想 provider 各用不同模型）
+
+# Anthropic（選配）
+ANTHROPIC_API_KEY=
+ANTHROPIC_MODEL=claude-sonnet-4
+
+# ─── Agent 分身後端（CLI spawn）───
+
+AGENT_CLI_BACKEND=kiro                # kiro | gemini | claude
+```
+
+### 初始化邏輯
+
+```python
+# src/llm/provider.py
+
+def get_default_provider() -> LLMProvider:
+    """根據環境變數建立 Provider 實例。Bot 啟動時決定，整個生命週期不變。"""
+    name = os.getenv("LLM_PROVIDER", "gemini")
+    model = os.getenv("LLM_MODEL", "gemini-2.0-flash")
+    temperature = float(os.getenv("LLM_TEMPERATURE", "0.7"))
+
+    if name == "gemini":
+        from src.llm.providers.gemini import GeminiProvider
+        return GeminiProvider(api_key=os.environ["GEMINI_API_KEY"], model=model, temperature=temperature)
+
+    elif name == "openai":
+        from src.llm.providers.openai import OpenAIProvider
+        return OpenAIProvider(api_key=os.environ["OPENAI_API_KEY"], model=os.getenv("OPENAI_MODEL", model), temperature=temperature)
+
+    elif name == "anthropic":
+        from src.llm.providers.anthropic import AnthropicProvider
+        return AnthropicProvider(api_key=os.environ["ANTHROPIC_API_KEY"], model=os.getenv("ANTHROPIC_MODEL", model), temperature=temperature)
+
+    raise ValueError(f"Unknown LLM_PROVIDER: {name}")
+```
+
+### 切換方式
+
+改 `.env` 然後重啟 Bot：
+```bash
+# 從 Gemini 切到 Claude
+LLM_PROVIDER=anthropic
+ANTHROPIC_API_KEY=sk-ant-...
+LLM_MODEL=claude-sonnet-4
+```
+
+不需改任何程式碼。agent_loop 透過 `get_default_provider()` 拿到正確的 Provider。
+
+### 檔案結構
+
+```
+src/llm/
+├── __init__.py
+├── provider.py              ← Protocol + LLMResponse + get_default_provider()
+├── agent_loop.py            ← ReAct 迴圈（用 provider.chat()）
+├── tool_registry.py         ← Tool 註冊 + dispatch
+├── context_builder.py       ← System prompt 組裝
+├── compression.py           ← Context 壓縮（Phase D）
+├── providers/
+│   ├── __init__.py
+│   ├── gemini.py            ← GeminiProvider
+│   ├── openai_provider.py   ← OpenAIProvider
+│   └── anthropic.py         ← AnthropicProvider
+├── tools/
+│   ├── __init__.py          ← 自動掃描註冊
+│   ├── wiki_write.py        ← save_to_wiki
+│   ├── wiki_search.py       ← search_wiki
+│   ├── memory_tools.py      ← recall_memory + save_memory
+│   └── skill_executor.py    ← execute_skill（Skill Tool 化）
+└── gemini_chat.py           ← 保留舊介面作 backward compat（內部委派給 GeminiProvider）
+```
