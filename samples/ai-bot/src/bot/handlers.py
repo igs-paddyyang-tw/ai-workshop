@@ -51,9 +51,6 @@ def _load_soul(agent_id: str) -> str:
 
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user_id = update.effective_user.id
-    if not _is_authorized(user_id):
-        await update.message.reply_text("⛔ 未授權。此 Bot 僅限管理者使用。")
-        return
     session = session_manager.get_or_create(user_id)
     session.clear_history()
 
@@ -68,14 +65,20 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         mode_str = "🧠 Agent CLI" if cli_ok else "⚠️ Agent CLI（未安裝）"
         agent_str = f"{info.get('emoji', '🤖')} {info.get('name', agent_name)}"
 
+    # 顯示 Chat ID（供使用者填入 ADMIN_CHAT_IDS）
+    auth_status = "✅ 已授權" if _is_authorized(user_id) else "🔒 未授權（自然語言對話需將 Chat ID 加入 .env）"
+
     await update.message.reply_text(
         f"🤖 AI Agent 已就緒！\n\n"
         f"• 模式：{mode_str}\n"
-        f"• 對話：{agent_str}\n\n"
+        f"• 對話：{agent_str}\n"
+        f"• 狀態：{auth_status}\n"
+        f"• Chat ID：`{user_id}`\n\n"
         "📌 /agents → 切換對話模式（9 選項）\n"
         "💬 直接打字 → 對話\n"
         "🔍 /recall → 查歷史記憶\n"
-        "📋 /help → 指令清單"
+        "📋 /help → 指令清單",
+        parse_mode="Markdown",
     )
 
 
@@ -506,10 +509,15 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     text = update.message.text.strip()
     user_id = update.effective_user.id
 
-    # ── 白名單檢查 ──
+    # ── 白名單檢查（只擋自然語言對話，指令不擋）──
     if not _is_authorized(user_id):
         log.warning("⛔ Unauthorized user=%s msg=%s", user_id, text[:50])
-        await update.message.reply_text("⛔ 未授權。此 Bot 僅限管理者使用。")
+        await update.message.reply_text(
+            f"🔒 自然語言對話需授權。\n\n"
+            f"你的 Chat ID：`{user_id}`\n"
+            f"請將此 ID 加入 `.env` 的 `ADMIN_CHAT_IDS` 後重啟 Bot。",
+            parse_mode="Markdown",
+        )
         return
 
     session = session_manager.get_or_create(user_id)
