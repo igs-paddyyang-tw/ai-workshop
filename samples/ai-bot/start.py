@@ -16,6 +16,9 @@ def main() -> None:
     from dotenv import load_dotenv
     load_dotenv()
 
+    # ── 依賴檢查（啟動前攔截）──
+    _check_dependencies()
+
     from src.logging_config import setup_logging
     setup_logging()
 
@@ -217,6 +220,31 @@ def main() -> None:
         if bot_proc:
             bot_proc.terminate()
             bot_proc.wait(timeout=5)
+
+
+def _check_dependencies() -> None:
+    """啟動前檢查必要依賴，缺少時直接報錯退出。"""
+    required = {
+        "google.generativeai": "google-generativeai",
+        "telegram": "python-telegram-bot",
+        "fastapi": "fastapi",
+        "uvicorn": "uvicorn",
+        "httpx": "httpx",
+        "dotenv": "python-dotenv",
+        "yaml": "pyyaml",
+    }
+    missing: list[str] = []
+    for module, package in required.items():
+        try:
+            __import__(module)
+        except ImportError:
+            missing.append(package)
+    if missing:
+        print("❌ 缺少必要依賴：")
+        for pkg in missing:
+            print(f"   pip install {pkg}")
+        print(f"\n   或執行：pip install -r requirements.txt")
+        sys.exit(1)
 
 
 def _self_growth_check() -> None:

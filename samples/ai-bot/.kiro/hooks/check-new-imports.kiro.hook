@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "name": "Check New Imports",
+  "description": "當 Python 檔案被編輯時，檢查是否有新的第三方 import 未列在 requirements.txt 中",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "**/*.py"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "檢查這個 Python 檔案的 import 語句，確認所有第三方套件都已列在 requirements.txt 中。如果發現有新的第三方套件未列入，提醒使用者需要加入 requirements.txt。忽略標準庫和專案內部模組（src.*）。"
+  }
+}
