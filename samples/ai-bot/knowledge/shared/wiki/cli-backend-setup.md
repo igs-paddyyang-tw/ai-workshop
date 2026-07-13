@@ -213,6 +213,7 @@ BACKENDS = {
 3. 找不到 → Windows fallback 查 `%LOCALAPPDATA%\agy\bin\agy.exe`
 4. `_build_cmd()` 呼叫時自動替換為完整路徑
 5. agy 額外帶 `--add-dir <workspace>`（因為它不看 cwd）
+6. agy/claude 自動 `_inject_soul()`：讀 SOUL.md prepend 到 prompt（因為不會讀 GEMINI.md）
 
 ---
 
@@ -240,6 +241,8 @@ CLI_BACKEND=claude  # 用 Claude CLI
 | workspace 錯誤（顯示 scratch） | 確認有帶 `--add-dir`，agy 不看 cwd |
 | `flags not defined: -dir` | 正確 flag 是 `--add-dir`，不是 `--dir` |
 | 首次卡在 ToS 畫面 | 必須手動 `agy` 進互動模式完成一次同意 + OAuth |
+| agy 不讀 SOUL.md | `--add-dir` 不等於主 workspace，用 `_inject_soul()` 解決 |
+| GEMINI.md 沒效果 | 同上，agy 只讀主 workspace 的 GEMINI.md |
 
 ---
 
@@ -313,3 +316,5 @@ curl -fsSL https://antigravity.google/cli/install.sh | bash
 | workspace 是 scratch | agy 不看 cwd | 加 `--add-dir` |
 | `flag -dir not defined` | flag 名稱不同 | 用 `--add-dir` |
 | 首次卡住 | ToS + OAuth 必須互動 | 手動跑一次 `agy` |
+| 不讀 SOUL.md | --add-dir ≠ 主 workspace | `_inject_soul()` prepend 到 prompt |
+| GEMINI.md 無效 | 同上 | 不需要 GEMINI.md，靠程式注入 |

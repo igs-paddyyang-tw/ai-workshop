@@ -93,6 +93,11 @@ class AgentProcess:
         builder = self.BACKENDS.get(self.backend)
         if not builder:
             builder = self.BACKENDS["kiro"]
+
+        # agy/claude 不會自動讀 .kiro/ steering，手動注入 SOUL
+        if self.backend in ("agy", "claude"):
+            message = self._inject_soul(message)
+
         cmd = builder(self, message)
         # 解析完整路徑（處理不在 PATH 的情況）
         try:
@@ -103,6 +108,19 @@ class AgentProcess:
         except ImportError:
             pass
         return cmd
+
+    def _inject_soul(self, message: str) -> str:
+        """讀取 working_dir 的 SOUL.md，prepend 到 message 作為 system context。"""
+        soul_path = Path(self.working_dir).resolve() / ".kiro" / "steering" / "SOUL.md"
+        if not soul_path.exists():
+            return message
+        try:
+            soul = soul_path.read_text(encoding="utf-8").strip()
+            if soul:
+                return f"[SYSTEM INSTRUCTIONS - 你必須嚴格遵守以下角色設定]\n\n{soul}\n\n[END SYSTEM INSTRUCTIONS]\n\n---\n\n使用者訊息：{message}"
+        except Exception:
+            pass
+        return message
 
     async def start(self, _retries: int = 3) -> None:
         """標記為可用，啟動佇列消費 worker（失敗 retry 最多 3 次）。"""

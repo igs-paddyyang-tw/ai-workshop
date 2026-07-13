@@ -132,12 +132,14 @@ async def cmd_agents(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    mode_str = "🚀 Ark Agent（Gemini）" if session.is_default_mode else f"{AVAILABLE_AGENTS[session.agent_name]['emoji']} {session.agent_name}-agent（Agent CLI）"
+    from src.agent.cli import get_available_backend
+    backend = get_available_backend()
+    mode_str = "🚀 Ark Agent（Gemini）" if session.is_default_mode else f"{AVAILABLE_AGENTS[session.agent_name]['emoji']} {session.agent_name}-agent（{backend}）"
     await update.message.reply_text(
         f"當前：{mode_str}\n\n"
         "選擇對話模式：\n"
         "• Ark Agent = Gemini API（零門檻）\n"
-        "• Agent 分身 = Agent CLI（需安裝）",
+        f"• Agent 分身 = Agent CLI（{backend}）",
         reply_markup=reply_markup,
     )
 
@@ -178,8 +180,10 @@ async def callback_switch_agent(update: Update, context: ContextTypes.DEFAULT_TY
 
     session_manager.switch_agent(user_id, agent_id)
     info = AVAILABLE_AGENTS[agent_id]
+    from src.agent.cli import get_available_backend
+    backend = get_available_backend()
     await query.edit_message_text(
-        f"✅ 已切換到 {info['emoji']} **{info['name']}**（Agent CLI）\n\n"
+        f"✅ 已切換到 {info['emoji']} **{info['name']}**（{backend}）\n\n"
         f"{info['desc']}\n\n"
         f"現在開始對話吧！",
         parse_mode="Markdown",

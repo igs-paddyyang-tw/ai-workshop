@@ -28,3 +28,5 @@
 - agy 用 -p "prompt" 觸發 non-interactive（不是位置參數）
 - agy 首次啟動需手動完成 ToS 同意 + OAuth（subprocess 會卡住）
 - agy 安裝路徑在 %LOCALAPPDATA%\agy\bin\，不自動加 PATH
+- agy 的 --add-dir 不等於主 workspace，GEMINI.md/AGENTS.md 不會被讀取
+- 解法：_inject_soul() 在 subprocess 呼叫時直接 prepend SOUL.md 到 prompt
