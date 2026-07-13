@@ -80,7 +80,7 @@ source: "knowledge/shared/raw/react-agent-architecture.md"
 - OpenAI Tools API（`tools` + `tool_calls` 格式）
 - Anthropic Tools API（`tools` + `tool_use` 格式）
 - 三家格式不同，Provider 層負責轉換
-- 保留 `gemini_chat.py` 舊介面作 backward compatibility
+- `gemini_chat.py` 已廢除，統一走 `chat.py`（simple_chat）→ Provider 層
 
 ### 業務約束
 
