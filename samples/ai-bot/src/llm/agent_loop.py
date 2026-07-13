@@ -104,7 +104,7 @@ async def agent_loop(
             # Append to messages（Gemini 格式：model 的 function_call + user 的 function_response）
             messages.append({
                 "role": "model",
-                "parts": [{"function_call": {"name": fc.name, "args": fc.args, "id": fc.id}}],
+                "parts": [{"function_call": {"name": fc.name, "args": fc.args}}],
             })
             messages.append({
                 "role": "user",
