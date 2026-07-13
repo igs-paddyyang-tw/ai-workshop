@@ -18,6 +18,20 @@ from src.agent.cli import AVAILABLE_AGENTS, is_cli_available, agent_cli_chat
 
 log = __import__("logging").getLogger("bot.handlers")
 
+# ── 白名單：只有 ADMIN_CHAT_IDS 的人能使用 Bot ──
+_ALLOWED_USERS: set[int] = set()
+_admin_env = os.getenv("ADMIN_CHAT_IDS", "")
+if _admin_env:
+    _ALLOWED_USERS = {int(x.strip()) for x in _admin_env.split(",") if x.strip().isdigit()}
+
+
+def _is_authorized(user_id: int) -> bool:
+    """檢查使用者是否在白名單中。白名單為空 = 不限制（開發模式）。"""
+    if not _ALLOWED_USERS:
+        return True  # 未設定白名單 = 所有人可用
+    return user_id in _ALLOWED_USERS
+
+
 # ── 載入 SOUL（fallback 模式用）──
 _SOUL_DIR = Path("agents/admin-agent/.kiro/steering")
 
@@ -37,6 +51,9 @@ def _load_soul(agent_id: str) -> str:
 
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user_id = update.effective_user.id
+    if not _is_authorized(user_id):
+        await update.message.reply_text("⛔ 未授權。此 Bot 僅限管理者使用。")
+        return
     session = session_manager.get_or_create(user_id)
     session.clear_history()
 
@@ -488,6 +505,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     """
     text = update.message.text.strip()
     user_id = update.effective_user.id
+
+    # ── 白名單檢查 ──
+    if not _is_authorized(user_id):
+        log.warning("⛔ Unauthorized user=%s msg=%s", user_id, text[:50])
+        await update.message.reply_text("⛔ 未授權。此 Bot 僅限管理者使用。")
+        return
+
     session = session_manager.get_or_create(user_id)
     current_agent = session.current_agent
     agent_info = AVAILABLE_AGENTS[current_agent]
