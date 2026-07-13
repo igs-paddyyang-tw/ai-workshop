@@ -225,7 +225,7 @@ def main() -> None:
 def _check_dependencies() -> None:
     """啟動前檢查必要依賴，缺少時直接報錯退出。"""
     required = {
-        "google.generativeai": "google-generativeai",
+        "google.genai": "google-genai",
         "telegram": "python-telegram-bot",
         "fastapi": "fastapi",
         "uvicorn": "uvicorn",

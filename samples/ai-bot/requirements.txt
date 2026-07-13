@@ -5,7 +5,7 @@ httpx==0.27.0
 pydantic==2.9.0
 python-dotenv==1.0.1
 pyyaml==6.0.1
-google-generativeai==0.8.3
+google-genai>=1.0.0
 
 # 選配：Wiki 搜尋優化（沒裝也能跑，graceful fallback）
 bm25s>=0.3.0

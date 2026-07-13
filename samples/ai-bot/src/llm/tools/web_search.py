@@ -14,20 +14,21 @@ async def handle_web_search(args: dict) -> str:
         return "Error: query 不能為空"
 
     try:
-        import google.generativeai as genai
+        from google import genai
+        from google.genai import types
 
         api_key = os.getenv("GEMINI_API_KEY", "")
         if not api_key:
             return "Error: 未設定 GEMINI_API_KEY"
 
-        genai.configure(api_key=api_key)
+        client = genai.Client(api_key=api_key)
 
-        model = genai.GenerativeModel("gemini-2.5-flash")
-
-        # 使用 Google Search 作為 grounding tool
-        response = await model.generate_content_async(
-            f"請搜尋並整理以下問題的最新資訊（繁體中文回覆）：{query}",
-            tools=[{"google_search": {}}],
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=f"請搜尋並整理以下問題的最新資訊（繁體中文回覆）：{query}",
+            config=types.GenerateContentConfig(
+                tools=[types.Tool(google_search=types.GoogleSearch())],
+            ),
         )
 
         # 擷取文字回覆
