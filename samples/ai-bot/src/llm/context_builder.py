@@ -69,8 +69,11 @@ async def build_default_system_prompt(query: str = "", session=None) -> str:
         "2. 知識庫查無 → 用 web_search tool 搜尋外部資訊\n"
         "3. web_search 有回傳內容 → 直接根據回傳內容整理回答，附上 🔗 來源\n"
         "4. 兩者都確實無結果（web_search 回傳含 'Error' 或 '無結果'）→ 回覆「📚 知識庫與外部搜尋皆無相關資料」\n"
-        "重要：web_search 回傳的文字就是搜尋結果，直接使用它來回答使用者。\n"
-        "需要寫入知識時使用 save_to_wiki tool（使用者明確要求時）。"
+        "\n重要規則：\n"
+        "- web_search 回傳的文字就是搜尋結果，直接使用它來回答使用者\n"
+        "- 回答後就結束，不要自動存入知識庫\n"
+        "- save_to_wiki 只在使用者明確說「存進知識庫」「記錄下來」「寫入 wiki」時才使用\n"
+        "- 絕對不要在同一輪中既搜尋又自動存入\n"
     )
 
     # 8. Skills 清單
