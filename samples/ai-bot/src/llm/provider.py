@@ -1,4 +1,4 @@
-"""LLM Provider 抽象層：統一介面，支援 Gemini / OpenAI / Anthropic。"""
+﻿"""LLM Provider 抽象層：統一介面，支援 Gemini / OpenAI / Anthropic。"""
 from __future__ import annotations
 
 import os
@@ -63,7 +63,7 @@ def get_default_provider() -> LLMProvider:
         return _default_provider
 
     name = os.getenv("LLM_PROVIDER", "gemini")
-    model = os.getenv("LLM_MODEL", "gemini-2.0-flash")
+    model = os.getenv("LLM_MODEL", "gemini-2.5-flash")
     temperature = float(os.getenv("LLM_TEMPERATURE", "0.7"))
 
     if name == "gemini":
