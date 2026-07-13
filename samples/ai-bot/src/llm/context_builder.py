@@ -61,11 +61,14 @@ async def build_default_system_prompt(query: str = "", session=None) -> str:
         except Exception:
             pass
 
-    # 7. Wiki（簡短提示，詳細搜尋走 search_wiki tool）
+    # 7. Wiki + Web Search（搜尋流程指引）
     parts.append(
-        "\n## 知識庫\n"
-        "你可以使用 search_wiki tool 搜尋知識庫。\n"
-        "需要寫入知識時使用 save_to_wiki tool。"
+        "\n## 知識庫與搜尋\n"
+        "查詢事實/比較/評價的流程（強制，不可跳過）：\n"
+        "1. 先用 search_wiki tool 搜尋知識庫\n"
+        "2. 知識庫查無 → 用 web_search tool 搜尋外部資訊\n"
+        "3. 兩者都查無 → 回覆「📚 知識庫與外部搜尋皆無相關資料」\n"
+        "需要寫入知識時使用 save_to_wiki tool（使用者明確要求時）。"
     )
 
     # 8. Skills 清單
