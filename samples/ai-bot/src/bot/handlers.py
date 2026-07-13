@@ -39,28 +39,46 @@ def _load_soul(agent_id: str) -> str:
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user_id = update.effective_user.id
     session = session_manager.get_or_create(user_id)
-    session.clear_history()  # 重新開始，清空舊對話
-    agent = AVAILABLE_AGENTS[session.current_agent]
-    mode = "🧠 Agent CLI" if is_cli_available() else "⚡ Gemini API"
+    session.clear_history()
+
+    # 判斷當前模式
+    if session.is_default_mode:
+        mode_str = "⚡ Gemini（Default）"
+        agent_str = "🤖 通用 AI 助手"
+    else:
+        agent_name = session.agent_name
+        info = AVAILABLE_AGENTS.get(agent_name, {})
+        cli_ok = is_cli_available()
+        mode_str = "🧠 Agent CLI" if cli_ok else "⚠️ Agent CLI（未安裝）"
+        agent_str = f"{info.get('emoji', '🤖')} {info.get('name', agent_name)}"
+
     await update.message.reply_text(
         f"🤖 AI Agent 已就緒！\n\n"
-        f"• 模式：{mode}\n"
-        f"• Agent：{agent['emoji']} {agent['name']}\n\n"
-        "📌 /agents → 選擇 Agent\n"
+        f"• 模式：{mode_str}\n"
+        f"• 對話：{agent_str}\n\n"
+        "📌 /agents → 切換對話模式（9 選項）\n"
         "💬 直接打字 → 對話\n"
+        "🔍 /recall → 查歷史記憶\n"
         "📋 /help → 指令清單"
     )
 
 
 async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(
-        "📋 指令清單：\n\n"
-        "/start — 歡迎訊息\n"
-        "/agents — 🔘 選擇 Agent（按鈕）\n"
-        "/mode — 查看執行模式\n"
-        "/history — 查看對話歷史\n"
-        "/help — 本清單\n\n"
-        "💬 直接輸入文字即可對話"
+        "📋 **指令清單**\n\n"
+        "**對話**\n"
+        "💬 直接輸入文字 → 對話\n"
+        "/agents → 切換對話模式（Default / 8 Agent）\n\n"
+        "**記憶**\n"
+        "/recall `關鍵詞` → 查歷史記憶\n"
+        "/skills → 已學會的 Skill\n"
+        "/consolidate → 蒸餾記憶\n\n"
+        "**其他**\n"
+        "/start → 重新開始\n"
+        "/mode → 查看執行模式\n"
+        "/history → 對話歷史\n"
+        "/help → 本清單",
+        parse_mode="Markdown",
     )
 
 
