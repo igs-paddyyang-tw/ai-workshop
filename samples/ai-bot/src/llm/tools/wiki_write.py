@@ -30,10 +30,12 @@ async def handle_save_to_wiki(args: dict) -> str:
     # 加 frontmatter
     today = datetime.now().strftime("%Y-%m-%d")
     tags_str = ", ".join(f"'{t}'" for t in tags) if tags else ""
+    wiki_type = args.get("type", "synthesis")
     frontmatter = (
         f"---\n"
         f"title: \"{title}\"\n"
-        f"type: wiki\n"
+        f"type: {wiki_type}\n"
+        f"status: developing\n"
         f"tags: [{tags_str}]\n"
         f"created: {today}\n"
         f"updated: {today}\n"
@@ -61,7 +63,11 @@ def register_tools():
     from src.llm.tool_registry import Tool, registry
     registry.register(Tool(
         name="save_to_wiki",
-        description="將內容寫入知識庫。當使用者要求整理、記錄、匯入知識時使用。",
+        description=(
+            "將內容寫入知識庫。使用者說「存進知識庫」「記錄下來」時使用。"
+            "如果使用者說「把這個存進知識庫」但沒提供具體內容，"
+            "你應該從對話歷史中找到上一輪的回覆內容，自動生成 slug（kebab-case）和 title，不要反問使用者。"
+        ),
         parameters={
             "type": "object",
             "properties": {
