@@ -1,4 +1,8 @@
-"""Gemini API 即時對話（最快路徑，不經 CLI）。"""
+"""Gemini API 直呼（Internal Only）。
+
+⚠️ 此模組僅供內部使用（daily_log 摘要、consolidate 蒸餾等）。
+對話請走 src/llm/agent_loop.agent_loop()。
+"""
 from __future__ import annotations
 
 import logging

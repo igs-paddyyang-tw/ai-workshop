@@ -39,10 +39,10 @@ KEYWORD_ROUTES: dict[str, tuple[IntentType, str]] = {
     "news": (IntentType.SKILL, "news"),
     "今天新聞": (IntentType.SKILL, "news"),
     "日報": (IntentType.SKILL, "news_renderer"),
-    # Wiki 相關
-    "wiki": (IntentType.WIKI, ""),
-    "知識庫": (IntentType.WIKI, ""),
-    "查知識": (IntentType.WIKI, ""),
+    # Wiki — 不再攔截，統一走 agent_loop 的 search_wiki tool
+    # "wiki": (IntentType.WIKI, ""),
+    # "知識庫": (IntentType.WIKI, ""),
+    # "查知識": (IntentType.WIKI, ""),
     # 摘要
     "摘要": (IntentType.SKILL, "summarize"),
     "summarize": (IntentType.SKILL, "summarize"),

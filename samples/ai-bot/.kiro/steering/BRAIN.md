@@ -61,6 +61,14 @@ inclusion: always
 - knowledge/wiki/ **只有使用者明確要求**才寫入
 - output/ 的內容**不會被 recall 搜尋到**（查知識用 wiki，查經驗用 memory）
 
+## 即時資訊規則
+
+如果使用者問「最近」「最新」「現在」「今天」的事，且 search_wiki 沒命中：
+1. 明確說：「我的知識庫沒有這個即時資訊」
+2. 提供已知的相關背景知識（如有）
+3. **不要編造**時間、數據、URL
+4. 建議：「如需最新資訊，可切換到 Agent 分身（/agents）使用 kiro-cli web search」
+
 ## Memory vs Wiki vs Output 分工（嚴格區分）
 
 | 問自己 | 答案 | 寫到 |

@@ -549,8 +549,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             return
 
     if plan.intent == IntentType.WIKI:
-        # Wiki 查詢優先
-        pass  # 繼續到下面的 Wiki RAG 段落
+        # Wiki 查詢不再攔截，統一走 L4 agent_loop 的 search_wiki tool
+        pass
 
     # ── Reaction: 🔥 處理中 + 持續 typing ──
     await _set_reaction(update.message, "🔥")
