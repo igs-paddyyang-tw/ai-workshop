@@ -585,10 +585,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                                  len(reply), result.iterations, len(result.tool_calls_log))
                 except Exception as e:
                     log.error("  ❌ Agent Loop error: %s", e)
-                    # Fallback 到純文字 gemini_chat
+                    # Fallback 到純文字 simple_chat
                     try:
-                        from src.llm.gemini_chat import gemini_chat
-                        reply = await gemini_chat(text, system=system_prompt if 'system_prompt' in dir() else "")
+                        from src.llm.chat import simple_chat
+                        reply = await simple_chat(text, system=system_prompt if 'system_prompt' in dir() else "")
                     except Exception:
                         reply = None
             else:

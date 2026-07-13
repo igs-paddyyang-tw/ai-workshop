@@ -68,12 +68,12 @@ async def consolidate(agent_name: str) -> dict:
 
     # LLM 蒸餾
     try:
-        from src.llm.gemini_chat import gemini_chat
+        from src.llm.chat import simple_chat
         prompt = _CONSOLIDATE_PROMPT.format(
             memory_content=memory_content[:2000],
             daily_content=daily_content[:4000],
         )
-        result = await gemini_chat(
+        result = await simple_chat(
             prompt=prompt,
             system="你是記憶蒸餾員，只輸出 memory.md 內容或 NO_CHANGE。",
         )

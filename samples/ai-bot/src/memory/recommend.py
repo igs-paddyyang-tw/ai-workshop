@@ -142,7 +142,7 @@ metadata:
 async def _generate_draft(agent_name: str, task_id: str, conversation: str) -> str | None:
     """使用 LLM 生成 Skill 草稿。"""
     try:
-        from src.llm.gemini_chat import gemini_chat
+        from src.llm.chat import simple_chat
 
         prompt = _DRAFT_PROMPT.format(
             agent=agent_name,
@@ -150,7 +150,7 @@ async def _generate_draft(agent_name: str, task_id: str, conversation: str) -> s
             conversation=conversation[:4000],
         )
 
-        result = await gemini_chat(
+        result = await simple_chat(
             prompt=prompt,
             system="你是 Skill 沉澱專家，只輸出 SKILL.md 草稿或 SKIP。不加任何其他說明。",
         )

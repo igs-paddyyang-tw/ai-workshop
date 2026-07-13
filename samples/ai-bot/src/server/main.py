@@ -182,13 +182,13 @@ async def api_chat(req: ChatRequest):
                 source = "agent_loop"
             else:
                 # Agent 模式但 CLI 不可用 → fallback Gemini
-                from src.llm.gemini_chat import gemini_chat
+                from src.llm.chat import simple_chat
                 soul_path = Path(f"agents/{agent_id}-agent/.kiro/steering/SOUL.md")
                 soul = soul_path.read_text(encoding="utf-8") if soul_path.exists() else ""
                 system = soul
                 if memory_context:
                     system += f"\n\n## 相關記憶\n{memory_context}"
-                reply = await gemini_chat(text, system=system)
+                reply = await simple_chat(text, system=system)
                 source = "gemini"
         except Exception as e:
             reply = f"⚠️ 錯誤: {e}"
