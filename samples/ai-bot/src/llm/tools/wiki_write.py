@@ -49,7 +49,12 @@ async def handle_save_to_wiki(args: dict) -> str:
     filepath = ALLOWED_DIR / f"{slug}.md"
     filepath.write_text(full_content, encoding="utf-8")
 
-    # 更新索引（best effort）
+    # 更新索引（wiki 搜尋索引 + memory FTS5）
+    try:
+        from src.wiki.indexer import rebuild_index
+        rebuild_index()
+    except Exception:
+        pass
     try:
         from src.memory.indexer import index_shared_wiki
         index_shared_wiki()
