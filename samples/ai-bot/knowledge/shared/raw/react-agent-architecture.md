@@ -129,32 +129,175 @@ Gemini response 有 function_call?
 └─ NO  → 純文字 → 回覆
 ```
 
-### 最小改動方案
-
-| 檔案 | 改動 |
-|------|------|
-| `src/llm/gemini_chat.py` | 支持 `tools` 參數 + `function_call` 回應處理（Gemini API 原生支持 `function_declarations`） |
-| `src/llm/agent_loop.py`（新增） | ReAct 迴圈（max 5 iterations）：呼叫 Gemini → 偵測 FC → 執行 → 再呼叫 |
-| `src/llm/wiki_write.py`（新增） | `save_to_wiki(title, slug, content, tags)` handler |
-| `src/bot/handlers.py` | Default 模式改用 `agent_loop()` 取代直接 `gemini_chat()` |
-
-### 流程對比
+### 完整架構圖
 
 ```
-改造前：
-  handlers.py → gemini_chat(text, system=prompt) → 純文字
-
-改造後：
-  handlers.py → agent_loop(text, system=prompt, tools=[save_to_wiki, recall_memory, ...])
-                     ↓
-                Gemini API（帶 function_declarations）
-                     ↓
-                有 function_call → dispatch → 收集結果 → 再呼叫
-                     ↓
-                無 function_call → 回覆
+┌─────────────────────────────────────────────────────────────────┐
+│                        ai-bot ReAct Agent                        │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  ┌────────────────────────────────────────┐                     │
+│  │ Layer 1: Agent Loop（核心迴圈）          │                     │
+│  │                                         │                     │
+│  │  src/llm/agent_loop.py                  │                     │
+│  │  ┌─→ build_messages(system, history)   │                     │
+│  │  │   call_gemini(messages, tools)      │                     │
+│  │  │        ↓                             │                     │
+│  │  │   has function_call?                │                     │
+│  │  │   ├─ YES → tool_dispatch()         │                     │
+│  │  │   │        append tool result      │                     │
+│  │  │   │        ↑ loop back             │                     │
+│  │  │   └─ NO  → return text            │                     │
+│  │  └────────────────────────────────────│                     │
+│  └────────────────────────────────────────┘                     │
+│                         │                                        │
+│                         ▼                                        │
+│  ┌────────────────────────────────────────┐                     │
+│  │ Layer 2: Tool Registry（工具層）         │                     │
+│  │                                         │                     │
+│  │  Built-in Tools:                        │                     │
+│  │  ├── save_to_wiki     寫入知識庫        │                     │
+│  │  ├── recall_memory    查詢記憶          │                     │
+│  │  ├── search_wiki      搜尋知識庫        │                     │
+│  │  ├── save_memory      寫入持久事實      │                     │
+│  │  ├── list_skills      列出技能          │                     │
+│  │  └── web_search       網路搜尋(未來)    │                     │
+│  │                                         │                     │
+│  │  Tool Schema → Gemini function_declarations                  │
+│  │  Tool Result → {"role": "user", parts: [function_response]}  │
+│  └────────────────────────────────────────┘                     │
+│                         │                                        │
+│                         ▼                                        │
+│  ┌────────────────────────────────────────┐                     │
+│  │ Layer 3: Context Builder（上下文組裝）    │                     │
+│  │                                         │                     │
+│  │  system prompt =                        │                     │
+│  │    SOUL.md                              │                     │
+│  │  + BRAIN.md                             │                     │
+│  │  + USER.md                              │                     │
+│  │  + memory.md（持久事實）                 │                     │
+│  │  + recent.md（最近經驗）                 │                     │
+│  │  + Skills descriptions（可觸發清單）     │                     │
+│  │  + Tool usage instructions              │                     │
+│  │                                         │                     │
+│  │  messages[] =                           │                     │
+│  │    session history                      │                     │
+│  │  + user message                         │                     │
+│  │  + [tool results from previous turns]   │                     │
+│  └────────────────────────────────────────┘                     │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-這樣 Gemini 對話中就能主動或被要求時寫入 `knowledge/shared/wiki/`。
+### 完整檔案清單
+
+| # | 檔案 | 類型 | 職責 |
+|---|------|------|------|
+| 1 | `src/llm/agent_loop.py` | 🆕 | ReAct 核心迴圈（max_iterations + tool dispatch） |
+| 2 | `src/llm/tool_registry.py` | 🆕 | Tool 註冊 + dispatch + schema 生成 |
+| 3 | `src/llm/tools/__init__.py` | 🆕 | 自動掃描註冊所有 tools |
+| 4 | `src/llm/tools/wiki_write.py` | 🆕 | save_to_wiki handler |
+| 5 | `src/llm/tools/memory_tools.py` | 🆕 | recall_memory + save_memory handler |
+| 6 | `src/llm/tools/wiki_search.py` | 🆕 | search_wiki handler |
+| 7 | `src/llm/gemini_chat.py` | 🔄 | 支持 tools 參數 + function_call 處理 |
+| 8 | `src/llm/context_builder.py` | 🆕 | 抽出 system prompt 組裝邏輯（統一 Default + Agent） |
+| 9 | `src/bot/handlers.py` | 🔄 | Default 模式改用 agent_loop |
+| 10 | `src/server/main.py` | 🔄 | API 也走 agent_loop |
+| 11 | `src/llm/compression.py` | 🆕 | Context 超限壓縮（Phase D） |
+
+### 各模組介面設計
+
+#### agent_loop.py
+
+```python
+@dataclass
+class AgentResult:
+    text: str                         # 最終回覆文字
+    tool_calls_log: list[dict]        # 執行過的 tool 記錄
+    iterations: int                   # 迭代次數
+    token_usage: dict | None = None   # 累計 token
+
+async def agent_loop(
+    user_message: str,
+    system_prompt: str,
+    session_history: list[dict],
+    tools: list[Tool] | None = None,
+    max_iterations: int = 5,
+    on_tool_call: Callable | None = None,
+) -> AgentResult:
+    """ReAct 迴圈。"""
+```
+
+#### tool_registry.py
+
+```python
+@dataclass
+class Tool:
+    name: str
+    description: str
+    parameters: dict              # JSON Schema（Gemini function_declarations 格式）
+    handler: Callable             # async def handler(args: dict) -> str
+    requires_approval: bool = False
+
+    def to_gemini_schema(self) -> dict:
+        return {"name": self.name, "description": self.description, "parameters": self.parameters}
+
+class ToolRegistry:
+    def register(self, tool: Tool): ...
+    def get(self, name: str) -> Tool | None: ...
+    def all_schemas(self) -> list[dict]: ...
+    async def dispatch(self, name: str, args: dict) -> str: ...
+```
+
+#### 內建 Tools
+
+| Tool | 觸發時機 | 行為 | 寫入路徑 |
+|------|----------|------|----------|
+| `save_to_wiki` | 使用者要求整理/記錄/寫入知識 | 寫入含 frontmatter 的 .md | `knowledge/shared/wiki/{slug}.md` |
+| `recall_memory` | 問「之前怎麼做的」 | FTS5 查詢 | 只讀 |
+| `search_wiki` | 需要查事實/規格 | WikiEngine.query() | 只讀 |
+| `save_memory` | 學到新持久事實 | append 到 memory.md | `memory/memory.md` |
+| `list_skills` | 問「你會什麼」 | 讀 skills registry | 只讀 |
+| `web_search` | 需要即時資訊（Phase E） | 外部 API | 只讀 |
+
+#### context_builder.py
+
+```python
+async def build_system_prompt(
+    mode: str = "default",
+    agent_id: str | None = None,
+    query: str = "",
+    session = None,
+) -> str:
+    """統一 system prompt 組裝。
+
+    mode="default" → 根目錄 SOUL + BRAIN + USER + memory + recent + recall + wiki + skills + tool instructions
+    mode="agent"   → agents/{agent_id}/ 的對應檔案（走 kiro-cli，此函式不會被呼叫）
+    """
+```
+
+### 與現有系統對接
+
+| 現有模組 | 改動 | 說明 |
+|----------|------|------|
+| `gemini_chat.py` | 🔄 改寫 | 加 `tools` + `tool_config` 參數，回傳結構化 response |
+| `handlers.py` L4 | 🔄 | `agent_loop()` 取代 `gemini_chat()` |
+| `server/main.py` L4d | 🔄 | 同上 |
+| `daily_log.py` | 不動 | agent_loop 結束後照舊呼叫 |
+| `recommend.py` | 不動 | tool_calls_log.length 可作為觸發依據 |
+| `skill_manage.py` | 不動 | 審批機制不變 |
+| `session.py` | 不動 | history 格式相容 |
+
+### 執行分期
+
+| Phase | 內容 | 預估 | 交付物 | 驗收 |
+|-------|------|------|--------|------|
+| **A** | agent_loop + tool_registry + gemini_chat 改寫 | 3-4h | 核心迴圈可跑 | Gemini 能呼叫 tool + 收結果 + 再回覆 |
+| **B** | save_to_wiki + recall_memory + search_wiki + save_memory | 2-3h | 4 個 handler | 對話中說「把這個寫入知識庫」→ wiki 出現新 .md |
+| **C** | handlers.py + server/main.py 對接 | 1-2h | 上線生效 | TG + Web UI Default 模式走 agent_loop |
+| **D** | compression.py（messages 超限壓縮） | 2h | 長對話穩定 | 超 10 輪對話不爆 context |
+| **E** | web_search + create_skill_proposal | 未來 | 擴展能力 | — |
+
+**A+B+C = 一天可完成**，Ark Agent 就能在對話中主動查詢記憶、搜尋知識庫、寫入新知識。
 
 ## 6. ai-bot 與 Hermes 架構對照表
 
