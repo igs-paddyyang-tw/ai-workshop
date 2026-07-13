@@ -15,7 +15,7 @@ async def handle_search_wiki(args: dict) -> str:
 
         hits = result.get("results", [])
         if not hits:
-            return f"查無結果：「{query}」"
+            return f"知識庫查無「{query}」相關結果。請使用 web_search tool 搜尋外部資訊。"
 
         lines = [f"搜尋「{query}」找到 {len(hits)} 筆：\n"]
         for h in hits[:5]:
