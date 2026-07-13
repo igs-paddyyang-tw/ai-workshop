@@ -7,3 +7,4 @@
 - [2026-07-13] lint-fix: 全部頁面修正 type/status/updated/related/sources，index.md 補齊 10 篇，schema.md 擴充
 - [2026-07-13] ingest: system-architecture.md, wiki-paths-analysis.md（從 docs/archive 歸檔到 wiki）
 - [2026-07-13] archive-cleanup: architecture-wiki-paths.html → output/drafts/; self-growth-v0.2 → output/drafts/; agent-expert-platform-spec → docs/specs/
+- [2026-07-13] lint-fix: chat-routing-architecture.md type wiki→system, 加入 index（共 13 篇）

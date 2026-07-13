@@ -1,7 +1,9 @@
 ---
 title: "對話路由架構（L1-L4）"
-type: wiki
-tags: ['architecture', 'routing', 'agent-loop', 'planner']
+type: system
+status: mature
+tags: [architecture, routing, agent-loop, planner]
+related: [react-agent-architecture, system-architecture, wiki-paths-analysis]
 created: 2026-07-13
 updated: 2026-07-13
 ---

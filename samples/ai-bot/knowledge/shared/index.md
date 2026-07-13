@@ -14,3 +14,4 @@
 | fishing-vs-slot-comparison.md | 捕魚機 vs 老虎機 — 產品定位比較 | comparison | mature |
 | ocean-king-vs-super-ace.md | Ocean King vs Super Ace 玩家選擇指南 | comparison | mature |
 | slot-market-trends-2025.md | 2025 老虎機市場動態與趨勢 | synthesis | developing |
+| chat-routing-architecture.md | 對話路由架構（L1-L4） | system | mature |
