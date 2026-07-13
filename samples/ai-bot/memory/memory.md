@@ -12,9 +12,13 @@
 ## 工具怪癖
 
 - Gemini FC schema 不支援 anyOf / title / default，需清理
+- Gemini FunctionCall 不支援 `id` 欄位（那是 OpenAI 格式），會報 Unknown field
 - `edit_message` 訊息未變更時會拋 TelegramError，需 try/except
 - numpy 下載慢（12MB），bm25s 是選配依賴（graceful fallback）
 - save_memory 已廢棄，對話記錄統一走 daily_log → memory/daily/
+- google-generativeai 舊 SDK 的 `content.find("---", 3)` 會誤判 URL 中的 ---
+- save_to_wiki 後必須 rebuild_index（metadata + BM25），否則 search_wiki 找不到新頁面
+- web_search 用 google-genai 新 SDK：`genai.Client()` + `types.GoogleSearch()`
 
 ## 人與偏好
 
@@ -25,11 +29,14 @@
 
 ## 進行中的長期事項
 
-- Gemini ReAct Agent Loop 已實作（read_file / write_file / list_files）
+- Gemini ReAct Agent Loop 已實作（search_wiki / save_to_wiki / recall_memory / save_memory / execute_skill / web_search）
 - Memory/Wiki/Output 三區分工已建立規範（BRAIN.md v2 含強制查詢規則+Output判斷規則）
-- Wiki 共用知識庫已擴充至 12 篇，健康值 9/10
+- Wiki 共用知識庫已擴充至 13+ 篇，健康值 9/10
 - schema.md 已升級 v3.0（完整 frontmatter 定義）
 - docs/ 精簡為四類（specs/designs/plans/one-pagers），archive 已移除
-- start.py 啟動日誌已優化（Tier 3 + 拆分數字 + lint + Web UI 全列）
-- 下一步：P2 consolidate 自動化已完成，待觀察效果
+- start.py 啟動日誌已優化（Tier 3 + 拆分數字 + lint + Web UI 全列 + 依賴檢查）
+- SDK 已遷移至 google-genai（新版統一介面）
+- web_search tool 已上線（Gemini Grounding + Google Search）
+- save_to_wiki 寫入後自動 rebuild_index（metadata + BM25）
 - daily log FTS5 索引已接通，recall 可搜歷史
+- 下一步：觀察 Mode B 完整閉環（搜尋→回覆→存入→再查命中）

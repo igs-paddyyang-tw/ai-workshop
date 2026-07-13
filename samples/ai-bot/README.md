@@ -213,15 +213,23 @@ Default 模式具備 Tool Calling 能力（Function Calling + ReAct 迴圈）：
 純文字回覆 → 回覆使用者 → 寫 daily log
 ```
 
-**可用 Tools：**
+**可用 Tools（6 個）：**
 
 | Tool | 功能 | 說明 |
 |------|------|------|
-| `search_wiki` | 搜尋知識庫 | 四層搜尋（exact → BM25 → hybrid → rerank） |
-| `save_to_wiki` | 寫入知識庫 | 寫入 `knowledge/shared/wiki/{slug}.md`（含 frontmatter） |
+| `search_wiki` | 搜尋知識庫 | 四層搜尋（exact → BM25 → hybrid → substring 兜底） |
+| `web_search` | 搜尋外部網路 | Gemini Grounding + Google Search（查無 wiki 時自動觸發） |
+| `save_to_wiki` | 寫入知識庫 | 寫入 wiki/ + 自動 rebuild_index（metadata + BM25） |
 | `recall_memory` | 查歷史記憶 | FTS5 查詢 memory + shared wiki |
 | `save_memory` | 記錄持久事實 | append 到 `memory/memory.md` |
 | `execute_skill` | 載入 Skill | 讀取 SKILL.md → LLM 按步驟執行 |
+
+**搜尋流程（強制，不可跳過）：**
+```
+search_wiki → 有結果 → 回答（📚 參考）
+           → 查無 → web_search → 有結果 → 回答（🔗 來源）
+                              → 查無 → 「📚 知識庫與外部搜尋皆無相關資料」
+```
 
 ### Memory / Wiki / Output 三區分工
 
