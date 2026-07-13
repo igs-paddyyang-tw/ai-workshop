@@ -164,24 +164,35 @@ async def api_chat(req: ChatRequest):
         except Exception:
             pass
 
-    # L4d: Gemini API
+    # L4d: ReAct Agent Loop（Default 模式）/ Gemini fallback
     if not reply:
-        gemini_key = os.getenv("GEMINI_API_KEY", "")
-        if gemini_key:
-            try:
+        try:
+            if is_default:
+                from src.llm.context_builder import build_default_system_prompt
+                from src.llm.agent_loop import agent_loop
+                import src.llm.tools  # 確保 tools 已註冊
+
+                system_prompt = await build_default_system_prompt(query=text)
+                result = await agent_loop(
+                    user_message=text,
+                    system_prompt=system_prompt,
+                    max_iterations=5,
+                )
+                reply = result.text
+                source = "agent_loop"
+            else:
+                # Agent 模式但 CLI 不可用 → fallback Gemini
                 from src.llm.gemini_chat import gemini_chat
-                # 載入 SOUL
                 soul_path = Path(f"agents/{agent_id}-agent/.kiro/steering/SOUL.md")
                 soul = soul_path.read_text(encoding="utf-8") if soul_path.exists() else ""
                 system = soul
                 if memory_context:
                     system += f"\n\n## 相關記憶\n{memory_context}"
                 reply = await gemini_chat(text, system=system)
-                if reply:
-                    source = "gemini"
-            except Exception as e:
-                reply = f"⚠️ 錯誤: {e}"
-                source = "error"
+                source = "gemini"
+        except Exception as e:
+            reply = f"⚠️ 錯誤: {e}"
+            source = "error"
 
     # 清理 output
     if reply:

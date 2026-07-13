@@ -564,22 +564,37 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
         # ── L4: 雙模式對話 ──
         if session.is_default_mode:
-            # === Default 模式：Gemini ReAct Agent Loop ===
-            gemini_key = os.getenv("GEMINI_API_KEY", "")
+            # === Default 模式：ReAct Agent Loop ===
+            gemini_key = os.getenv("GEMINI_API_KEY", "") or os.getenv("LLM_PROVIDER", "")
             if gemini_key:
-                system_prompt = await _build_default_system_prompt(text, session)
                 try:
+                    from src.llm.context_builder import build_default_system_prompt
                     from src.llm.agent_loop import agent_loop
-                    reply = await agent_loop(text, system=system_prompt)
+                    import src.llm.tools  # 確保 tools 已註冊
+
+                    system_prompt = await build_default_system_prompt(query=text, session=session)
+                    result = await agent_loop(
+                        user_message=text,
+                        system_prompt=system_prompt,
+                        session_history=None,  # context_builder 已含 history
+                        max_iterations=5,
+                    )
+                    reply = result.text
                     if reply:
-                        log.info("  ✅ Gemini reply (%d chars)", len(reply))
+                        log.info("  ✅ Agent Loop reply (%d chars, %d iterations, %d tools)",
+                                 len(reply), result.iterations, len(result.tool_calls_log))
                 except Exception as e:
-                    log.error("  ❌ Gemini error: %s", e)
-                    reply = None
+                    log.error("  ❌ Agent Loop error: %s", e)
+                    # Fallback 到純文字 gemini_chat
+                    try:
+                        from src.llm.gemini_chat import gemini_chat
+                        reply = await gemini_chat(text, system=system_prompt if 'system_prompt' in dir() else "")
+                    except Exception:
+                        reply = None
             else:
                 reply = (
                     f"🔄 echo: {text}\n\n"
-                    "💡 開啟 AI：填入 GEMINI_API_KEY\n"
+                    "💡 開啟 AI：填入 GEMINI_API_KEY 或設定 LLM_PROVIDER\n"
                     "或用 `/agents` 切換到 Agent 分身（需 kiro-cli）"
                 )
         else:
