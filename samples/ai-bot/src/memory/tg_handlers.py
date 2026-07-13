@@ -17,8 +17,18 @@ if _admin_env:
 
 
 def _get_current_agent(context: ContextTypes.DEFAULT_TYPE) -> str:
-    """取得使用者目前選擇的 Agent。"""
-    return context.user_data.get("current_agent", "admin") + "-agent"
+    """取得使用者目前選擇的 Agent（支援 Default 模式）。"""
+    from src.agent.session import session_manager
+    user_id = context._user_id if hasattr(context, '_user_id') else None
+    if user_id:
+        session = session_manager.get_or_create(user_id)
+        if session.is_default_mode:
+            return "_default"
+        return (session.agent_name or "admin") + "-agent"
+    agent = context.user_data.get("current_agent", "default")
+    if agent == "default":
+        return "_default"
+    return agent + "-agent"
 
 
 # ─── /recall ───

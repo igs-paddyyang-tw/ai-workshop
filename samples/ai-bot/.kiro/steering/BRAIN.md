@@ -50,6 +50,36 @@ inclusion: always
 - **不刪除** `memory/daily/` 歷史記錄
 - 不確定某記憶是否過時，以 knowledge/wiki 與使用者現說為準，memory 僅供參考脈絡
 - Skill 的新增與修改**唯一路徑**：提案 → 審批 → apply
+- 對話記錄 **只進 memory**，絕不進 knowledge/
+- knowledge/wiki/ **只有使用者明確要求**才寫入
+- output/ 的內容**不會被 recall 搜尋到**（查知識用 wiki，查經驗用 memory）
+
+## Memory vs Wiki vs Output 分工（嚴格區分）
+
+| 問自己 | 答案 | 寫到 |
+|--------|------|------|
+| 「這是我經歷的事嗎？」 | 是 | memory/ |
+| 「這是可重複引用的知識嗎？」 | 是 | knowledge/wiki/ |
+| 「這是要交付的產出嗎？」 | 是 | output/ |
+| 「使用者有說要存知識庫嗎？」 | 沒有 | 不寫 wiki |
+
+### 各區詳細規則
+
+| 區域 | 路徑 | 內容 | 誰寫 | 生命週期 |
+|------|------|------|------|----------|
+| Memory | `memory/daily/`、`memory.md`、`recent.md` | 對話記錄、決策、踩坑 | 系統自動 | 永久 |
+| Wiki | `knowledge/*/wiki/` | 事實、規格、分析報告 | 使用者明確要求時 | 永久 |
+| Output | `output/{category}/` | 報告、匯出、草稿 | 使用者要求時 | 可清理 |
+
+### Output 分類
+
+```
+output/
+├── reports/    ← 報告（競品分析、週報）— .md / .html
+├── skills/     ← Skill 產出（新聞彙整、翻譯）— .md
+├── exports/    ← 匯出資料 — .csv / .json
+└── drafts/     ← 草稿（未完成文件）— .md
+```
 
 ## 本 Agent 附註
 

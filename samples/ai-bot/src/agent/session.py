@@ -25,7 +25,7 @@ class UserSession:
     """單一使用者的 Session。"""
 
     user_id: int
-    current_agent: str = "admin"
+    current_agent: str = "default"
     mode: str = "default"  # "default" | "agent:{name}"
     history: list[ConversationTurn] = field(default_factory=list)
     max_turns: int = 10

@@ -14,7 +14,6 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
 
 from src.agent.session import session_manager
-from src.agent.memory import save_memory
 from src.agent.cli import AVAILABLE_AGENTS, is_cli_available, agent_cli_chat
 
 log = __import__("logging").getLogger("bot.handlers")
@@ -233,10 +232,10 @@ async def cmd_chat(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     # ── 組裝完整 system prompt ──
     system_prompt = await _build_rich_system_prompt(current_agent, text, session)
 
-    # ── 呼叫 Gemini ──
+    # ── 呼叫 Gemini（帶 Tool Calling）──
     try:
-        from src.llm.gemini_chat import gemini_chat
-        reply = await gemini_chat(text, system=system_prompt)
+        from src.llm.agent_loop import agent_loop
+        reply = await agent_loop(text, system=system_prompt)
     except Exception as e:
         log.error("Gemini chat error: %s", e)
         reply = f"⚠️ Gemini 錯誤：{e}"
@@ -245,7 +244,6 @@ async def cmd_chat(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         if len(reply) > 3000:
             reply = reply[-3000:]
         session.add_turn("agent", reply)
-        save_memory(current_agent, user_id, text, reply)
         await _set_reaction(update.message, "👍")
         header = f"⚡ [{current_agent}-agent] (Gemini)\n"
         full_text = header + reply
@@ -346,7 +344,7 @@ async def _build_rich_system_prompt(agent_id: str, query: str, session) -> str:
 
 
 async def _build_default_system_prompt(query: str, session) -> str:
-    """組裝 Default 模式的 Gemini system prompt（8 層 context）。
+    """組裝 Default 模式的 Gemini system prompt（8 層 context + Tool 規則）。
 
     讀取根目錄的 steering + memory + wiki，不走任何 Agent 私有目錄。
     """
@@ -371,21 +369,65 @@ async def _build_default_system_prompt(query: str, session) -> str:
     if user_path.exists():
         parts.append(user_path.read_text(encoding="utf-8"))
 
-    # 4. memory/memory.md（根目錄持久事實）
+    # 4. Tool 使用規則
+    parts.append("""## 工具使用規則
+
+你有三個工具可用：read_file、write_file、list_files。
+
+### 何時使用 write_file：
+- 使用者明確要求：「寫成報告」「存進知識庫」「匯出」「產出文件」「幫我整理成文章」
+- 寫入前告訴使用者你要寫什麼、寫到哪裡
+- 寫入後回覆確認路徑和大小
+
+### 何時不使用 write_file：
+- 一般對話（只是聊天、問答）→ 不寫
+- 使用者沒要求保存 → 不寫
+- 對話記錄 → 系統自動處理，你不需寫
+
+### 寫入路徑選擇：
+- 報告/分析 → output/reports/{date}_{slug}.md
+- 知識庫文章（使用者說「存進知識庫」）→ knowledge/shared/raw/{slug}.md（系統會自動匯入索引）
+- 匯出資料 → output/exports/{date}_{slug}.csv
+- 草稿 → output/drafts/{slug}.md
+
+### Memory vs Wiki 分工：
+- Memory（系統自動）= 你經歷過的事（對話記錄、決策）
+- Wiki（使用者要求才寫）= 可重複引用的知識（事實、規格、分析）
+- Output（使用者要求才寫）= 交付的產出物（報告、匯出檔）
+""")
+
+    # 5. memory/memory.md（根目錄持久事實）
     memory_path = Path("memory/memory.md")
     if memory_path.exists():
         content = memory_path.read_text(encoding="utf-8")
         if content.strip() and "（尚無記錄）" not in content:
             parts.append(f"\n## 持久記憶\n{content[:1500]}")
 
-    # 5. memory/recent.md（根目錄最近經驗）
+    # 6. memory/recent.md（根目錄最近經驗）
     recent_path = Path("memory/recent.md")
     if recent_path.exists():
         content = recent_path.read_text(encoding="utf-8")
         if content.strip() and "（尚無記錄）" not in content:
             parts.append(f"\n## 最近經驗\n{content[:1500]}")
 
-    # 6. FTS5 recall（查 default + shared）
+    # 6b. 今日 daily log 尾部 5 筆（讓 Gemini 知道今天做過什麼）
+    from datetime import datetime as _dt
+    today_log = Path("memory/daily") / f"{_dt.now().strftime('%Y-%m-%d')}.md"
+    if today_log.exists():
+        log_content = today_log.read_text(encoding="utf-8")
+        log_entries = [e.strip() for e in log_content.split("\n## ") if e.strip()]
+        # 取最後 5 筆（跳過 header 行）
+        recent_entries = log_entries[-5:] if len(log_entries) > 5 else log_entries
+        if recent_entries:
+            daily_text = "\n## ".join(recent_entries)
+            # 去掉可能的 "# 2026-07-13 Daily Log" header
+            if daily_text.startswith("#"):
+                lines = daily_text.split("\n", 1)
+                daily_text = lines[1] if len(lines) > 1 else ""
+            if daily_text.strip():
+                parts.append(f"\n## 今日對話紀錄\n## {daily_text.strip()}")
+
+    # 7. FTS5 recall（查 default + shared）
     try:
         from src.memory.recall import recall
         results = recall("_default", query, k=3, include_shared=True)
@@ -397,7 +439,7 @@ async def _build_default_system_prompt(query: str, session) -> str:
     except Exception:
         pass
 
-    # 7. Wiki RAG（shared wiki）
+    # 8. Wiki RAG（shared wiki）
     try:
         from src.wiki.engine import WikiEngine
         engine = WikiEngine()
@@ -410,7 +452,7 @@ async def _build_default_system_prompt(query: str, session) -> str:
     except Exception:
         pass
 
-    # 8. Skills 清單
+    # 9. Skills 清單
     try:
         from src.skills.registry import SkillRegistry
         registry = SkillRegistry()
@@ -424,7 +466,7 @@ async def _build_default_system_prompt(query: str, session) -> str:
     except Exception:
         pass
 
-    # 9. Session history
+    # 10. Session history
     context_str = session.get_context()
     if context_str:
         parts.append(f"\n{context_str}")
@@ -454,6 +496,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     session.add_turn("user", text)
     log.info("📨 user=%s agent=%s msg=%s", user_id, current_agent, text[:100])
 
+    # ── 自動 consolidate：每天首次對話時蒸餾前一天 ──
+    await _auto_consolidate_if_needed()
+
     # ── Reaction: 👀 收到 ──
     await _set_reaction(update.message, "👀")
 
@@ -473,7 +518,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         if result is not None:
             result = _clean_output(result)
             session.add_turn("agent", result)
-            save_memory(current_agent, user_id, text, result)
             await _set_reaction(update.message, "👍")
             header = f"{agent_info['emoji']} [{current_agent}-agent]\n"
             await update.message.reply_text(header + result, parse_mode="Markdown", disable_web_page_preview=True)
@@ -488,7 +532,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         if reply:
             reply = _clean_output(reply)
             session.add_turn("agent", reply)
-            save_memory(current_agent, user_id, text, reply)
             await _set_reaction(update.message, "👍")
             header = f"{agent_info['emoji']} [{current_agent}-agent]\n"
             await update.message.reply_text(header + reply, parse_mode="Markdown", disable_web_page_preview=True)
@@ -500,7 +543,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         if reply:
             reply = _clean_output(reply)
             session.add_turn("agent", reply)
-            save_memory(current_agent, user_id, text, reply)
             await _set_reaction(update.message, "👍")
             header = f"🤝 [team]\n"
             await update.message.reply_text(header + reply, disable_web_page_preview=True)
@@ -522,13 +564,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
         # ── L4: 雙模式對話 ──
         if session.is_default_mode:
-            # === Default 模式：Gemini 對話 ===
+            # === Default 模式：Gemini ReAct Agent Loop ===
             gemini_key = os.getenv("GEMINI_API_KEY", "")
             if gemini_key:
                 system_prompt = await _build_default_system_prompt(text, session)
                 try:
-                    from src.llm.gemini_chat import gemini_chat
-                    reply = await gemini_chat(text, system=system_prompt)
+                    from src.llm.agent_loop import agent_loop
+                    reply = await agent_loop(text, system=system_prompt)
                     if reply:
                         log.info("  ✅ Gemini reply (%d chars)", len(reply))
                 except Exception as e:
@@ -569,7 +611,27 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             if len(reply) > 3000:
                 reply = reply[-3000:]
             session.add_turn("agent", reply)
-            save_memory(current_agent, user_id, text, reply)
+            # 對話記錄寫入 memory/daily（不寫 knowledge/raw）
+            try:
+                from src.memory.daily_log import write_daily_log
+                task_id = f"msg-{update.message.message_id}"
+                conversation = f"User: {text[:200]}\nAgent: {reply[:500]}"
+                if session.is_default_mode:
+                    asyncio.create_task(
+                        write_daily_log("_default", task_id, conversation)
+                    )
+                else:
+                    agent_name = session.agent_name or current_agent
+                    asyncio.create_task(
+                        write_daily_log(f"{agent_name}-agent", task_id, conversation)
+                    )
+            except Exception as e:
+                log.warning("daily_log failed: %s", e)
+            # 更新 recent.md（最近 5 輪對話，供下次啟動時注入 system prompt）
+            try:
+                _update_recent(session)
+            except Exception as e:
+                log.warning("recent.md update failed: %s", e)
             await _set_reaction(update.message, "👍")
             # Header
             if session.is_default_mode:
@@ -803,6 +865,60 @@ def _search_memory(agent_id: str, query: str, max_results: int = 3) -> str | Non
 
 
 # ── Reaction Helper ───────────────────────────────────────
+
+
+def _update_recent(session) -> None:
+    """將 session 最近 5 輪對話寫入 memory/recent.md，供下次 system prompt 注入。"""
+    from pathlib import Path
+
+    recent_path = Path("memory/recent.md")
+    recent_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # 取最近 5 輪
+    turns = session.history[-10:]  # 5 輪 = 10 條（user + agent 各一）
+    if not turns:
+        return
+
+    lines = ["# 最近對話\n"]
+    for turn in turns:
+        prefix = "👤 User" if turn.role == "user" else "🤖 Agent"
+        content = turn.content[:300]
+        lines.append(f"{prefix}: {content}\n")
+
+    recent_path.write_text("\n".join(lines), encoding="utf-8")
+
+
+# ── 自動 consolidate ─────────────────────────────────────
+
+_consolidate_done_today: str = ""  # 記錄今天是否已跑過
+
+
+async def _auto_consolidate_if_needed() -> None:
+    """每天首次對話時，自動蒸餾前一天 daily log → memory.md。"""
+    global _consolidate_done_today
+    from datetime import datetime, timedelta
+
+    today = datetime.now().strftime("%Y-%m-%d")
+    if _consolidate_done_today == today:
+        return  # 今天已經跑過
+
+    # 檢查昨天有沒有 daily log
+    yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+    yesterday_log = Path(f"memory/daily/{yesterday}.md")
+    if not yesterday_log.exists():
+        _consolidate_done_today = today
+        return  # 昨天沒 log，跳過
+
+    # 非同步執行 consolidate（不阻塞對話）
+    try:
+        from src.memory.consolidate import consolidate
+        result = await consolidate("_default")
+        if result.get("status") == "updated":
+            log.info("Auto-consolidate: memory.md updated from %s", yesterday)
+        _consolidate_done_today = today
+    except Exception as e:
+        log.warning("Auto-consolidate failed: %s", e)
+        _consolidate_done_today = today  # 避免重複嘗試
 
 
 async def _set_reaction(message, emoji: str) -> None:

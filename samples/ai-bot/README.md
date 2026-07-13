@@ -141,9 +141,49 @@ team.yaml 含 transport: http → 跨機模式（遠端派工）
 
 | 模式 | 觸發 | 後端 | Context |
 |------|------|------|---------|
-| 自然對話 | 直接打字 | Agent CLI | 完整 .kiro/ workspace |
-| 快問快答 | `/chat 問題` | Gemini API | SOUL + memory + recall + wiki + skills + history |
+| 自然對話（Default） | 直接打字 | Gemini ReAct Agent Loop | SOUL + BRAIN + memory + recall + wiki + skills + tools |
+| 快問快答 | `/chat 問題` | Gemini ReAct Agent Loop | 同上（帶 Function Calling） |
+| Agent 分身 | `/agents` 切換 | kiro-cli | 完整 .kiro/ workspace |
 | Skill 執行 | `/skill_id` 或關鍵字 | 本地 Python | Skill 內部邏輯 |
+
+### Gemini ReAct Agent（NEW）
+
+Default 模式具備 Tool Calling 能力（Function Calling + ReAct 迴圈）：
+
+```
+使用者訊息 → 組裝 System Prompt → Gemini API（帶 tools）
+     ↓
+有 function_call? → 執行 tool → 結果回傳 → 再呼叫 Gemini → ...（max 5 次）
+     ↓
+純文字回覆 → 回覆使用者 → 寫 daily log + 更新 recent.md
+```
+
+**可用 Tools：**
+
+| Tool | 功能 | 允許路徑 |
+|------|------|---------|
+| `read_file` | 讀取專案內檔案 | knowledge/、output/、agents/、docs/、memory/ |
+| `write_file` | 寫入檔案 | output/\*、knowledge/shared/raw/ |
+| `list_files` | 列出目錄 | 同 read_file |
+
+**觸發寫檔的條件：** 使用者明確要求（「寫成報告」「存進知識庫」「匯出」）。一般對話不觸發。
+
+### Memory / Wiki / Output 三區分工
+
+| 區域 | 路徑 | 內容 | 誰寫 |
+|------|------|------|------|
+| Memory | `memory/daily/` + `memory.md` + `recent.md` | 對話記錄、持久事實 | 系統自動 |
+| Wiki | `knowledge/*/wiki/` | 結構化知識 | 使用者明確要求（先進 raw/ 再 ingest） |
+| Output | `output/{category}/` | 報告、匯出、草稿 | 使用者要求 |
+
+**Output 分類：**
+```
+output/
+├── reports/    ← 報告（.md / .html）
+├── skills/     ← Skill 產出
+├── exports/    ← 匯出資料（.csv / .json）
+└── drafts/     ← 草稿
+```
 
 ### Reaction 動態
 
@@ -186,11 +226,13 @@ ai-bot/
 │   ├── agent/                      ← process + cli + planner + session
 │   ├── bot/                        ← TG handlers（L1-L4 路由）
 │   ├── coordinator/a2a/            ← A2A 派工（router + transport + server）
-│   ├── memory/                     ← 🆕 記憶子系統（daily_log + recall + recommend + ...）
+│   ├── memory/                     ← 記憶子系統（daily_log + recall + consolidate）
 │   ├── wiki/                       ← WikiEngine + indexer + search/（四層）
 │   ├── skills/internal/            ← 實際 Python Skills
+│   ├── tools/                      ← 🆕 Gemini FC Tools（read/write/list + registry）
 │   ├── server/                     ← FastAPI + Memory API + A2A endpoints
-│   └── llm/                        ← Gemini Chat
+│   └── llm/                        ← Gemini Chat + 🆕 Agent Loop（ReAct）
+├── output/                         ← 🆕 產出目錄（reports/skills/exports/drafts/）
 ├── docs/                           ← 工程文件（spec + design + plan）
 ├── logs/
 └── tests/

@@ -46,6 +46,17 @@ def main() -> None:
     # ── 自我成長系統自檢 ──
     _self_growth_check()
 
+    # ── Output 清理（刪除 30 天前的暫存檔）──
+    try:
+        from src.tools.cleanup import cleanup_output
+        deleted = cleanup_output(max_age_days=30)
+        if deleted:
+            print(f"  🧹 Output 清理: 刪除 {len(deleted)} 個過期檔案")
+        else:
+            print(f"  🧹 Output 清理: ✅ 無過期檔案")
+    except Exception as e:
+        print(f"  🧹 Output 清理: ⚠️ {e}")
+
     # Bot 子進程
     bot_proc = None
     if tg_token:

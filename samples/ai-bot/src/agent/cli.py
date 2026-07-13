@@ -16,6 +16,12 @@ log = logging.getLogger("agent-cli")
 
 # ── 可用 Agent 清單 ──
 AVAILABLE_AGENTS = {
+    "default": {
+        "dir": ".",
+        "name": "Ark Agent",
+        "emoji": "🚀",
+        "desc": "通用 AI 助手（Gemini）",
+    },
     "admin": {
         "dir": "agents/admin-agent",
         "name": "Admin Agent",

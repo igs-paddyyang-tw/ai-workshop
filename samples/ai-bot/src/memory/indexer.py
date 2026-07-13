@@ -127,6 +127,7 @@ def rebuild_all() -> dict[str, int]:
                 results[agent_dir.name] = index_agent(agent_dir.name)
 
     results["_shared_wiki"] = index_shared_wiki()
+    results["_default"] = index_default_memory()
     return results
 
 
@@ -271,3 +272,25 @@ def _extract_frontmatter(content: str, key: str) -> str | None:
         value = m.group(1).strip().strip("\"'")
         return value
     return None
+
+
+def index_default_memory() -> int:
+    """索引根目錄 memory/（Default 模式的 daily log + memory.md）。"""
+    conn = get_connection()
+    count = 0
+
+    # Daily logs
+    daily_dir = BASE_DIR / "memory" / "daily"
+    if daily_dir.exists():
+        for md_file in daily_dir.glob("*.md"):
+            count += _index_file(conn, md_file, "_default", SOURCE_DAILY)
+
+    # memory.md
+    memory_file = BASE_DIR / "memory" / "memory.md"
+    if memory_file.exists():
+        count += _index_file(conn, memory_file, "_default", SOURCE_MEMORY)
+
+    conn.commit()
+    conn.close()
+    log.info("Indexed _default memory: %d entries updated", count)
+    return count

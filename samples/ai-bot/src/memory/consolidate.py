@@ -36,9 +36,16 @@ _CONSOLIDATE_PROMPT = """\
 
 
 async def consolidate(agent_name: str) -> dict:
-    """手動蒸餾：讀 daily log → LLM 判斷 → 更新 memory.md。"""
-    agent_path = AGENTS_DIR / agent_name
-    memory_dir = agent_path / "memory"
+    """手動蒸餾：讀 daily log → LLM 判斷 → 更新 memory.md。
+
+    agent_name="_default" 時，讀根目錄 memory/。
+    """
+    if agent_name == "_default":
+        memory_dir = BASE_DIR / "memory"
+    else:
+        agent_path = AGENTS_DIR / agent_name
+        memory_dir = agent_path / "memory"
+
     memory_file = memory_dir / "memory.md"
     daily_dir = memory_dir / "daily"
 
