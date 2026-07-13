@@ -26,9 +26,22 @@ class UserSession:
 
     user_id: int
     current_agent: str = "admin"
+    mode: str = "default"  # "default" | "agent:{name}"
     history: list[ConversationTurn] = field(default_factory=list)
     max_turns: int = 10
     last_active: str = field(default_factory=lambda: datetime.now().isoformat())
+
+    @property
+    def is_default_mode(self) -> bool:
+        """是否為 Default（Gemini）模式。"""
+        return self.mode == "default"
+
+    @property
+    def agent_name(self) -> str | None:
+        """Agent 模式時回傳 agent 名稱，Default 回傳 None。"""
+        if self.mode.startswith("agent:"):
+            return self.mode.split(":", 1)[1]
+        return None
 
     def add_turn(self, role: str, content: str) -> None:
         """新增一輪對話，超過上限時移除最舊的。"""
@@ -67,9 +80,13 @@ class SessionManager:
     def switch_agent(self, user_id: int, agent_id: str) -> UserSession:
         """切換 Agent（清空歷史，開始新對話）。"""
         session = self.get_or_create(user_id)
-        if session.current_agent != agent_id:
+        if agent_id == "default":
+            session.mode = "default"
+            session.current_agent = "default"
+        else:
+            session.mode = f"agent:{agent_id}"
             session.current_agent = agent_id
-            session.clear_history()
+        session.clear_history()
         session.last_active = datetime.now().isoformat()
         return session
 

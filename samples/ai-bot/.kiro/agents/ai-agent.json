@@ -1,7 +1,7 @@
 {
   "name": "ai-agent",
-  "display_name": "AI Agent 開發助手",
-  "description": "專精 AI Agent 架構、記憶系統、Skill 機制、Prompt 工程、RAG、MCP 整合",
-  "role": "ai-agent-developer",
+  "display_name": "通用 AI 助手",
+  "description": "預設對話模式（Gemini）— 記憶 + Skills + Wiki + 通用問答",
+  "role": "default-assistant",
   "created": "2026-07-02"
 }

@@ -11,7 +11,7 @@ from pathlib import Path
 log = logging.getLogger("wiki.search.layer0")
 
 BASE_DIR = Path(__file__).resolve().parents[3]
-WIKI_DIR = BASE_DIR / "knowledge" / "wiki"
+WIKI_DIR = BASE_DIR / "knowledge" / "shared" / "wiki"
 
 
 def search_exact(q: str, metadata: list[dict]) -> list[dict]:

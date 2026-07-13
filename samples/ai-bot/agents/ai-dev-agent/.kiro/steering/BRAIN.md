@@ -41,3 +41,5 @@ inclusion: always
 
 - Prompt 實驗結果必附 before/after 對比原文
 - 新發現的 LLM 行為怪癖記入 memory.md
+- 共用知識庫：`knowledge/shared/wiki/`（跨 agent 共享，優先查詢）
+- 私有知識庫：`agents/ai-dev-agent/knowledge/wiki/`

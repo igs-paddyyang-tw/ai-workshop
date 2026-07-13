@@ -104,9 +104,12 @@ async def api_chat(req: ChatRequest):
     from src.agent.cli import AVAILABLE_AGENTS, is_cli_available, agent_cli_chat
 
     text = req.message.strip()
-    agent_id = req.agent_id if req.agent_id in AVAILABLE_AGENTS else "admin"
+    agent_id = req.agent_id
     reply: str | None = None
     source: str = ""
+
+    # Default 模式：走 Gemini
+    is_default = (agent_id == "default" or agent_id not in AVAILABLE_AGENTS)
 
     # L3: Planner keyword 路由
     from src.agent.planner import route, IntentType
@@ -128,8 +131,8 @@ async def api_chat(req: ChatRequest):
             except Exception:
                 pass
 
-    # L4a: Agent CLI
-    if not reply and is_cli_available():
+    # L4a: Agent CLI（僅 Agent 模式）
+    if not reply and not is_default and is_cli_available():
         try:
             reply = await agent_cli_chat(text, agent_id=agent_id)
             if reply:
@@ -192,10 +195,10 @@ async def api_chat(req: ChatRequest):
         reply = "目前無法回應，請確認 GEMINI_API_KEY 已設定。"
         source = "fallback"
 
-    agent_info = AVAILABLE_AGENTS[agent_id]
+    agent_info = AVAILABLE_AGENTS.get(agent_id, {"name": "Default", "emoji": "🤖"})
     return {
         "reply": reply,
-        "agent_id": agent_id,
+        "agent_id": agent_id if not is_default else "default",
         "agent_name": agent_info["name"],
         "agent_emoji": agent_info["emoji"],
         "source": source,

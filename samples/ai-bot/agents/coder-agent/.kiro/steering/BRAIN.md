@@ -41,3 +41,5 @@ inclusion: always
 
 - 踩坑條目必附完整指令與錯誤訊息原文
 - 技術決策記錄需含「選了什麼 + 為什麼不選另一個」
+- 共用知識庫：`knowledge/shared/wiki/`（跨 agent 共享，優先查詢）
+- 私有知識庫：`agents/coder-agent/knowledge/wiki/`

@@ -41,3 +41,5 @@ inclusion: always
 
 - 數據來源與計算公式必須記錄（可重現性）
 - KPI 定義變更記入 memory.md
+- 共用知識庫：`knowledge/shared/wiki/`（跨 agent 共享，優先查詢）
+- 私有知識庫：`agents/data-agent/knowledge/wiki/`

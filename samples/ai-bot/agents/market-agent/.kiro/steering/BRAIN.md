@@ -41,3 +41,5 @@ inclusion: always
 
 - 資訊來源 URL 必附（可驗證性）
 - 競品動態記入 daily log，重要趨勢升級至 memory.md
+- 共用知識庫：`knowledge/shared/wiki/`（跨 agent 共享，優先查詢）
+- 私有知識庫：`agents/market-agent/knowledge/wiki/`

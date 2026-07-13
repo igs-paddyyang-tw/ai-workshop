@@ -9,3 +9,8 @@ knowledge/wiki/slot-market-trends.md
 !knowledge/wiki/fishing-vs-slot-comparison.md
 logs/*.log
 bot.pid
+
+venv/
+__pycache__/
+*.pyc
+data/memory.db

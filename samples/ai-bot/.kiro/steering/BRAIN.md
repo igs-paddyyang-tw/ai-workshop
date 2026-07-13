@@ -17,8 +17,22 @@ inclusion: always
 
 1. 涉及「怎麼做」的任務 → 先看已載入的 skills 是否命中；命中就照 SKILL.md 的步驟執行
 2. 涉及「之前發生過什麼 / 上次怎麼解的」→ 先 recall 查 memory，不要憑印象回答
-3. 涉及「事實、規格、文件」→ 查 knowledge（Wiki RAG），引用時註明來源
+3. 涉及「事實、規格、文件」→ 依以下順序查 knowledge（使用 ark-wiki-engine 的 Query SOP），引用時註明來源：
+   - 3a. Agent 私有 wiki（`agents/{agent-name}/knowledge/wiki/`）
+   - 3b. **共用 wiki（`knowledge/shared/wiki/`）** ← 所有 agent 共享的知識庫
+   - 3c. 外部搜尋（Web Search）— 只在 3a+3b 都查無時才使用
+   - 每層查無再往下，**不可跳層**
 4. recall 與 Wiki 都沒有 → **明說不知道，不要編造**
+
+### Wiki 檢索路徑速查
+
+| 層級 | 路徑 | 索引位置 | 說明 |
+|------|------|----------|------|
+| 私有 | `agents/{name}/knowledge/wiki/` | 各 agent 目錄 | agent 專屬知識 |
+| 共用 | `knowledge/shared/wiki/` | `knowledge/shared/.index/` | 跨 agent 共享 |
+| 原始 | `knowledge/shared/raw/` | — | 唯讀原始資料 |
+
+#[[file:knowledge/shared/index.md]]
 
 ## 寫：每次任務結束時
 

@@ -65,49 +65,83 @@ async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 
 async def cmd_agents(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """顯示 Inline Keyboard 選擇 Agent。"""
+    """顯示 Inline Keyboard 選擇對話模式（9 選項）。"""
     user_id = update.effective_user.id
     session = session_manager.get_or_create(user_id)
-    current = session.current_agent
 
+    # Default 按鈕
+    default_prefix = "✓ " if session.is_default_mode else ""
+    default_btn = InlineKeyboardButton(
+        f"{default_prefix}🤖 Default（Gemini）",
+        callback_data="switch_agent:default",
+    )
+
+    # Agent 按鈕
     def btn(agent_id):
         info = AVAILABLE_AGENTS[agent_id]
-        prefix = "→ " if current == agent_id else ""
+        prefix = "✓ " if session.agent_name == agent_id else ""
         return InlineKeyboardButton(
             f"{prefix}{info['emoji']} {agent_id.capitalize()}",
             callback_data=f"switch_agent:{agent_id}",
         )
 
     keyboard = [
+        [default_btn],
         [btn("admin"), btn("pm")],
         [btn("ai-dev"), btn("coder")],
         [btn("qa"), btn("data")],
         [btn("market"), btn("report")],
+        [InlineKeyboardButton("🔙 回到 Default", callback_data="switch_agent:default")],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    agent = AVAILABLE_AGENTS[current]
+
+    mode_str = "🤖 Default（Gemini）" if session.is_default_mode else f"{AVAILABLE_AGENTS[session.agent_name]['emoji']} {session.agent_name}-agent（kiro-cli）"
     await update.message.reply_text(
-        f"當前：{agent['emoji']} {agent['name']}\n\n選擇要對話的 Agent：",
+        f"當前：{mode_str}\n\n"
+        "選擇對話模式：\n"
+        "• Default = Gemini API（零門檻）\n"
+        "• Agent 分身 = kiro-cli（需安裝）",
         reply_markup=reply_markup,
     )
 
 
 async def callback_switch_agent(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Inline Button 回調 — 切換 Agent。"""
+    """Inline Button 回調 — 切換對話模式。"""
     query = update.callback_query
     await query.answer()
 
-    agent_id = query.data.split(":")[1]  # "switch_agent:news" → "news"
+    agent_id = query.data.split(":")[1]
     user_id = query.from_user.id
+
+    if agent_id == "default":
+        session_manager.switch_agent(user_id, "default")
+        await query.edit_message_text(
+            "✅ 已切換到 🤖 **Default**（Gemini）\n\n"
+            "直接輸入文字即可對話。",
+            parse_mode="Markdown",
+        )
+        return
 
     if agent_id not in AVAILABLE_AGENTS:
         await query.edit_message_text("❌ 無效的 Agent")
         return
 
-    session = session_manager.switch_agent(user_id, agent_id)
+    # 檢查 kiro-cli
+    if not is_cli_available():
+        await query.edit_message_text(
+            f"⚠️ **{agent_id}-agent** 需要 kiro-cli\n\n"
+            "安裝方式：\n"
+            "```\nnpm i -g kiro-cli && kiro-cli login\n```\n\n"
+            "未來將支援 Gemini CLI / Claude CLI。\n"
+            "目前請使用 🤖 Default 模式。",
+            parse_mode="Markdown",
+        )
+        return
+
+    session_manager.switch_agent(user_id, agent_id)
     info = AVAILABLE_AGENTS[agent_id]
     await query.edit_message_text(
-        f"✅ 已切換到 {info['emoji']} **{info['name']}**\n\n"
+        f"✅ 已切換到 {info['emoji']} **{info['name']}**（kiro-cli）\n\n"
         f"{info['desc']}\n\n"
         f"現在開始對話吧！",
         parse_mode="Markdown",
@@ -193,7 +227,7 @@ async def cmd_chat(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         if len(reply) > 3000:
             reply = reply[-3000:]
         session.add_turn("agent", reply)
-        await save_memory(current_agent, user_id, text, reply)
+        save_memory(current_agent, user_id, text, reply)
         await _set_reaction(update.message, "👍")
         header = f"⚡ [{current_agent}-agent] (Gemini)\n"
         full_text = header + reply
@@ -258,10 +292,16 @@ async def _build_rich_system_prompt(agent_id: str, query: str, session) -> str:
         engine = WikiEngine(agent_id=agent_id)
         wiki_result = await engine.query(query, use_rag=False)
         if wiki_result.get("results"):
-            wiki_lines = ["\n## 知識庫參考"]
+            wiki_lines = ["\n## 知識庫參考（搜尋範圍：私有 wiki → knowledge/shared/wiki/）"]
             for r in wiki_result["results"][:3]:
                 wiki_lines.append(f"### {r['title']}\n{r['snippet'][:200]}")
             parts.append("\n".join(wiki_lines))
+        else:
+            parts.append(
+                "\n## 知識檢索規則\n"
+                "- 回答事實性問題前先查 wiki（私有 → 共用 knowledge/shared/wiki/）\n"
+                "- 查無結果才走外部搜尋，並明確告知使用者"
+            )
     except Exception:
         pass
 
@@ -280,6 +320,93 @@ async def _build_rich_system_prompt(agent_id: str, query: str, session) -> str:
         pass
 
     # 7. Session history
+    context_str = session.get_context()
+    if context_str:
+        parts.append(f"\n{context_str}")
+
+    return "\n\n".join(parts)
+
+
+async def _build_default_system_prompt(query: str, session) -> str:
+    """組裝 Default 模式的 Gemini system prompt（8 層 context）。
+
+    讀取根目錄的 steering + memory + wiki，不走任何 Agent 私有目錄。
+    """
+    parts: list[str] = []
+
+    # 1. SOUL.md（根目錄）
+    soul_path = Path(".kiro/steering/SOUL.md")
+    if soul_path.exists():
+        parts.append(soul_path.read_text(encoding="utf-8"))
+
+    # 2. BRAIN.md（根目錄）
+    brain_path = Path(".kiro/steering/BRAIN.md")
+    if brain_path.exists():
+        content = brain_path.read_text(encoding="utf-8")
+        # 移除 frontmatter
+        if content.startswith("---"):
+            _, _, content = content.split("---", 2)
+        parts.append(content.strip())
+
+    # 3. USER.md（根目錄）
+    user_path = Path(".kiro/steering/USER.md")
+    if user_path.exists():
+        parts.append(user_path.read_text(encoding="utf-8"))
+
+    # 4. memory/memory.md（根目錄持久事實）
+    memory_path = Path("memory/memory.md")
+    if memory_path.exists():
+        content = memory_path.read_text(encoding="utf-8")
+        if content.strip() and "（尚無記錄）" not in content:
+            parts.append(f"\n## 持久記憶\n{content[:1500]}")
+
+    # 5. memory/recent.md（根目錄最近經驗）
+    recent_path = Path("memory/recent.md")
+    if recent_path.exists():
+        content = recent_path.read_text(encoding="utf-8")
+        if content.strip() and "（尚無記錄）" not in content:
+            parts.append(f"\n## 最近經驗\n{content[:1500]}")
+
+    # 6. FTS5 recall（查 default + shared）
+    try:
+        from src.memory.recall import recall
+        results = recall("_default", query, k=3, include_shared=True)
+        if results:
+            recall_lines = ["\n## 相關歷史記憶"]
+            for r in results:
+                recall_lines.append(f"- [{r.date}] {r.title}: {r.body[:100]}")
+            parts.append("\n".join(recall_lines))
+    except Exception:
+        pass
+
+    # 7. Wiki RAG（shared wiki）
+    try:
+        from src.wiki.engine import WikiEngine
+        engine = WikiEngine()
+        wiki_result = await engine.query(query, use_rag=False)
+        if wiki_result.get("results"):
+            wiki_lines = ["\n## 知識庫參考"]
+            for r in wiki_result["results"][:3]:
+                wiki_lines.append(f"### {r['title']}\n{r['snippet'][:200]}")
+            parts.append("\n".join(wiki_lines))
+    except Exception:
+        pass
+
+    # 8. Skills 清單
+    try:
+        from src.skills.registry import SkillRegistry
+        registry = SkillRegistry()
+        registry.auto_discover("src.skills.internal")
+        skills = registry.list_skills()
+        if skills:
+            skill_lines = ["\n## 可用技能（/skill_id 觸發）"]
+            for s in skills[:10]:
+                skill_lines.append(f"- /{s['skill_id']} — {s['description'][:40]}")
+            parts.append("\n".join(skill_lines))
+    except Exception:
+        pass
+
+    # 9. Session history
     context_str = session.get_context()
     if context_str:
         parts.append(f"\n{context_str}")
@@ -328,7 +455,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         if result is not None:
             result = _clean_output(result)
             session.add_turn("agent", result)
-            await save_memory(current_agent, user_id, text, result)
+            save_memory(current_agent, user_id, text, result)
             await _set_reaction(update.message, "👍")
             header = f"{agent_info['emoji']} [{current_agent}-agent]\n"
             await update.message.reply_text(header + result, parse_mode="Markdown", disable_web_page_preview=True)
@@ -343,7 +470,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         if reply:
             reply = _clean_output(reply)
             session.add_turn("agent", reply)
-            await save_memory(current_agent, user_id, text, reply)
+            save_memory(current_agent, user_id, text, reply)
             await _set_reaction(update.message, "👍")
             header = f"{agent_info['emoji']} [{current_agent}-agent]\n"
             await update.message.reply_text(header + reply, parse_mode="Markdown", disable_web_page_preview=True)
@@ -355,7 +482,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         if reply:
             reply = _clean_output(reply)
             session.add_turn("agent", reply)
-            await save_memory(current_agent, user_id, text, reply)
+            save_memory(current_agent, user_id, text, reply)
             await _set_reaction(update.message, "👍")
             header = f"🤝 [team]\n"
             await update.message.reply_text(header + reply, disable_web_page_preview=True)
@@ -373,60 +500,73 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     )
 
     try:
-        # ── L4: 自然對話 = Agent CLI（不 fallback Gemini）──
-        # 強制 Gemini 請用 /chat 指令
         reply: str | None = None
 
-        # 4a. Agent CLI（唯一自然對話路徑）
-        if is_cli_available():
-            log.debug("  → Agent CLI...")
-            try:
-                reply = await agent_cli_chat(text, agent_id=current_agent)
-                if reply:
-                    log.info("  ✅ CLI reply (%d chars)", len(reply))
-            except Exception as e:
-                log.error("  ❌ CLI error: %s", e)
-                reply = None
-
-        # 4b. CLI 不可用 → 提示使用 /chat
-        if not reply and not is_cli_available():
+        # ── L4: 雙模式對話 ──
+        if session.is_default_mode:
+            # === Default 模式：Gemini 對話 ===
             gemini_key = os.getenv("GEMINI_API_KEY", "")
             if gemini_key:
-                reply = (
-                    "💡 Agent CLI 未安裝，自然對話不可用。\n\n"
-                    "替代方案：\n"
-                    "• `/chat 你的問題` — 強制使用 Gemini API\n"
-                    "• 安裝 kiro-cli：`npm i -g kiro-cli && kiro-cli login`"
-                )
+                system_prompt = await _build_default_system_prompt(text, session)
+                try:
+                    from src.llm.gemini_chat import gemini_chat
+                    reply = await gemini_chat(text, system=system_prompt)
+                    if reply:
+                        log.info("  ✅ Gemini reply (%d chars)", len(reply))
+                except Exception as e:
+                    log.error("  ❌ Gemini error: %s", e)
+                    reply = None
             else:
                 reply = (
                     f"🔄 echo: {text}\n\n"
-                    "💡 開啟 AI：填入 GEMINI_API_KEY 或安裝 kiro-cli"
+                    "💡 開啟 AI：填入 GEMINI_API_KEY\n"
+                    "或用 `/agents` 切換到 Agent 分身（需 kiro-cli）"
                 )
-
-        # 4c. CLI 有回但為空（timeout 等）→ 簡短提示
-        if not reply and is_cli_available():
-            reply = "⚠️ Agent CLI 無回應（可能超時），請重試或用 `/chat` 走 Gemini。"
+        else:
+            # === Agent 模式：kiro-cli ===
+            agent_name = session.agent_name
+            if is_cli_available():
+                log.debug("  → Agent CLI (%s)...", agent_name)
+                try:
+                    reply = await agent_cli_chat(text, agent_id=agent_name)
+                    if reply:
+                        log.info("  ✅ CLI reply (%d chars)", len(reply))
+                except Exception as e:
+                    log.error("  ❌ CLI error: %s", e)
+                    reply = None
+                if not reply:
+                    reply = "⚠️ Agent CLI 無回應（可能超時），請重試。"
+            else:
+                reply = (
+                    f"⚠️ **{agent_name}-agent** 需要 kiro-cli\n\n"
+                    "安裝方式：\n"
+                    "```\nnpm i -g kiro-cli && kiro-cli login\n```\n\n"
+                    "未來將支援 Gemini CLI / Claude CLI。\n"
+                    "請先用 `/agents` 切回 🤖 Default。"
+                )
 
         # ── 回覆 + 記憶 + Reaction ──
         if reply:
             reply = _clean_output(reply)
-            # 長度截斷（避免 TG 洗版）
             if len(reply) > 3000:
                 reply = reply[-3000:]
             session.add_turn("agent", reply)
-            await save_memory(current_agent, user_id, text, reply)
+            save_memory(current_agent, user_id, text, reply)
             await _set_reaction(update.message, "👍")
-            header = f"{agent_info['emoji']} [{current_agent}-agent]\n"
-            # 分段發送（TG 單則上限 4096）
+            # Header
+            if session.is_default_mode:
+                header = "🤖 [Default]\n"
+            else:
+                agent_name = session.agent_name
+                info = AVAILABLE_AGENTS.get(agent_name, {})
+                header = f"{info.get('emoji', '🤖')} [{agent_name}-agent]\n"
             full_text = header + reply
             for i in range(0, len(full_text), 4000):
                 await update.message.reply_text(full_text[i:i+4000])
             log.info("  📤 sent reply to user=%s (%d chars)", user_id, len(reply))
         else:
             await _set_reaction(update.message, "💔")
-            header = f"{agent_info['emoji']} [{current_agent}-agent]\n"
-            await update.message.reply_text(header + "⚠️ 抱歉，我暫時無法回應，請稍後再試。")
+            await update.message.reply_text("⚠️ 抱歉，我暫時無法回應，請稍後再試。")
             log.error("  💔 no reply for user=%s msg=%s", user_id, text[:100])
 
     except Exception as e:

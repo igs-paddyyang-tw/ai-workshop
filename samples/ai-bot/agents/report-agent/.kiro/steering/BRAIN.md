@@ -41,3 +41,5 @@ inclusion: always
 
 - 報告模板偏好記入 memory.md
 - 每次報告產出記錄使用的數據時間範圍
+- 共用知識庫：`knowledge/shared/wiki/`（跨 agent 共享，優先查詢）
+- 私有知識庫：`agents/report-agent/knowledge/wiki/`

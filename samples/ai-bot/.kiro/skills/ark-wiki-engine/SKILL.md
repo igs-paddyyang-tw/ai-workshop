@@ -316,10 +316,20 @@ print(issues)
 2. **Layer 0 精確匹配**：查 `.index/metadata.json`，slug/title/aliases 命中 → 直接回該頁面
 3. **Layer 1 BM25**：查 `.index/bm25s/` 持久化索引，取 top 5
 4. **Layer 0 兜底**：若 Layer 1 無結果，逐檔子字串掃描（保證不掛零）
-5. 讀對應 `knowledge/wiki/{page}.md`，跳過 frontmatter（`---` 之間）
+5. 讀對應 wiki 頁面，跳過 frontmatter（`---` 之間）
 6. 以段落為單位擷取（段落 = 連續非空行，以空行分隔），選擇包含最多關鍵字的段落（最多取 3 段）
 7. 根據擷取的段落，用自己的話合成回答（非直接拼接），回答要直接對應 query 的問題
 8. 結尾附：`📚 參考：{page1}, {page2}`
+
+**搜尋範圍（按優先序，不可跳層）**：
+
+| 優先序 | 路徑 | 說明 |
+|--------|------|------|
+| 1 | `agents/{current-agent}/knowledge/wiki/` | Agent 私有知識 |
+| 2 | `knowledge/shared/wiki/` | 共用知識庫（所有 agent 共享） |
+| 3 | 外部搜尋（Web Search） | 只在 1+2 都查無時使用 |
+
+**索引位置**：`knowledge/shared/.index/`（metadata.json + bm25s/）
 
 #### Lint SOP
 1. 列出 `knowledge/wiki/*.md` 所有頁面

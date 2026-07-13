@@ -14,8 +14,8 @@ from pathlib import Path
 log = logging.getLogger("wiki.search.layer2")
 
 BASE_DIR = Path(__file__).resolve().parents[3]
-WIKI_DIR = BASE_DIR / "knowledge" / "wiki"
-INDEX_DIR = BASE_DIR / "knowledge" / ".index"
+WIKI_DIR = BASE_DIR / "knowledge" / "shared" / "wiki"
+INDEX_DIR = BASE_DIR / "knowledge" / "shared" / ".index"
 
 
 # ─── RRF 融合 ────────────────────────────────────────

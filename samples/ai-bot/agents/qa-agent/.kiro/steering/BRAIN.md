@@ -41,3 +41,5 @@ inclusion: always
 
 - Bug 記錄必含重現步驟 + 環境資訊
 - 測試覆蓋率變化記入 memory.md
+- 共用知識庫：`knowledge/shared/wiki/`（跨 agent 共享，優先查詢）
+- 私有知識庫：`agents/qa-agent/knowledge/wiki/`

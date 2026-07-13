@@ -44,13 +44,37 @@ def rebuild_index() -> dict:
     return manifest
 
 
-def scan_wiki_pages() -> list[dict]:
-    """掃描 wiki/ 所有 .md，擷取 frontmatter 資訊。"""
+def scan_wiki_pages(include_agents: bool = True) -> list[dict]:
+    """掃描 wiki/ 所有 .md，擷取 frontmatter 資訊。
+
+    搜尋範圍：shared/wiki/ + agents/*/knowledge/wiki/
+    """
     pages = []
-    if not WIKI_DIR.exists():
+
+    # Layer 1: 共用 wiki（主要）
+    pages.extend(_scan_wiki_dir(WIKI_DIR, scope="shared"))
+
+    # Layer 2: Agent 私有 wiki（選配）
+    if include_agents:
+        agents_dir = BASE_DIR / "agents"
+        if agents_dir.exists():
+            for agent in sorted(agents_dir.iterdir()):
+                if not agent.is_dir() or agent.name.startswith("."):
+                    continue
+                agent_wiki = agent / "knowledge" / "wiki"
+                if agent_wiki.exists():
+                    pages.extend(_scan_wiki_dir(agent_wiki, scope=agent.name))
+
+    return pages
+
+
+def _scan_wiki_dir(wiki_dir: Path, scope: str = "shared") -> list[dict]:
+    """掃描單一 wiki 目錄。"""
+    pages = []
+    if not wiki_dir.exists():
         return pages
 
-    for md in sorted(WIKI_DIR.rglob("*.md")):
+    for md in sorted(wiki_dir.rglob("*.md")):
         if md.name.startswith("."):
             continue
         content = md.read_text(encoding="utf-8")
@@ -60,7 +84,7 @@ def scan_wiki_pages() -> list[dict]:
 
         fm = _parse_frontmatter(content)
         body = _strip_frontmatter(content)
-        rel_path = str(md.relative_to(WIKI_DIR))
+        rel_path = str(md.relative_to(wiki_dir))
 
         pages.append({
             "slug": md.stem,
@@ -70,6 +94,7 @@ def scan_wiki_pages() -> list[dict]:
             "related": fm.get("related", []),
             "type": fm.get("type", ""),
             "path": rel_path,
+            "scope": scope,
             "updated": fm.get("updated", ""),
             "body": body,  # 暫存供 BM25 用，不寫入 metadata.json
         })
@@ -89,6 +114,7 @@ def build_metadata(pages: list[dict]) -> None:
             "related": p["related"],
             "type": p["type"],
             "path": p["path"],
+            "scope": p.get("scope", "shared"),
             "updated": p["updated"],
         })
 

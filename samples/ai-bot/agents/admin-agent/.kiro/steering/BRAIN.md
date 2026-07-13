@@ -41,3 +41,5 @@ inclusion: always
 
 - 分流決策記入 daily log：記錄「為什麼選這個 Agent」的理由
 - 費用異常事件必須記入 memory.md
+- 共用知識庫：`knowledge/shared/wiki/`（跨 agent 共享，優先查詢）
+- 私有知識庫：`agents/admin-agent/knowledge/wiki/`
