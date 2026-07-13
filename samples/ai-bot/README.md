@@ -161,27 +161,67 @@ team.yaml 含 transport: http → 跨機模式（遠端派工）
 | Agent 分身 | `/agents` 切換 | kiro-cli | 完整 .kiro/ workspace |
 | Skill 執行 | `/skill_id` 或關鍵字 | 本地 Python | Skill 內部邏輯 |
 
-### Gemini ReAct Agent（NEW）
+### 對話路由架構（L1 → L4）
+
+```
+使用者發訊息
+     │
+     ▼
+L1: 系統指令（硬編碼）
+     │ /reset → 清空 session
+     │ 命中 → 直接結束
+     ▼
+L2: Skill 直呼（/ 開頭）
+     │ /news → NewsSkill
+     │ /summarize → SummarizeSkill
+     │ /任意 skill_id → 直接執行
+     │ 命中 → 直接結束
+     ▼
+L3: Planner 關鍵字路由
+     │ 「新聞」→ NewsSkill
+     │ 「摘要」「翻譯」→ 對應 Skill
+     │ 「派工」「assign」→ A2A 團隊派工
+     │ 命中 → 直接結束
+     ▼
+L4: 自然語言（統一走 ReAct Agent Loop）
+     │
+     ├── 🚀 Ark Agent（Default）
+     │    agent_loop + 5 tools（search_wiki, save_to_wiki,
+     │    recall_memory, save_memory, execute_skill）
+     │    LLM 自主判斷用哪個 tool
+     │
+     └── Agent 分身（kiro-cli）
+          spawn kiro-cli → 完整 .kiro/ 環境
+```
+
+| 層 | 觸發 | 速度 | 用途 |
+|----|------|------|------|
+| L1 | `/reset` 等系統指令 | 即時 | 系統操作 |
+| L2 | `/skill_id args` | < 1s | 明確呼叫 Skill |
+| L3 | 關鍵字（新聞/翻譯/派工） | < 1s | 自然語言中的明顯意圖 |
+| L4 | 以上都沒命中 | 2-10s | 一般對話，LLM 自主判斷 |
+
+### Gemini ReAct Agent（Default 模式）
 
 Default 模式具備 Tool Calling 能力（Function Calling + ReAct 迴圈）：
 
 ```
-使用者訊息 → 組裝 System Prompt → Gemini API（帶 tools）
+使用者訊息 → context_builder 組裝 System Prompt → Provider.chat（帶 tools）
      ↓
-有 function_call? → 執行 tool → 結果回傳 → 再呼叫 Gemini → ...（max 5 次）
+有 function_call? → dispatch tool → 結果回傳 → 再呼叫 LLM → ...（max 5 次）
      ↓
-純文字回覆 → 回覆使用者 → 寫 daily log + 更新 recent.md
+純文字回覆 → 回覆使用者 → 寫 daily log
 ```
 
 **可用 Tools：**
 
-| Tool | 功能 | 允許路徑 |
-|------|------|---------|
-| `read_file` | 讀取專案內檔案 | knowledge/、output/、agents/、docs/、memory/ |
-| `write_file` | 寫入檔案 | output/\*、knowledge/shared/raw/ |
-| `list_files` | 列出目錄 | 同 read_file |
-
-**觸發寫檔的條件：** 使用者明確要求（「寫成報告」「存進知識庫」「匯出」）。一般對話不觸發。
+| Tool | 功能 | 說明 |
+|------|------|------|
+| `search_wiki` | 搜尋知識庫 | 四層搜尋（exact → BM25 → hybrid → rerank） |
+| `save_to_wiki` | 寫入知識庫 | 寫入 `knowledge/shared/wiki/{slug}.md`（含 frontmatter） |
+| `recall_memory` | 查歷史記憶 | FTS5 查詢 memory + shared wiki |
+| `save_memory` | 記錄持久事實 | append 到 `memory/memory.md` |
+| `execute_skill` | 載入 Skill | 讀取 SKILL.md → LLM 按步驟執行 |
 
 ### Memory / Wiki / Output 三區分工
 
