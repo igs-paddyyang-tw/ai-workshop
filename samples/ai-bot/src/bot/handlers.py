@@ -499,8 +499,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     # ── 自動 consolidate：每天首次對話時蒸餾前一天 ──
     await _auto_consolidate_if_needed()
 
-    # ── Reaction: 👀 收到 ──
+    # ── Reaction: 👀 收到 + 立即 typing ──
     await _set_reaction(update.message, "👀")
+    try:
+        await context.bot.send_chat_action(chat_id=update.message.chat_id, action="typing")
+    except Exception:
+        pass
 
     # ── L1: /reset → 清空 session ──
     if text.lower() in ("/reset", "重置"):
