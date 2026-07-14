@@ -1,10 +1,11 @@
 ---
 title: "全團隊程式碼規範"
 type: system
+status: mature
 tags: [coding, standards, python, typescript]
+related: [team-roles, react-agent-architecture]
 created: 2026-07-08
 updated: 2026-07-08
-status: mature
 ---
 
 # 全團隊程式碼規範

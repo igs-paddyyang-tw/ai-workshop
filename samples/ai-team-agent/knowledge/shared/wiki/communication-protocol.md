@@ -1,10 +1,11 @@
 ---
 title: "Agent 間溝通協議"
 type: system
+status: mature
 tags: [communication, protocol, a2a]
+related: [team-roles, react-agent-architecture]
 created: 2026-07-08
 updated: 2026-07-08
-status: mature
 ---
 
 # Agent 間溝通協議

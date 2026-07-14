@@ -3,7 +3,7 @@
     "team": {
       "command": "py",
       "args": [
-        "src/ark_team_core/team_mcp.py",
+        "src/gateway/mcp_stdio.py",
         "--port",
         "33333",
         "--instance",
