@@ -127,6 +127,9 @@ async def start_all_agents() -> int:
 
     count = 0
     for agent_id, info in AVAILABLE_AGENTS.items():
+        # Default (Ark Agent) 走 Gemini agent_loop，不需要 CLI 進程
+        if agent_id == "default":
+            continue
         name = f"{agent_id}-agent"
         working_dir = info["dir"]
         proc = AgentProcess(
@@ -142,7 +145,7 @@ async def start_all_agents() -> int:
         count += 1
 
     _started = True
-    log.info("All %d agents started", count)
+    log.info("All %d agents registered", count)
     return count
 
 

@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 import asyncio
 import logging
 import re
@@ -132,7 +132,7 @@ class AgentProcess:
                 if self._worker_task and not self._worker_task.done():
                     self._worker_task.cancel()
                 self._worker_task = asyncio.create_task(self._queue_worker())
-                log.info("Agent %s ready (cwd=%s)", self.name, cwd)
+                log.info("Agent %s registered (cwd=%s)", self.name, cwd)
                 return
             except Exception as e:
                 log.warning("Agent %s start attempt %d/%d failed: %s", self.name, attempt, _retries, e)
