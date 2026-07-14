@@ -355,10 +355,21 @@ Agent 具備跨 session 記憶 + Skill 自動推薦能力：
 | Tier | 條件 | 能力 |
 |------|------|------|
 | 0 | 零設定 | Skills + Wiki + API + Web UI |
-| 1 | + TG Token | Bot + Inline Button + 8 Agent |
-| 2 | + Gemini Key | AI 對話 + RAG + SOUL |
-| 3 | + Agent CLI | 8 Agent 常駐 + 完整 .kiro/ |
+| 1 | + TG Token | Bot + Inline Button + 9 對話模式 |
+| 2 | + Gemini Key | 🚀 Ark Agent（ReAct + 6 Tools + 記憶） |
+| 3 | + Agent CLI | 8 Agent 分身（kiro / agy / claude） |
 | 4 | + team.yaml | 團隊派工 + A2A 跨機 |
+
+### Agent 進程架構
+
+```
+🚀 Ark Agent（Default）     → Gemini ReAct agent_loop（in-process，3-5s）
+👑 Admin ~ 📝 Report（×8）  → kiro-cli spawn per message（動態，15-20s）
+```
+
+- Default 不建 CLI 進程，直接走 Provider API
+- Agent 分身每次對話 spawn `kiro-cli chat --resume`（冷啟動，session 靠磁碟恢復）
+- CLI Backend 可切（.env `CLI_BACKEND=kiro / agy / claude`）
 
 ---
 
