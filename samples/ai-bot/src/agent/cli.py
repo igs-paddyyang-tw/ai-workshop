@@ -110,13 +110,6 @@ def _resolve_cmd(backend: str) -> str | None:
     found = shutil.which(cmd)
     if found:
         return found
-    # Windows 常見安裝路徑 fallback
-    if backend == "agy":
-        local_app = os.environ.get("LOCALAPPDATA", "")
-        if local_app:
-            candidate = Path(local_app) / "agy" / "bin" / "agy.exe"
-            if candidate.exists():
-                return str(candidate)
     return None
 
 
