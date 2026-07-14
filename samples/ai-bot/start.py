@@ -219,7 +219,7 @@ def main() -> None:
     # API Server
     import uvicorn
     try:
-        uvicorn.run("src.server.main:app", host="0.0.0.0", port=8000, reload=True)
+        uvicorn.run("src.server.main:app", host="0.0.0.0", port=8000, reload=False)
     finally:
         if bot_proc:
             bot_proc.terminate()
