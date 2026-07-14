@@ -21,9 +21,30 @@ python start.py
 src/
 ├── gateway/          # 入口層：Telegram Bot、FastAPI、MCP stdio
 ├── coordinator/      # 協調層：A2A、DB、Events、Memory、Wiki、Services
-├── runtime/          # 執行層：Agent Process、Config、Scheduler
+├── runtime/          # 執行層：Agent Process、Config、Scheduler、PersistentDaemon
 └── business/         # 業務層：Skills、News、Web Search
 ```
+
+## 進程模式
+
+平台支援雙模式，透過 `team.yaml` 一行切換：
+
+```yaml
+defaults:
+  persistent: true   # 常駐模式（預設）
+  persistent: false  # Spawn 模式（fallback）
+```
+
+| 模式 | 延遲 | 資源 | Context |
+|------|------|------|---------|
+| 常駐 (Persistent) | < 100ms | 常駐佔 RAM | 天然保持 session |
+| Spawn | 2-5 秒 | 空閒零佔用 | --resume 每次載入 |
+
+常駐模式使用 `--legacy-ui` + stdin pipe，包含：
+- Health Loop（30 秒巡檢、自動重啟、指數退避）
+- Message Queue + SQLite Overflow（backpressure 保護）
+- Heartbeat（外部 watchdog 偵測凍結）
+- FailureMemory（重複錯誤偵測 → soft-pause）
 
 ## Agent 團隊
 

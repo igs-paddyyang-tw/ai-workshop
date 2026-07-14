@@ -16,6 +16,11 @@ access:
 defaults:
   backend: kiro-cli
   model: auto
+  persistent: true              # 常駐模式（--legacy-ui + stdin pipe）
+
+startup:
+  concurrency: 2
+  stagger_delay_ms: 3000
 
 cost_guard:
   daily_limit_usd: 15.0

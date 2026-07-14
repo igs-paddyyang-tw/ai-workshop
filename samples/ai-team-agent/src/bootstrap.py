@@ -10,6 +10,13 @@ import os
 import time
 from pathlib import Path
 
+# 載入 .env
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 
 async def main() -> None:
     # Logging
@@ -141,6 +148,14 @@ async def main() -> None:
     team_config = load_config("team.yaml")
     agents: dict[str, AgentProcess] = {}
 
+    # === 常駐模式 ===
+    persistent_daemon = None
+    if team_config.persistent:
+        from runtime.persistent_daemon import PersistentDaemon
+        persistent_daemon = PersistentDaemon(config_path="team.yaml")
+        app.state.persistent_daemon = persistent_daemon
+        log.info("使用常駐模式 (PersistentDaemon)")
+
     # TG reply callback（稍後設定）
     tg_reply_fn = None
     _tg_handled_agents: set[str] = set()  # agents currently handled by TG handler directly
@@ -205,22 +220,35 @@ async def main() -> None:
         if tg_reply_fn and agent_name not in _tg_handled_agents:
             await tg_reply_fn(agent_name, _summarize_for_tg(agent_name, text))
 
-    log.info("啟動 %d agents...", len(team_config.instances))
-    for name, ic in team_config.instances.items():
-        agent_cwd = Path(ic.working_directory).resolve()
-        agent_cwd.mkdir(parents=True, exist_ok=True)
-        proc = AgentProcess(
-            name=name, working_dir=ic.working_directory,
-            model=ic.model, skip_resume=ic.skip_resume,
-            backend=ic.backend,
-        )
-        proc.timeout = team_config.timeout_seconds
-        proc.on_output = _on_agent_output
-        proc.event_bus = bus
-        agents[name] = proc
-        await proc.start()
-        await asyncio.sleep(1)
-    log.info("所有 agents 已就緒 (%d)", len(agents))
+    # === 啟動 agents ===
+    if persistent_daemon:
+        # 常駐模式：用 PersistentDaemon 啟動所有 agent
+        log.info("啟動 %d agents（常駐模式）...", len(team_config.instances))
+        results = await persistent_daemon.start_all()
+        for name, ok in results.items():
+            if ok:
+                log.info("  ✅ %s", name)
+            else:
+                log.error("  ❌ %s 啟動失敗", name)
+        log.info("常駐 agents 已就緒 (%d/%d)", sum(results.values()), len(results))
+    else:
+        # Spawn 模式（fallback）：維持現有行為
+        log.info("啟動 %d agents（spawn 模式）...", len(team_config.instances))
+        for name, ic in team_config.instances.items():
+            agent_cwd = Path(ic.working_directory).resolve()
+            agent_cwd.mkdir(parents=True, exist_ok=True)
+            proc = AgentProcess(
+                name=name, working_dir=ic.working_directory,
+                model=ic.model, skip_resume=ic.skip_resume,
+                backend=ic.backend,
+            )
+            proc.timeout = team_config.timeout_seconds
+            proc.on_output = _on_agent_output
+            proc.event_bus = bus
+            agents[name] = proc
+            await proc.start()
+            await asyncio.sleep(1)
+        log.info("所有 agents 已就緒 (%d)", len(agents))
 
     # ── 3b. A2A Router + Task Dispatcher ──
     from coordinator.a2a.router import A2ARouter
@@ -234,6 +262,9 @@ async def main() -> None:
     discovery = AgentDiscovery(memory)
 
     async def _spawn_fn(agent_name: str, message: str) -> str | None:
+        if persistent_daemon:
+            ok = await persistent_daemon.send_message(agent_name, message)
+            return "queued" if ok else None
         agent = agents.get(agent_name)
         if not agent:
             log.warning("spawn_fn: unknown agent %s", agent_name)
@@ -299,6 +330,10 @@ async def main() -> None:
 
     async def _on_system_restart(event: Event):
         aid = event.data.get("agent_id", "")
+        if persistent_daemon:
+            await persistent_daemon.restart_instance(aid)
+            log.info("Restarted agent %s (persistent)", aid)
+            return
         agent = agents.get(aid)
         if not agent:
             return
@@ -332,6 +367,7 @@ async def main() -> None:
         tg_app = ApplicationBuilder().token(token).build()
         tg_app.bot_data["api_base"] = f"http://127.0.0.1:{api_port}"
         tg_app.bot_data["agents"] = agents
+        tg_app.bot_data["persistent_daemon"] = persistent_daemon
         tg_app.bot_data["handled_agents"] = _tg_handled_agents
         tg_app.bot_data["skill_registry"] = skill_registry
         tg_app.bot_data["growth_detector"] = growth
@@ -419,6 +455,8 @@ async def main() -> None:
         from runtime.scheduler import Scheduler
 
         async def _send_to(instance: str, message: str) -> bool:
+            if persistent_daemon:
+                return await persistent_daemon.send_message(instance, message)
             agent = agents.get(instance)
             if agent:
                 asyncio.create_task(agent.send(message))
@@ -442,31 +480,34 @@ async def main() -> None:
         pass
     finally:
         log.info("Shutting down (graceful, timeout=30s)...")
-        # 1. 設 shutdown flag — 不再接受新任務
-        AgentProcess._shutting_down = True
 
-        # 2. 等待所有 busy agent 完成（最多 30s）
-        deadline = asyncio.get_event_loop().time() + 30
-        busy_agents = [name for name, proc in agents.items() if proc._busy]
-        if busy_agents:
-            log.info("Waiting for busy agents: %s", busy_agents)
-        while any(proc._busy for proc in agents.values()):
-            if asyncio.get_event_loop().time() > deadline:
-                still_busy = [n for n, p in agents.items() if p._busy]
-                log.warning("Timeout! Force killing busy agents: %s", still_busy)
-                break
-            await asyncio.sleep(0.5)
+        if persistent_daemon:
+            # 常駐模式：PersistentDaemon 負責 graceful stop
+            await persistent_daemon.stop_all()
+        else:
+            # Spawn 模式：設 shutdown flag → 等待 busy → kill
+            AgentProcess._shutting_down = True
+            deadline = asyncio.get_event_loop().time() + 30
+            busy_agents = [name for name, proc in agents.items() if proc._busy]
+            if busy_agents:
+                log.info("Waiting for busy agents: %s", busy_agents)
+            while any(proc._busy for proc in agents.values()):
+                if asyncio.get_event_loop().time() > deadline:
+                    still_busy = [n for n, p in agents.items() if p._busy]
+                    log.warning("Timeout! Force killing busy agents: %s", still_busy)
+                    break
+                await asyncio.sleep(0.5)
+            for proc in agents.values():
+                await proc.kill()
 
-        # 3. Drain EventBus queue
+        # Drain EventBus queue
         await bus.drain()
 
-        # 4. 關閉服務
+        # 關閉服務
         if tg_app:
             await tg_app.updater.stop()
             await tg_app.stop()
             await tg_app.shutdown()
-        for proc in agents.values():
-            await proc.kill()
         await bus.stop()
         server.should_exit = True
         log.info("Graceful shutdown complete.")

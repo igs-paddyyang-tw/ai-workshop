@@ -97,3 +97,12 @@ async def spawn_agent(body: dict, request: Request):
     from coordinator.events.types import Event, EventType
     await bus.emit(Event(type=EventType.AGENT_STARTED, data={"agent_id": name, "action": "spawn"}, source="api"))
     return {"status": "spawning", "agent": name}
+
+
+@router.get("/runtime/status")
+async def runtime_status(request: Request):
+    """常駐 Daemon 運行狀態（pid / status / crash_count）。"""
+    daemon = getattr(request.app.state, "persistent_daemon", None)
+    if daemon:
+        return {"mode": "persistent", "instances": daemon.get_status()}
+    return {"mode": "spawn", "instances": []}
