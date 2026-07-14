@@ -20,8 +20,8 @@ updated: 2026-07-13
 ### 現況
 
 - `requirements.txt` 已用 `google-genai>=1.0.0` ✅
-- `src/llm/providers/gemini.py` 仍用舊版 `google.generativeai` import ⚠️
-- **TODO**：遷移 GeminiProvider 到新版 `google.genai` API
+- `src/llm/providers/gemini.py` 已遷移到新版 `from google import genai` ✅
+- `genai.Client` + `types.FunctionDeclaration` + `types.Part.from_text()` ✅
 
 ### 遷移方式（未來）
 
