@@ -74,73 +74,57 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         f"• 對話：{agent_str}\n"
         f"• 狀態：{auth_status}\n"
         f"• Chat ID：`{user_id}`\n\n"
-        "📌 /agents → 切換對話模式（9 選項）\n"
-        "💬 直接打字 → 對話\n"
-        "🔍 /recall → 查歷史記憶\n"
-        "📋 /help → 指令清單",
+        "💬 直接打字即可對話\n"
+        "/agents — 切換對話模式\n"
+        "/reset — 重置對話\n"
+        "/help — 進階指令",
         parse_mode="Markdown",
     )
 
 
 async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(
-        "📋 **指令清單**\n\n"
-        "**對話**\n"
-        "💬 直接輸入文字 → 對話\n"
-        "/agents → 切換對話模式（Ark Agent / 8 Agent）\n\n"
+        "📋 **進階指令**\n\n"
         "**記憶**\n"
-        "/recall `關鍵詞` → 查歷史記憶\n"
-        "/skills → 已學會的 Skill\n"
-        "/consolidate → 蒸餾記憶\n\n"
-        "**其他**\n"
-        "/start → 重新開始\n"
-        "/mode → 查看執行模式\n"
-        "/history → 對話歷史\n"
-        "/help → 本清單",
+        "/recall `關鍵詞` — 搜尋歷史記憶\n"
+        "/skills — 已學會的技能清單\n"
+        "/consolidate — 蒸餾記憶（daily → memory.md）\n\n"
+        "**對話**\n"
+        "/chat `問題` — 強制走 Gemini ReAct\n"
+        "/mode — 查看執行模式\n"
+        "/history — 對話歷史\n\n"
+        "**系統**\n"
+        "/start — 狀態 + Chat ID\n"
+        "/agents — 切換對話模式（9 選項）\n"
+        "/reset — 重置對話\n\n"
+        "💡 大部分功能直接打字即可（Bot 會自動查知識庫、記憶）",
         parse_mode="Markdown",
     )
 
 
 async def cmd_agents(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """顯示 Inline Keyboard 選擇對話模式（9 選項）。"""
+    """顯示 9 個對話模式按鈕。"""
     user_id = update.effective_user.id
     session = session_manager.get_or_create(user_id)
 
-    # Default 按鈕
-    default_prefix = "✓ " if session.is_default_mode else ""
-    default_btn = InlineKeyboardButton(
-        f"{default_prefix}🚀 Ark Agent（Gemini）",
-        callback_data="switch_agent:default",
-    )
-
-    # Agent 按鈕
-    def btn(agent_id):
-        info = AVAILABLE_AGENTS[agent_id]
-        prefix = "✓ " if session.agent_name == agent_id else ""
-        return InlineKeyboardButton(
-            f"{prefix}{info['emoji']} {agent_id.capitalize()}",
-            callback_data=f"switch_agent:{agent_id}",
-        )
+    def btn(agent_id, emoji, label):
+        is_active = (agent_id == "default" and session.is_default_mode) or (session.agent_name == agent_id)
+        prefix = "✓ " if is_active else ""
+        return InlineKeyboardButton(f"{prefix}{emoji} {label}", callback_data=f"switch_agent:{agent_id}")
 
     keyboard = [
-        [default_btn],
-        [btn("admin"), btn("pm")],
-        [btn("ai-dev"), btn("coder")],
-        [btn("qa"), btn("data")],
-        [btn("market"), btn("report")],
-        [InlineKeyboardButton("🔙 回到 Ark Agent", callback_data="switch_agent:default")],
+        [btn("default", "🚀", "Ark Agent")],
+        [btn("admin", "👑", "Admin"), btn("pm", "📋", "PM"), btn("ai-dev", "🧠", "AI Dev")],
+        [btn("coder", "💻", "Coder"), btn("qa", "🧪", "QA"), btn("data", "📊", "Data")],
+        [btn("market", "🗺️", "Market"), btn("report", "📝", "Report")],
     ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
 
-    from src.agent.cli import get_available_backend
-    backend = get_available_backend()
-    mode_str = "🚀 Ark Agent（Gemini）" if session.is_default_mode else f"{AVAILABLE_AGENTS[session.agent_name]['emoji']} {session.agent_name}-agent（{backend}）"
+    mode_str = "🚀 Ark Agent" if session.is_default_mode else f"{AVAILABLE_AGENTS[session.agent_name]['emoji']} {session.agent_name}"
     await update.message.reply_text(
         f"當前：{mode_str}\n\n"
-        "選擇對話模式：\n"
-        "• Ark Agent = Gemini API（零門檻）\n"
-        f"• Agent 分身 = Agent CLI（{backend}）",
-        reply_markup=reply_markup,
+        "🚀 Ark Agent = Gemini（零門檻）\n"
+        "其他 = Agent 分身（需 CLI）",
+        reply_markup=InlineKeyboardMarkup(keyboard),
     )
 
 

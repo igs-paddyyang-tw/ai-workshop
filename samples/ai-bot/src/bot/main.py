@@ -31,13 +31,10 @@ from src.memory.tg_handlers import (
 
 # Bot 指令選單（TG 左下角 / 按鈕）
 BOT_COMMANDS = [
-    BotCommand("start", "啟動 Bot"),
-    BotCommand("agents", "切換 Agent"),
-    BotCommand("chat", "Gemini 快問"),
-    BotCommand("recall", "記憶搜尋"),
-    BotCommand("skills", "技能列表"),
+    BotCommand("start", "啟動 / 狀態"),
+    BotCommand("agents", "切換對話模式"),
     BotCommand("reset", "重置對話"),
-    BotCommand("help", "指令說明"),
+    BotCommand("help", "進階指令"),
 ]
 
 
