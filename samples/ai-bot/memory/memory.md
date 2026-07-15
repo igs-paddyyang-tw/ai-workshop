@@ -59,4 +59,5 @@
 - Tier 0 定義：Prompts + Skills + Wiki + MCP（不再含 API）
 - 預設模型：gemini-3.5-flash（需測試可用性，fallback 2.5-flash）
 - PORT=8080（FastAPI Web UI + REST）
+- SOUL inject 策略：kiro-cli 不注入（自動讀 .kiro/）；agy/claude 需手動 inject 到 prompt
 ```

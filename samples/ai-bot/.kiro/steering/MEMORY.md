@@ -30,3 +30,4 @@
 - agy 安裝路徑在 %LOCALAPPDATA%\agy\bin\，不自動加 PATH
 - agy 的 --add-dir 不等於主 workspace，GEMINI.md/AGENTS.md 不會被讀取
 - 解法：_inject_soul() 在 subprocess 呼叫時直接 prepend SOUL.md 到 prompt
+- kiro-cli 自動讀 .kiro/steering/，不需 inject SOUL；agy/claude 需要手動注入

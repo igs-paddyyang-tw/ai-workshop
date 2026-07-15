@@ -156,16 +156,24 @@ async def agent_cli_chat(
     *,
     agent_id: str = "admin",
     timeout: int = 120,
+    session=None,
 ) -> str | None:
     """透過 AgentProcess 執行對話。
 
     如果服務已啟動 → 用 send()（排隊執行）
     如果服務沒啟動 → fallback 到直接 subprocess
     """
+    # 注入 SOUL + Context（僅 agy/claude 需要；kiro-cli 自動讀 .kiro/steering）
+    backend = get_available_backend()
+    if backend == "kiro":
+        injected = message  # kiro-cli 自己讀 SOUL，不需注入
+    else:
+        injected = _inject_context(message, agent_id, session)
+
     # 優先用常駐服務
     proc = _agents.get(agent_id)
     if proc and proc.is_alive():
-        result = await proc.send(message)
+        result = await proc.send(injected)
         return result if result else None
 
     # Fallback: 直接 subprocess（相容舊行為）
@@ -182,11 +190,11 @@ async def agent_cli_chat(
         backend = get_available_backend()
         # 根據 backend 組裝 fallback 指令
         if backend == "agy":
-            cmd = ["agy", "-p", message, "--dangerously-skip-permissions", "--add-dir", str(working_dir.resolve())]
+            cmd = ["agy", "-p", injected, "--dangerously-skip-permissions", "--add-dir", str(working_dir.resolve())]
         elif backend == "claude":
-            cmd = ["claude", "-p", message]
+            cmd = ["claude", "-p", injected]
         else:
-            cmd = ["kiro-cli", "chat", "--no-interactive", "--trust-all-tools", message]
+            cmd = ["kiro-cli", "chat", "--no-interactive", "--trust-all-tools", injected]
 
         proc_sub = await asyncio.create_subprocess_exec(
             *cmd,
@@ -204,6 +212,39 @@ async def agent_cli_chat(
         lines = [line for line in output.split("\n") if line.strip()]
         return "\n".join(lines) if lines else None
     except asyncio.TimeoutError:
+        log.warning("agent_cli_chat timeout (%ds) for %s", timeout, agent_id)
         return None
-    except Exception:
+    except Exception as e:
+        log.error("agent_cli_chat error for %s: %s", agent_id, e)
         return None
+
+
+def _inject_context(message: str, agent_id: str, session=None) -> str:
+    """注入 SOUL + 對話脈絡到 prompt。
+
+    結構：
+      1. SOUL.md 內容（人格注入）
+      2. 最近 4 輪對話（Context 鏈）
+      3. 當前使用者訊息
+    """
+    parts: list[str] = []
+
+    # 1. SOUL
+    soul_path = BASE_DIR / "agents" / f"{agent_id}-agent" / ".kiro" / "steering" / "SOUL.md"
+    if soul_path.exists():
+        parts.append(soul_path.read_text(encoding="utf-8"))
+
+    # 2. 最近對話（限 4 輪 = 2 來回）
+    if session and hasattr(session, "history") and session.history:
+        recent = session.history[-4:]
+        if recent:
+            context_lines = ["## 對話脈絡"]
+            for turn in recent:
+                prefix = "User" if turn.role == "user" else "Agent"
+                context_lines.append(f"{prefix}: {turn.content[:200]}")
+            parts.append("\n".join(context_lines))
+
+    # 3. 當前問題
+    parts.append(f"## 當前問題\n{message}")
+
+    return "\n\n---\n\n".join(parts)

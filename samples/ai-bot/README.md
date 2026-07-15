@@ -371,12 +371,13 @@ Agent 具備跨 session 記憶 + Skill 自動推薦能力：
 
 ```
 🚀 Ark Agent（Default）     → Gemini ReAct agent_loop（in-process，3-5s）
-👑 Admin ~ 📝 Report（×8）  → kiro-cli spawn per message（動態，15-20s）
+👑 Admin ~ 📝 Report（×8）  → CLI spawn per message（動態，15-20s）
 ```
 
 - Default 不建 CLI 進程，直接走 Provider API
-- Agent 分身每次對話 spawn `kiro-cli chat --resume`（冷啟動，session 靠磁碟恢復）
-- CLI Backend 可切（.env `CLI_BACKEND=kiro / agy / claude`）
+- Agent 分身每次對話 spawn CLI（session 靠磁碟恢復）
+- CLI Backend 可切（.env `CLI_BACKEND=agy / kiro / claude`）
+- **SOUL inject 策略**：kiro-cli 自動讀 `.kiro/steering/`（不注入）；agy/claude 需手動 prepend SOUL.md 到 prompt
 
 ---
 
