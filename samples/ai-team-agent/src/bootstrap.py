@@ -217,7 +217,9 @@ async def main() -> None:
             pass
         finally:
             await conn.close()
-        if tg_reply_fn and agent_name not in _tg_handled_agents:
+        # 常駐模式：回覆由 MCP reply() tool 驅動，不再從 stdout 推 TG
+        # spawn 模式：沒有 MCP，仍需 callback 推 TG
+        if not persistent_daemon and tg_reply_fn and agent_name not in _tg_handled_agents:
             await tg_reply_fn(agent_name, _summarize_for_tg(agent_name, text))
 
     # === 啟動 agents ===
@@ -404,14 +406,9 @@ async def main() -> None:
 
         await tg_app.initialize()
         await tg_app.bot.set_my_commands([
-            BotCommand("start", "歡迎"), BotCommand("status", "狀態"),
-            BotCommand("agents", "Agent 列表"), BotCommand("board", "看板"),
-            BotCommand("costs", "費用"), BotCommand("queue", "佇列"),
-            BotCommand("assign", "派工"), BotCommand("stop", "停止 Agent"),
-            BotCommand("restart", "重啟 Agent"), BotCommand("logs", "查看日誌"),
-            BotCommand("recall", "查詢記憶"), BotCommand("skills", "技能列表"),
-            BotCommand("consolidate", "蒸餾記憶"), BotCommand("mode", "執行模式"),
-            BotCommand("help", "說明"),
+            BotCommand("start", "歡迎"),
+            BotCommand("status", "團隊狀態"),
+            BotCommand("help", "使用說明"),
         ])
         await tg_app.start()
         await tg_app.updater.start_polling(drop_pending_updates=True)
@@ -439,6 +436,17 @@ async def main() -> None:
                     log.warning("TG reply failed: %s", e)
 
         tg_reply_fn = _tg_reply
+
+        # ── 設定 Chat Channel（TG）──
+        from gateway.api.chat import TelegramChannel, set_channel
+
+        tg_channel = TelegramChannel()
+        tg_channel.configure(
+            bot=tg_app.bot,
+            chat_id=chat_id,
+            allowed_chat_ids=allowed_users,
+        )
+        set_channel(tg_channel)
 
         # NotificationService
         if chat_id:

@@ -46,6 +46,29 @@ defaults:
 - Heartbeat（外部 watchdog 偵測凍結）
 - FailureMemory（重複錯誤偵測 → soft-pause）
 
+## 對話回覆機制
+
+### 常駐模式（MCP reply 驅動）
+
+```
+User(TG) → handle_message → daemon.send_message → stdin pipe → Agent 思考
+  → Agent 呼叫 MCP reply(text) → POST /api/chat/reply → TG 回覆使用者
+```
+
+- Agent **必須**用 `reply()` tool 回覆使用者（所有 agent steering 已配置）
+- 不再依賴 stdout regex 截取（已移除）
+- 支援多使用者 routing（per-message chat_id 追蹤）
+- 智慧 timeout：300s + 活動偵測寬限 120s
+
+### Spawn 模式（同步等待）
+
+```
+User(TG) → handle_message → await agent.send(text) → stdout → TG 回覆
+```
+
+- 直接等待進程結束，拿 stdout 回覆
+- 無需 MCP reply tool
+
 ## Agent 團隊
 
 | Agent | 角色 | 職責 |

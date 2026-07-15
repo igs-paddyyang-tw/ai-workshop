@@ -23,6 +23,7 @@ TOOLS: list[dict[str, Any]] = [
             "properties": {
                 "text": {"type": "string", "description": "回覆內容"},
                 "kind": {"type": "string", "description": "訊息類型", "default": "text"},
+                "summary": {"type": "string", "description": "一句話摘要（≤80字，供 trace log）", "default": ""},
             },
             "required": ["text"],
         },
@@ -158,31 +159,53 @@ class McpBridge:
             return await handler(client, arguments)
 
     async def _tool_reply(self, client: httpx.AsyncClient, args: dict) -> Any:
-        # reply 透過 broadcast（簡化版：記錄到 audit）
-        r = await client.post(f"{self.base_url}/api/agents/spawn", json={
-            "name": self.instance,
-            "action": "reply",
-            "text": args.get("text", ""),
+        text = args.get("text", "")
+        summary = args.get("summary", "")
+        await client.post(f"{self.base_url}/api/chat/reply", json={
+            "instance": self.instance,
+            "text": text,
+            "summary": summary,
         })
-        return {"status": "sent", "text": args.get("text", "")[:100]}
+        return {"status": "sent", "text": text[:100]}
 
     async def _tool_send_to_instance(self, client: httpx.AsyncClient, args: dict) -> Any:
         instance = args.get("instance", "")
         msg = args.get("msg", "")
-        r = await client.post(f"{self.base_url}/api/agents/spawn", json={
-            "name": instance,
-            "action": "message",
-            "text": f"[from {self.instance}] {msg}",
+        # 透過 daemon 送訊息給目標 agent（含 A2A callback metadata）
+        r = await client.post(f"{self.base_url}/api/chat/send", json={
+            "target": instance,
+            "message": f"[from {self.instance}] {msg}",
+            "from_agent": self.instance,
+            "reply_to": self.instance,  # A2A callback: 目標完成後通知來源
+        })
+        # 進度通知（使用者看到）
+        await client.post(f"{self.base_url}/api/chat/notify", json={
+            "text": f"📋 {self.instance} → {instance}",
+            "from_agent": self.instance,
+            "to_agent": instance,
         })
         return {"status": "sent", "to": instance, "message": msg[:100]}
 
     async def _tool_delegate_task(self, client: httpx.AsyncClient, args: dict) -> Any:
         instance = args.get("instance", "")
         task = args.get("task", "")
+        # 建立 issue
         r = await client.post(f"{self.base_url}/api/issues", json={
             "title": task[:80],
             "description": task,
             "assignee": instance,
+        })
+        # 送訊息給目標 agent（讓它知道要做什麼）
+        await client.post(f"{self.base_url}/api/chat/send", json={
+            "target": instance,
+            "message": f"[任務from {self.instance}] {task}",
+            "from_agent": self.instance,
+        })
+        # 進度通知（使用者看到）
+        await client.post(f"{self.base_url}/api/chat/notify", json={
+            "text": f"🔀 轉派 {instance}：{task[:30]}",
+            "from_agent": self.instance,
+            "to_agent": instance,
         })
         return r.json() if r.status_code < 400 else {"error": r.text}
 
@@ -317,21 +340,15 @@ async def handle_request(bridge: McpBridge, request: dict) -> dict:
 
 
 async def main_loop(bridge: McpBridge) -> None:
-    """讀 stdin JSON-RPC，寫 stdout 回覆。"""
-    reader = asyncio.StreamReader()
-    protocol = asyncio.StreamReaderProtocol(reader)
-    await asyncio.get_event_loop().connect_read_pipe(lambda: protocol, sys.stdin.buffer)
-
-    writer_transport, writer_protocol = await asyncio.get_event_loop().connect_write_pipe(
-        asyncio.streams.FlowControlMixin, sys.stdout.buffer
-    )
-    writer = asyncio.StreamWriter(writer_transport, writer_protocol, None, asyncio.get_event_loop())
+    """讀 stdin JSON-RPC，寫 stdout 回覆（Windows 相容）。"""
+    loop = asyncio.get_event_loop()
 
     while True:
-        line = await reader.readline()
+        # 用 executor 讀 stdin（Windows 不支援 async pipe）
+        line = await loop.run_in_executor(None, sys.stdin.readline)
         if not line:
             break
-        line = line.decode("utf-8").strip()
+        line = line.strip()
         if not line:
             continue
         try:
@@ -342,8 +359,8 @@ async def main_loop(bridge: McpBridge) -> None:
         response = await handle_request(bridge, request)
         if response is not None:
             out = json.dumps(response, ensure_ascii=False) + "\n"
-            writer.write(out.encode("utf-8"))
-            await writer.drain()
+            sys.stdout.write(out)
+            sys.stdout.flush()
 
 
 def parse_args() -> argparse.Namespace:
