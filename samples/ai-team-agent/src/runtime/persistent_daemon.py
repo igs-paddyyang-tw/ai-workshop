@@ -217,17 +217,16 @@ class PersistentDaemon:
                     continue
 
                 if state.status == InstanceStatus.RUNNING and state.process:
-                    # 記錄送出前的 output count
-                    count_before = state.process.output_count
-
                     await state.process.send_input(text)
                     state.last_activity = time.time()
                     log.info("📤 sent to %s (%d chars)", name, len(text))
 
-                    # 等待 stdout 出現回覆 → 自動推送 TG
-                    reply_text = await self._wait_for_reply(state, count_before, timeout=120)
-                    if reply_text:
-                        await self._push_reply(name, reply_text)
+                    # Debug: 10 秒後擷取 stdout 確認 agent 狀態
+                    await asyncio.sleep(10)
+                    if state.process:
+                        recent = state.process.capture(lines=20)
+                        if recent:
+                            log.info("📋 %s stdout preview:\n%s", name, recent[-500:])
 
                     # 動態間隔（避免 stdin 塞爆）
                     qsize = state._msg_queue.qsize()
@@ -257,65 +256,6 @@ class PersistentDaemon:
                     pass
 
 
-
-    # ── Reply detection ───────────────────────────────────────────
-
-    async def _wait_for_reply(self, state: InstanceState, count_before: int, timeout: float = 120) -> str | None:
-        """等待 agent stdout 出現新回覆（偵測新的 'Time:' 結束標記）。"""
-        deadline = time.time() + timeout
-        # 記住舊 capture 的最後一行（用來判斷「新的 Time:」）
-        old_capture = state.process.capture(lines=5) if state.process else ""
-        old_time_count = old_capture.count("Time:")
-
-        while time.time() < deadline:
-            await asyncio.sleep(2)
-            if not state.process:
-                return None
-            if state.process.output_count <= count_before:
-                continue
-            # 有新 output — 檢查是否有 **新的** Time: 標記
-            recent = state.process.capture(lines=50)
-            new_time_count = recent.count("Time:")
-            if new_time_count <= old_time_count:
-                continue
-            # 有新的 Time: → 提取 "> " 開頭的回覆
-            lines = recent.split("\n")
-            reply_lines = []
-            capture_started = False
-            for line in reversed(lines):
-                stripped = line.strip()
-                if "Time:" in stripped:
-                    capture_started = True
-                    continue
-                if capture_started:
-                    if stripped.startswith("> "):
-                        reply_lines.insert(0, stripped[2:])
-                    elif stripped and reply_lines:
-                        reply_lines.insert(0, stripped)
-                    elif not stripped and reply_lines:
-                        break  # 空行表示回覆區塊結束
-            if reply_lines:
-                return "\n".join(reply_lines)
-            # fallback: 取 "> " 行
-            for line in lines:
-                if line.strip().startswith("> "):
-                    return line.strip()[2:]
-            return None
-        log.warning("_wait_for_reply timeout for %s", state.config.name)
-        return None
-
-    async def _push_reply(self, agent_name: str, text: str) -> None:
-        """將 stdout 截取的回覆推送到 /api/chat/reply。"""
-        import httpx
-        try:
-            async with httpx.AsyncClient(timeout=10) as client:
-                await client.post(
-                    f"http://127.0.0.1:{self.config.health_port}/api/chat/reply",
-                    json={"instance": agent_name, "text": text, "summary": text[:80]},
-                )
-                log.info("✅ reply from %s (%d chars)", agent_name, len(text))
-        except Exception as e:
-            log.warning("Push reply failed for %s: %s", agent_name, e)
 
     # ── Health Loop ─────────────────────────────────────────────
 

@@ -12,6 +12,12 @@ import httpx
 
 log = logging.getLogger(__name__)
 
+# MCP stdio log 寫入 stderr（因為 stdout 是 JSON-RPC 通道）
+_handler = logging.StreamHandler(sys.stderr)
+_handler.setFormatter(logging.Formatter("%(asctime)s [%(name)s] %(levelname)s %(message)s"))
+log.addHandler(_handler)
+log.setLevel(logging.INFO)
+
 # ── Tool 定義 ────────────────────────────────────────────────────
 
 TOOLS: list[dict[str, Any]] = [
@@ -161,11 +167,15 @@ class McpBridge:
     async def _tool_reply(self, client: httpx.AsyncClient, args: dict) -> Any:
         text = args.get("text", "")
         summary = args.get("summary", "")
-        await client.post(f"{self.base_url}/api/chat/reply", json={
+        log.info("[MCP] reply called by %s: %s", self.instance, text[:80])
+        r = await client.post(f"{self.base_url}/api/chat/reply", json={
             "instance": self.instance,
             "text": text,
             "summary": summary,
         })
+        if r.status_code >= 400:
+            log.warning("[MCP] reply POST failed: %s", r.text[:200])
+            return {"error": r.text[:200]}
         return {"status": "sent", "text": text[:100]}
 
     async def _tool_send_to_instance(self, client: httpx.AsyncClient, args: dict) -> Any:
@@ -377,4 +387,9 @@ if __name__ == "__main__":
     args = parse_args()
     base_url = f"http://127.0.0.1:{args.port}"
     bridge = McpBridge(base_url=base_url, instance=args.instance, role=args.role)
+
+    # Startup log（寫入 stderr 供 debug）
+    import sys as _sys
+    print(f"[mcp_stdio] started: instance={args.instance} port={args.port} role={args.role}", file=_sys.stderr, flush=True)
+
     asyncio.run(main_loop(bridge))
