@@ -54,28 +54,36 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     is_allowed = _is_authorized(user_id)
     status = "✅ 已授權" if is_allowed else "🔒 未授權"
 
+    # 系統資訊
+    from src.agent.cli import is_cli_available, get_available_backend
+    model = os.getenv("LLM_MODEL", "gemini-3.5-flash")
+    cli_ok = is_cli_available()
+    backend = get_available_backend() if cli_ok else "—"
+
     await update.message.reply_text(
-        f"👋 歡迎！\n\n"
+        f"👋 *AI Agent 專家開發平台*\n\n"
         f"• Chat ID：`{user_id}`\n"
-        f"• 狀態：{status}\n\n"
-        f"直接打字即可對話（需授權）\n"
-        f"輸入 /help 查看說明。",
+        f"• 狀態：{status}\n"
+        f"• LLM：{model}\n"
+        f"• CLI：{backend}\n"
+        f"• Agent：8 個專家\n\n"
+        f"直接打字即可對話，輸入 /help 查看完整說明。",
         parse_mode="Markdown",
     )
 
 
 async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(
-        "📖 *基本指令*（所有人）\n"
-        "/start — 歡迎 + Chat ID\n"
-        "/status — 團隊狀態\n"
+        "📖 *基本指令*（3 個，所有人可用）\n"
+        "/start — 歡迎 \\+ 系統資訊\n"
+        "/status — 平台狀態\n"
         "/help — 本說明\n\n"
-        "🔒 *進階功能*（需白名單）\n"
-        "直接打字 → Ark Agent 理解意圖 → 自動派工\n"
-        "@agent\\-name msg → 強制指定 Agent\n"
-        "/agents — Agent 列表\n"
+        "🔒 *進階指令*（3 個，需白名單）\n"
+        "/agents — Agent 列表 \\+ 切換\n"
         "/recall `關鍵詞` — 搜尋記憶\n"
-        "/skills — 技能清單\n",
+        "/skills — 技能清單\n\n"
+        "💬 *自然語言*（需白名單）\n"
+        "直接打字 → Ark Agent 理解意圖 → 自動回答或派工",
         parse_mode="MarkdownV2",
     )
 
@@ -373,10 +381,10 @@ async def _build_default_system_prompt(query: str, session) -> str:
             _, _, content = content.split("---", 2)
         parts.append(content.strip())
 
-    # 3. USER.md（根目錄）
-    user_path = Path(".kiro/steering/USER.md")
-    if user_path.exists():
-        parts.append(user_path.read_text(encoding="utf-8"))
+    # 3. TEAM.md（根目錄）
+    team_path = Path(".kiro/steering/TEAM.md")
+    if team_path.exists():
+        parts.append(team_path.read_text(encoding="utf-8"))
 
     # 4. Tool 使用規則
     parts.append("""## 工具使用規則
@@ -553,7 +561,49 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 await update.message.reply_text(f"⚠️ {target} 不可用")
             return
 
-        # ── Path 2: 自然語言 → Ark Agent（ReAct + 自動派工）──
+        # ── Path 2: 判斷模式 ──
+        # 若使用者已切換到特定 Agent（非 default），走 Agent CLI 或 fallback Gemini + Agent SOUL
+        if not session.is_default_mode and session.agent_name != "default":
+            agent_id = session.agent_name
+            update_trace_decision(trace_id, "Agent分身", agent_id, f"cli:{agent_id}")
+
+            info = AVAILABLE_AGENTS.get(agent_id, {})
+            emoji = info.get("emoji", "🤖")
+
+            # ProgressStack（即時進度回饋）
+            from src.bot.progress import ProgressStack
+            progress = ProgressStack(update.message.chat_id, context.bot)
+            await progress.init(f"{emoji} {agent_id}-agent 思考中...")
+
+            if is_cli_available():
+                from src.agent.cli import agent_cli_chat
+                reply = await agent_cli_chat(text, agent_id=agent_id, session=session)
+            else:
+                # fallback: 用該 Agent 的 SOUL 做 Gemini 對話
+                from src.llm.agent_loop import agent_loop
+                system_prompt = await _build_rich_system_prompt(agent_id, text, session)
+                result = await agent_loop(
+                    user_message=text,
+                    system_prompt=system_prompt,
+                    max_iterations=5,
+                )
+                reply = result.text if result else None
+
+            if reply:
+                reply = _clean_output(reply)
+                if len(reply) > 3000:
+                    reply = reply[-3000:]
+                session.add_turn("agent", reply)
+                complete_trace(trace_id, reply[:80], success=True)
+                await progress.complete(reply)
+                await _set_reaction(update.message, "👍")
+            else:
+                fail_trace(trace_id, f"{agent_id} 無回覆")
+                await progress.fail(f"{agent_id}-agent 無回應，請重試。")
+                await _set_reaction(update.message, "👎")
+            return
+
+        # ── Path 3: 自然語言 → Ark Agent（ReAct + 自動派工）──
         from src.llm.context_builder import build_default_system_prompt
         from src.llm.agent_loop import agent_loop
         from src.bot.progress import ProgressStack

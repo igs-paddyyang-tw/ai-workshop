@@ -51,7 +51,7 @@
 - Agent CLI 架構：動態 spawn（非常駐），default-agent 已排除 CLI init
 - 對話路由統一：三路徑架構（/command + @mention + 自然語言→Ark Agent 派工），移除舊 L1-L4 六層 if-else
 - LLM Provider 抽象層：Gemini/OpenAI/Anthropic 可切換（.env 一鍵）
-- CLI Backend 選項：agy / kiro / claude（預設 agy）
+- CLI Backend 選項：agy / kiro / claude（預設 agy），透過 CLI_BACKEND + CLI_MODEL 環境變數控制
 - Agent 定義：統一在 agents.yaml（不再硬編碼），dispatchable 欄位控制可派工清單
 - dispatch_to_agent tool：Gemini FC 自動派工給 7 個專業 Agent（Hub-and-Spoke）
 - ProgressStack：堆疊式 edit_message 進度回饋（⏳→✅→完成回覆）
@@ -59,5 +59,6 @@
 - Tier 0 定義：Prompts + Skills + Wiki + MCP（不再含 API）
 - 預設模型：gemini-3.5-flash（需測試可用性，fallback 2.5-flash）
 - PORT=8080（FastAPI Web UI + REST）
-- SOUL inject 策略：kiro-cli 不注入（自動讀 .kiro/）；agy/claude 需手動 inject 到 prompt
+- SOUL inject 策略：kiro-cli 不注入（自動讀 .kiro/）；agy/claude 需手動 inject SOUL + MEMORY 到 prompt
+- Steering 精簡：每個 agent 4 檔（SOUL/BRAIN/MEMORY/TEAM），USER.md 併入 SOUL，GUARDRAILS.md 併入 BRAIN
 ```

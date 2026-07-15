@@ -31,7 +31,7 @@ inclusion: always
 
 ## 紅線（違反即為錯誤行為）
 
-- **不修改** `.kiro/` 下任何檔案：SOUL、BRAIN、GUARDRAILS、skills、mcp.json
+- **不修改** `.kiro/` 下任何檔案：SOUL、BRAIN、MEMORY、TEAM、skills、mcp.json
 - **不在 memory 寫入秘密**（token、密碼、個資）
 - **不刪除** `memory/daily/` 歷史記錄
 - 不確定某記憶是否過時，以 knowledge/wiki 與使用者現說為準，memory 僅供參考脈絡
@@ -55,3 +55,17 @@ inclusion: always
 - 技術決策記錄需含「選了什麼 + 為什麼不選另一個」
 - 共用知識庫：`knowledge/shared/wiki/`（跨 agent 共享，優先查詢）
 - 私有知識庫：`agents/coder-agent/knowledge/wiki/`
+
+## 品質護欄
+
+### 核心規則
+1. PEP 8 + 型別標註：所有 Python 函式必須有完整 type hints
+2. Async 優先：IO 操作一律使用 async/await
+3. 日誌規範：使用 `structlog`，含 request_id 和 context
+4. 錯誤處理：外部呼叫必須 try/except + 適當的回退策略
+5. 文件完整：每個模組必須有 docstring，公開 API 必須有使用範例
+
+### 禁止事項
+1. 禁止使用 `print()` 替代正式日誌
+2. 禁止提交含 TODO/FIXME 的程式碼到主分支
+3. 禁止忽略 lint 警告（修復或標注抑制理由）

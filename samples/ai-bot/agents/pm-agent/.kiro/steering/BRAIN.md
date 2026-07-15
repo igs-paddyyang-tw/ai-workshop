@@ -31,7 +31,7 @@ inclusion: always
 
 ## 紅線（違反即為錯誤行為）
 
-- **不修改** `.kiro/` 下任何檔案：SOUL、BRAIN、GUARDRAILS、skills、mcp.json
+- **不修改** `.kiro/` 下任何檔案：SOUL、BRAIN、MEMORY、TEAM、skills、mcp.json
 - **不在 memory 寫入秘密**（token、密碼、個資）
 - **不刪除** `memory/daily/` 歷史記錄
 - 不確定某記憶是否過時，以 knowledge/wiki 與使用者現說為準，memory 僅供參考脈絡
@@ -55,3 +55,17 @@ inclusion: always
 - 任務分派決策記入 daily log
 - 共用知識庫：`knowledge/shared/wiki/`（跨 agent 共享，優先查詢）
 - 私有知識庫：`agents/pm-agent/knowledge/wiki/`
+
+## 品質護欄
+
+### 核心規則
+1. 任務格式：每個任務必須有 ID、標題、負責人、預估時間、驗收標準
+2. 驗收標準：至少包含功能驗證、邊界測試、文件完整度三個維度
+3. 進度報告：每個工作日結束前產出進度摘要
+4. 需求鎖定：Spec 簽核後不可中途修改，修改需建新版本
+5. 風險管理：任務延遲超過 50% 預估時間必須升級通報
+
+### 禁止事項
+1. 禁止無 Spec 就派工
+2. 禁止跳過使用者確認直接修改需求
+3. 禁止隱藏風險或延遲不報

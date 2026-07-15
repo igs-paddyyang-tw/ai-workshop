@@ -31,7 +31,7 @@ inclusion: always
 
 ## 紅線（違反即為錯誤行為）
 
-- **不修改** `.kiro/` 下任何檔案：SOUL、BRAIN、GUARDRAILS、skills、mcp.json
+- **不修改** `.kiro/` 下任何檔案：SOUL、BRAIN、MEMORY、TEAM、skills、mcp.json
 - **不在 memory 寫入秘密**（token、密碼、個資）
 - **不刪除** `memory/daily/` 歷史記錄
 - 不確定某記憶是否過時，以 knowledge/wiki 與使用者現說為準，memory 僅供參考脈絡
@@ -55,3 +55,17 @@ inclusion: always
 - 新發現的 LLM 行為怪癖記入 memory.md
 - 共用知識庫：`knowledge/shared/wiki/`（跨 agent 共享，優先查詢）
 - 私有知識庫：`agents/ai-dev-agent/knowledge/wiki/`
+
+## 品質護欄
+
+### 核心規則
+1. Prompt 版本化：每個 Prompt 必須有版本號，修改時建立新版本而非覆蓋
+2. 模型選擇：優先考慮成本效益比，記錄選型理由
+3. 評估方法：新 Prompt 必須跑至少 5 個測試案例才算完成
+4. Skill 結構：遵循 `name / description / parameters / execute` 四段式
+5. 安全優先：所有 LLM 呼叫必須有 timeout 和 fallback 機制
+
+### 禁止事項
+1. 禁止未測試就交付 Prompt
+2. 禁止在程式碼中明文存放模型 API 金鑰
+3. 禁止跳過成本評估直接使用最貴模型

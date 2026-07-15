@@ -278,13 +278,13 @@ ai-bot/
 │   ├── memory.db                   ← FTS5 統一索引
 │   └── proposals.json              ← Skill 審批狀態
 ├── .kiro/
-│   ├── steering/SOUL.md + USER.md + BRAIN.md
+│   ├── steering/SOUL.md + BRAIN.md + MEMORY.md + TEAM.md
 │   ├── agents/ai-agent.json        ← AI Agent 開發助手
 │   ├── prompts/route-message.md    ← 意圖路由
 │   └── skills/ark-wiki-engine/ + ark-superpowers/ + ark-grill-me/ + ...
 ├── agents/                         ← 8 Agent（.kiro/ + knowledge/ + memory/）
 │   └── {name}-agent/
-│       ├── .kiro/steering/         ← SOUL + USER + BRAIN + GUARDRAILS
+│       ├── .kiro/steering/         ← SOUL + BRAIN + MEMORY + TEAM
 │       ├── .kiro/skills/           ← 程序記憶（審批後落地）
 │       ├── memory/                 ← 情節 + 語意記憶
 │       │   ├── daily/             ← append-only daily log
@@ -339,10 +339,10 @@ Agent 具備跨 session 記憶 + Skill 自動推薦能力：
 
 | 檔案 | 職責 |
 |------|------|
-| `SOUL.md` | 我是誰（人格、邊界） |
-| `USER.md` | 我服務誰（偏好） |
-| `BRAIN.md` | 我怎麼工作 + 安全紅線 |
-| `GUARDRAILS.md` | 品質標準（核心規則 + 禁止事項） |
+| `SOUL.md` | 我是誰（人格、能力、邊界、使用者偏好） |
+| `BRAIN.md` | 我怎麼工作 + 安全紅線 + 品質護欄 |
+| `MEMORY.md` | 專案狀態 + 技術決策 + 踩坑紀錄 |
+| `TEAM.md` | 團隊結構 + 協作規則 |
 
 ### Memory API
 

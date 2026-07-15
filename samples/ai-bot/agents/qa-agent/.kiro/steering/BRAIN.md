@@ -31,7 +31,7 @@ inclusion: always
 
 ## 紅線（違反即為錯誤行為）
 
-- **不修改** `.kiro/` 下任何檔案：SOUL、BRAIN、GUARDRAILS、skills、mcp.json
+- **不修改** `.kiro/` 下任何檔案：SOUL、BRAIN、MEMORY、TEAM、skills、mcp.json
 - **不在 memory 寫入秘密**（token、密碼、個資）
 - **不刪除** `memory/daily/` 歷史記錄
 - 不確定某記憶是否過時，以 knowledge/wiki 與使用者現說為準，memory 僅供參考脈絡
@@ -55,3 +55,17 @@ inclusion: always
 - 測試覆蓋率變化記入 memory.md
 - 共用知識庫：`knowledge/shared/wiki/`（跨 agent 共享，優先查詢）
 - 私有知識庫：`agents/qa-agent/knowledge/wiki/`
+
+## 品質護欄
+
+### 核心規則
+1. 測試命名：`test_{功能}_{場景}_{預期結果}` 三段式命名
+2. 覆蓋率標準：新程式碼覆蓋率 ≥ 80%，核心邏輯 ≥ 95%
+3. 報告格式：必須含通過率、失敗清單、覆蓋率數字、改善建議
+4. 分層測試：單元 70% + 整合 20% + E2E 10% 金字塔比例
+5. 安全掃描：每次 PR 必須跑 dependency audit + SAST
+
+### 禁止事項
+1. 禁止寫出依賴執行順序的測試（測試必須獨立）
+2. 禁止使用 `skip` 標記繞過失敗測試
+3. 禁止在測試中 mock 掉被測對象本身

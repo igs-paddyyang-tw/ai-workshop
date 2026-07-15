@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 import shutil
 from pathlib import Path
 
@@ -73,7 +74,6 @@ def is_cli_available() -> bool:
 
 def get_available_backend() -> str:
     """從 CLI_BACKEND 環境變數取得 backend，未設定則自動偵測。"""
-    import os
     env_val = os.getenv("CLI_BACKEND", "").strip().lower()
     if env_val in ("kiro", "agy", "claude"):
         return env_val
@@ -89,7 +89,6 @@ def get_available_backend() -> str:
 
 def _resolve_cmd(backend: str) -> str | None:
     """解析 backend 對應的可執行檔完整路徑，找不到回傳 None。"""
-    import os
     cmd_map = {"kiro": "kiro-cli", "agy": "agy", "claude": "claude"}
     cmd = cmd_map.get(backend, backend)
     # 先查 PATH
@@ -116,7 +115,8 @@ async def start_all_agents() -> int:
         return 0
 
     backend = get_available_backend()
-    log.info("使用 CLI backend: %s", backend)
+    cli_model = os.getenv("CLI_MODEL", "auto")
+    log.info("使用 CLI backend: %s, model: %s", backend, cli_model)
 
     count = 0
     for agent_id, info in AVAILABLE_AGENTS.items():
@@ -128,7 +128,7 @@ async def start_all_agents() -> int:
         proc = AgentProcess(
             name=name,
             working_dir=working_dir,
-            model="auto",
+            model=cli_model,
             skip_resume=True,
             backend=backend,
         )
@@ -220,21 +220,34 @@ async def agent_cli_chat(
 
 
 def _inject_context(message: str, agent_id: str, session=None) -> str:
-    """注入 SOUL + 對話脈絡到 prompt。
+    """注入 SOUL + MEMORY + 對話脈絡到 prompt。
 
     結構：
       1. SOUL.md 內容（人格注入）
-      2. 最近 4 輪對話（Context 鏈）
-      3. 當前使用者訊息
+      2. MEMORY.md 內容（專案狀態 + 踩坑紀錄）
+      3. 最近 4 輪對話（Context 鏈）
+      4. 當前使用者訊息
     """
     parts: list[str] = []
 
     # 1. SOUL
-    soul_path = BASE_DIR / "agents" / f"{agent_id}-agent" / ".kiro" / "steering" / "SOUL.md"
+    steering_dir = BASE_DIR / "agents" / f"{agent_id}-agent" / ".kiro" / "steering"
+    soul_path = steering_dir / "SOUL.md"
     if soul_path.exists():
         parts.append(soul_path.read_text(encoding="utf-8"))
 
-    # 2. 最近對話（限 4 輪 = 2 來回）
+    # 2. MEMORY（專案狀態，≤ 1500 chars）
+    memory_path = steering_dir / "MEMORY.md"
+    if memory_path.exists():
+        content = memory_path.read_text(encoding="utf-8")
+        # 移除 frontmatter
+        if content.startswith("---"):
+            _, _, content = content.split("---", 2)
+        content = content.strip()
+        if content and len(content) > 20:
+            parts.append(content[:1500])
+
+    # 3. 最近對話（限 4 輪 = 2 來回）
     if session and hasattr(session, "history") and session.history:
         recent = session.history[-4:]
         if recent:
@@ -244,7 +257,7 @@ def _inject_context(message: str, agent_id: str, session=None) -> str:
                 context_lines.append(f"{prefix}: {turn.content[:200]}")
             parts.append("\n".join(context_lines))
 
-    # 3. 當前問題
+    # 4. 當前問題
     parts.append(f"## 當前問題\n{message}")
 
     return "\n\n---\n\n".join(parts)

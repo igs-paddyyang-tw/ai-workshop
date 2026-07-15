@@ -267,7 +267,7 @@ def _self_growth_check() -> None:
 
         # Steering 必備檔
         steering_dir = agent_path / ".kiro" / "steering"
-        required_steering = ["SOUL.md", "BRAIN.md", "GUARDRAILS.md", "USER.md"]
+        required_steering = ["SOUL.md", "BRAIN.md", "MEMORY.md", "TEAM.md"]
         for f in required_steering:
             if not (steering_dir / f).exists():
                 warnings.append(f"  ⚠️  {agent}: 缺少 steering/{f}")

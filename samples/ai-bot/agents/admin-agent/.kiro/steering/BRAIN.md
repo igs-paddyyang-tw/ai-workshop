@@ -31,7 +31,7 @@ inclusion: always
 
 ## 紅線（違反即為錯誤行為）
 
-- **不修改** `.kiro/` 下任何檔案：SOUL、BRAIN、GUARDRAILS、skills、mcp.json
+- **不修改** `.kiro/` 下任何檔案：SOUL、BRAIN、MEMORY、TEAM、skills、mcp.json
 - **不在 memory 寫入秘密**（token、密碼、個資）
 - **不刪除** `memory/daily/` 歷史記錄
 - 不確定某記憶是否過時，以 knowledge/wiki 與使用者現說為準，memory 僅供參考脈絡
@@ -55,3 +55,17 @@ inclusion: always
 - 費用異常事件必須記入 memory.md
 - 共用知識庫：`knowledge/shared/wiki/`（跨 agent 共享，優先查詢）
 - 私有知識庫：`agents/admin-agent/knowledge/wiki/`
+
+## 品質護欄
+
+### 核心規則
+1. 服務監控：每次請求前確認目標服務狀態，異常時先修復再執行
+2. 日誌紀錄：所有管理操作必須寫入 `logs/admin-actions.log`，含時間戳
+3. 重啟流程：重啟前確認無進行中任務 → 通知相關 Agent → 執行重啟 → 驗證恢復
+4. 費用控制：單次操作超過預算 80% 必須暫停並通知使用者
+5. 分流準確：意圖不明時主動詢問，不猜測分流
+
+### 禁止事項
+1. 禁止未經確認直接刪除任何 Agent 配置
+2. 禁止繞過費用預警機制
+3. 禁止同時重啟所有服務（必須逐一滾動重啟）

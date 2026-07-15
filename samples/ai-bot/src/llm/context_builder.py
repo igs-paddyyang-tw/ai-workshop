@@ -29,10 +29,10 @@ async def build_default_system_prompt(query: str = "", session=None) -> str:
             _, _, content = content.split("---", 2)
         parts.append(content.strip())
 
-    # 3. USER.md
-    user_path = BASE_DIR / ".kiro" / "steering" / "USER.md"
-    if user_path.exists():
-        parts.append(user_path.read_text(encoding="utf-8"))
+    # 3. TEAM.md
+    team_path = BASE_DIR / ".kiro" / "steering" / "TEAM.md"
+    if team_path.exists():
+        parts.append(team_path.read_text(encoding="utf-8"))
 
     # 4. memory/memory.md
     memory_path = BASE_DIR / "memory" / "memory.md"

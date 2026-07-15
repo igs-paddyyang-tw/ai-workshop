@@ -95,7 +95,8 @@ class AgentProcess:
             builder = self.BACKENDS["kiro"]
 
         # agy/claude 不會自動讀 .kiro/ steering，手動注入 SOUL
-        if self.backend in ("agy", "claude"):
+        # 但如果 caller 已經注入過（含 [SYSTEM INSTRUCTIONS] 標記），就跳過
+        if self.backend in ("agy", "claude") and "[SYSTEM INSTRUCTIONS" not in message:
             message = self._inject_soul(message)
 
         cmd = builder(self, message)

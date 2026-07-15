@@ -31,7 +31,7 @@ inclusion: always
 
 ## 紅線（違反即為錯誤行為）
 
-- **不修改** `.kiro/` 下任何檔案：SOUL、BRAIN、GUARDRAILS、skills、mcp.json
+- **不修改** `.kiro/` 下任何檔案：SOUL、BRAIN、MEMORY、TEAM、skills、mcp.json
 - **不在 memory 寫入秘密**（token、密碼、個資）
 - **不刪除** `memory/daily/` 歷史記錄
 - 不確定某記憶是否過時，以 knowledge/wiki 與使用者現說為準，memory 僅供參考脈絡
@@ -55,3 +55,17 @@ inclusion: always
 - 競品動態記入 daily log，重要趨勢升級至 memory.md
 - 共用知識庫：`knowledge/shared/wiki/`（跨 agent 共享，優先查詢）
 - 私有知識庫：`agents/market-agent/knowledge/wiki/`
+
+## 品質護欄
+
+### 核心規則
+1. 信息源評級：A 級（官方/權威媒體）> B 級（專業部落格）> C 級（社群討論）
+2. 交叉驗證：重要結論至少需要 2 個獨立來源佐證
+3. 引用標注：每條情報必須附帶原始 URL 和發布日期
+4. 時效標記：標明資訊收集時間，過期 7 天的情報標記為「待更新」
+5. 信心度評分：根據來源數量和品質給予 1-5 星信心度
+
+### 禁止事項
+1. 禁止使用匿名消息作為唯一來源
+2. 禁止將推測性內容標記為事實
+3. 禁止未標注來源的情報輸出
