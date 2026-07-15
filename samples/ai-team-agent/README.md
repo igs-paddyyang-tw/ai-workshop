@@ -15,68 +15,57 @@ cp .env.example .env          # 填入 TELEGRAM_BOT_TOKEN 等
 python start.py
 ```
 
-## 分層啟動（Tier）
-
-| Tier | 功能 | 條件 |
-|------|------|------|
-| 0 | Prompts + Skills + Wiki + MCP | 永遠可用 |
-| 1 | Telegram Bot | 需 TELEGRAM_BOT_TOKEN |
-| 2 | kiro-cli Agent | 需 kiro-cli 在 PATH |
-| 3 | Team A2A 派工 | 需 team.yaml |
-
 ## 架構
 
 ```
 src/
 ├── gateway/          # 入口層：Telegram Bot、FastAPI、MCP stdio
 ├── coordinator/      # 協調層：A2A、DB、Events、Memory、Wiki、Services
-├── runtime/          # 執行層：Agent Process、Config、Scheduler、PersistentDaemon
+├── runtime/          # 執行層：PersistentDaemon、Config、Scheduler
 └── business/         # 業務層：Skills、News、Web Search
 ```
 
 ## 進程模式
 
-平台支援雙模式，透過 `team.yaml` 一行切換：
+透過 `team.yaml` 切換：
 
-```yaml
-defaults:
-  persistent: true   # 常駐模式（預設）
-  persistent: false  # Spawn 模式（fallback）
-```
+| 模式 | 命令 | 延遲 | MCP Tools |
+|------|------|------|-----------|
+| 常駐 (Persistent) | `--legacy-ui --require-mcp-startup` | < 100ms | ✅ 載入 |
+| Spawn (fallback) | `--no-interactive msg` | 2-5s | ✅ 每次重新載入 |
 
-| 模式 | 延遲 | 資源 | Context |
-|------|------|------|---------|
-| 常駐 (Persistent) | < 100ms | 常駐佔 RAM | 天然保持 session |
-| Spawn | 2-5 秒 | 空閒零佔用 | --resume 每次載入 |
-
-常駐模式使用 `--legacy-ui` + stdin pipe，包含：
+常駐模式特性：
 - Health Loop（30 秒巡檢、自動重啟、指數退避）
 - Message Queue + SQLite Overflow（backpressure 保護）
-- Heartbeat（外部 watchdog 偵測凍結）
-- FailureMemory（重複錯誤偵測 → soft-pause）
+- Heartbeat + FailureMemory（錯誤偵測 → soft-pause）
 
 ## 對話回覆機制
 
 ### 常駐模式（MCP reply 驅動）
 
 ```
-User(TG) → handle_message → daemon.send_message → stdin pipe → Agent 思考
-  → Agent 呼叫 MCP reply(text) → POST /api/chat/reply → TG 回覆使用者
+User(TG) → handle_message → daemon.send_message → stdin pipe → Agent
+  → Agent 呼叫 MCP reply(text) → mcp_stdio → POST /api/chat/reply → TG
 ```
-
-- Agent **必須**用 `reply()` tool 回覆使用者（所有 agent steering 已配置）
-- 不再依賴 stdout regex 截取（已移除）
-- 支援多使用者 routing（per-message chat_id 追蹤）
-- 智慧 timeout：300s + 活動偵測寬限 120s
 
 ### Spawn 模式（同步等待）
 
 ```
-User(TG) → handle_message → await agent.send(text) → stdout → TG 回覆
+User(TG) → handle_message → await agent.send(msg) → stdout → TG
 ```
 
-- 直接等待進程結束，拿 stdout 回覆
-- 無需 MCP reply tool
+## MCP 注意事項（Windows）
+
+kiro-cli 的 MCP stdio 有三個 Windows 特有限制：
+
+1. **stderr = 死亡** — MCP server 的 stderr 有任何輸出 → kiro-cli 判定 Transport closed
+2. **UTF-8 BOM = 死亡** — mcp.json 有 BOM → JSON parser 失敗（PowerShell `Set-Content -Encoding UTF8` 會加 BOM）
+3. **cp950 encode = 死亡** — stdout 含非 ASCII 字元且未用 `ensure_ascii=True` → UnicodeEncodeError → stderr traceback
+
+解決方案：
+- `json.dumps(ensure_ascii=True)` 所有 stdout 輸出
+- logging 用 `NullHandler`（不寫 stderr）
+- 用 Python 寫 mcp.json（避免 BOM）
 
 ## Agent 團隊
 
@@ -93,37 +82,33 @@ User(TG) → handle_message → await agent.send(text) → stdout → TG 回覆
 
 ## Agent 目錄結構
 
-每個 agent 遵循統一結構：
-
 ```
-agents/{name}/
+agents/{name}/          ← kiro-cli 的 cwd（MCP 從這裡載入）
 ├── .kiro/
-│   ├── steering/     # SOUL + BRAIN + GUARDRAILS + TEAM + ...
-│   ├── prompts/      # route-message.md 等
-│   └── settings/     # mcp.json
+│   ├── steering/       # SOUL + BRAIN
+│   └── settings/       # mcp.json（無 BOM！）
 ├── knowledge/
-│   ├── wiki/         # 私有知識庫
-│   └── raw/          # 原始文件
+│   ├── wiki/           # 私有知識庫
+│   └── raw/            # 原始文件
 ├── memory/
-│   ├── memory.md     # 持久事實（≤2000 tokens）
-│   ├── recent.md     # 最近經驗
-│   └── daily/        # 每日紀錄
+│   ├── memory.md       # 持久事實
+│   └── daily/          # 每日紀錄
 └── output/
-    ├── drafts/
-    ├── exports/
-    ├── reports/
-    └── skills/
 ```
 
-## MCP 工具
+## MCP 工具（11 tools）
 
-平台啟動後，Kiro IDE 可透過 MCP stdio server 使用：
-
-- `reply` / `send_to_instance` / `broadcast_all` — 通訊
-- `delegate_task` / `create_task` / `update_task` / `list_tasks` — 任務管理
-- `query_team_status` — 團隊狀態
-- `wiki_query` — 知識庫搜尋
-- `record_spend` / `log_to_leader` — 成本與回報
+| 工具 | 用途 |
+|------|------|
+| `reply(text, summary)` | 回覆使用者（唯一出口） |
+| `send_to_instance(instance, msg)` | 跨 agent 通訊 |
+| `delegate_task(instance, task)` | 委派任務 |
+| `query_team_status()` | 團隊狀態 |
+| `broadcast_all(message)` | 廣播全員 |
+| `create_task` / `update_task` / `list_tasks` | 任務管理 |
+| `wiki_query(query)` | 知識庫搜尋 |
+| `record_spend(amount_usd)` | 記錄成本 |
+| `log_to_leader(text)` | 回報 leader |
 
 **前提：** 需先 `python start.py` 啟動 backend（port 33333）。
 
