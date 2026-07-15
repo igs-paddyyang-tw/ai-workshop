@@ -325,7 +325,7 @@ async def handle_request(bridge: McpBridge, request: dict) -> dict:
                 "jsonrpc": "2.0",
                 "id": req_id,
                 "result": {
-                    "content": [{"type": "text", "text": json.dumps(result, ensure_ascii=False)}],
+                    "content": [{"type": "text", "text": json.dumps(result, ensure_ascii=True)}],
                 },
             }
         except Exception as e:
@@ -333,7 +333,7 @@ async def handle_request(bridge: McpBridge, request: dict) -> dict:
                 "jsonrpc": "2.0",
                 "id": req_id,
                 "result": {
-                    "content": [{"type": "text", "text": json.dumps({"error": str(e)}, ensure_ascii=False)}],
+                    "content": [{"type": "text", "text": json.dumps({"error": str(e)}, ensure_ascii=True)}],
                     "isError": True,
                 },
             }
@@ -367,7 +367,7 @@ async def main_loop(bridge: McpBridge) -> None:
 
         response = await handle_request(bridge, request)
         if response is not None:
-            out = json.dumps(response, ensure_ascii=False) + "\n"
+            out = json.dumps(response, ensure_ascii=True) + "\n"
             sys.stdout.write(out)
             sys.stdout.flush()
 
