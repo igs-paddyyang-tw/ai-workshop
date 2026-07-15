@@ -18,6 +18,7 @@
 
 - Gemini FC schema 不支援 anyOf / title / default，需清理
 - Gemini FunctionCall 不支援 `id` 欄位（那是 OpenAI 格式），會報 Unknown field
+- Gemini API 在工具呼叫（Function Call）時，若 parts 中缺少 `thought_signature` 會拋出 400 INVALID_ARGUMENT 錯誤
 - `edit_message` 訊息未變更時會拋 TelegramError，需 try/except
 - numpy 下載慢（12MB），bm25s 是選配依賴（graceful fallback）
 - save_memory 已廢棄，對話記錄統一走 daily_log → memory/daily/
