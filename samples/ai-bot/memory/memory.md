@@ -9,7 +9,7 @@
 - Windows 平台，PowerShell 為主要 shell
 - Bot 啟動指令：`start_bot.bat` 或 `python start.py`
 - Uvicorn reload 只影響 API server，bot 子進程需完整重啟
-- BRAIN.md 規範已更新，包含強制查詢規則，Output 只提醒不主動刪除，競品分析內容應存入 Wiki
+- BRAIN.md 規範已更新，包含強制查詢規則、Output vs Wiki 判斷規則，Output 只提醒不主動刪除，競品分析內容應存入 Wiki
 - search_wiki 查無結果後會引導進行 web_search
 - 外部搜尋結果原則上只回覆不自動存入知識庫
 - save_to_wiki 寫入後會自動 rebuild_index (metadata + BM25 + FTS5)，確保搜尋最新內容
@@ -23,6 +23,7 @@
 - save_memory 已廢棄，對話記錄統一走 daily_log → memory/daily/
 - web_search 用 google-genai 新 SDK：`genai.Client()` + `types.GoogleSearch()`
 - LLM 需要明確的 prompt 引導才能有效利用搜尋結果
+- google-generativeai 舊 SDK 不支援 google_search grounding
 
 ## 人與偏好
 
@@ -49,4 +50,5 @@
 - LLM Provider 抽象層：Gemini/OpenAI/Anthropic 可切換（.env 一鍵）
 - CLI Backend 選項：kiro / agy / claude（預設 kiro）
 - 下一步：觀察 Mode B 完整閉環（搜尋→回覆→存入→再查命中）
+- 考慮 Agent 私有 wiki 也做同規格 lint
 ```
