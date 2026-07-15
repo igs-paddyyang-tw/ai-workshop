@@ -102,13 +102,13 @@ class PersistentDaemon:
         )
         cmd = self.backend.build_command(cfg)
 
-        # 啟動進程（cwd = instance_dir，不是 working_directory）
+        # 啟動進程（cwd = working_directory，kiro-cli 從 cwd/.kiro/settings/mcp.json 載入 MCP）
         mp = ManagedProcess(name=name)
         if state.process and state.process.is_alive():
             await state.process.kill()
             unregister(name)
 
-        await mp.start(cmd, cwd=str(inst_dir))
+        await mp.start(cmd, cwd=ic.working_directory)
         register(mp)
         state.process = mp
 
