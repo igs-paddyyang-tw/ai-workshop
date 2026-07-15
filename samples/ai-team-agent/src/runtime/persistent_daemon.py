@@ -217,16 +217,18 @@ class PersistentDaemon:
                     continue
 
                 if state.status == InstanceStatus.RUNNING and state.process:
-                    await state.process.send_input(text)
+                    # 包裹訊息：提醒 Agent 必須用 reply tool 回覆
+                    wrapped = f"[使用者訊息] {text}\n\n（請用 reply tool 回覆使用者，不要直接輸出文字）"
+                    await state.process.send_input(wrapped)
                     state.last_activity = time.time()
                     log.info("📤 sent to %s (%d chars)", name, len(text))
 
-                    # Debug: 10 秒後擷取 stdout 確認 agent 狀態
-                    await asyncio.sleep(10)
+                    # Debug: 15 秒後擷取 stdout 確認 agent 狀態
+                    await asyncio.sleep(15)
                     if state.process:
-                        recent = state.process.capture(lines=20)
+                        recent = state.process.capture(lines=30)
                         if recent:
-                            log.info("📋 %s stdout preview:\n%s", name, recent[-500:])
+                            log.info("📋 %s stdout preview:\n%s", name, recent[-800:])
 
                     # 動態間隔（避免 stdin 塞爆）
                     qsize = state._msg_queue.qsize()
