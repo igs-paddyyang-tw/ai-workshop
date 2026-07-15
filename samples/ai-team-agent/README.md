@@ -15,6 +15,15 @@ cp .env.example .env          # 填入 TELEGRAM_BOT_TOKEN 等
 python start.py
 ```
 
+## 分層啟動（Tier）
+
+| Tier | 功能 | 條件 |
+|------|------|------|
+| 0 | Prompts + Skills + Wiki + MCP | 永遠可用 |
+| 1 | Telegram Bot | 需 TELEGRAM_BOT_TOKEN |
+| 2 | kiro-cli Agent | 需 kiro-cli 在 PATH |
+| 3 | Team A2A 派工 | 需 team.yaml |
+
 ## 架構
 
 ```

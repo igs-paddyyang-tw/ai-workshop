@@ -76,3 +76,4 @@
 - **對話路由：stdout 截取 + MCP reply 同時存在 → 雙重回覆或零回覆**
 - **對話路由：TelegramChannel._chat_id 只綁一人 → 多使用者時回覆丟失**
 - **對話路由：spawn 模式 fire-and-forget → 使用者收不到回覆**
+- **MCP stdio：Windows asyncio connect_write_pipe 噴 WinError 6 → 改用 sys.stdout.write + run_in_executor**

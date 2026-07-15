@@ -91,7 +91,9 @@ related_plan: docs/plans/persistent-process-plan.md
 - 支援同一團隊混用 spawn 與 persistent 模式
 - 預設值由 `defaults.persistent` 決定
 
-### FR-6：Idle Eviction（閒置回收）
+### FR-6：Idle Eviction（閒置回收）— 延後實作
+
+> 暫不實作。目前 8 agents 常駐記憶體可控，待團隊規模擴大或 RAM 不足時再排入。
 
 - 常駐進程閒置超過 `idle_timeout_minutes` 後自動休眠（kill）
 - 下次有任務時自動 respawn

@@ -1,6 +1,7 @@
-"""Telegram 指令 handlers — 11 個 slash 指令。"""
+"""Telegram 指令 handlers — slash 指令（含白名單權限）。"""
 from __future__ import annotations
 
+import functools
 import httpx
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
@@ -10,6 +11,22 @@ from gateway.telegram.formatters import fmt_status, fmt_board, fmt_costs, fmt_qu
 
 def _api(context: ContextTypes.DEFAULT_TYPE) -> str:
     return context.bot_data.get("api_base", "http://127.0.0.1:33333")
+
+
+def require_whitelist(fn):
+    """白名單權限 decorator — 非白名單使用者顯示 ID 提示。"""
+    @functools.wraps(fn)
+    async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        uid = update.effective_user.id
+        allowed = context.bot_data.get("allowed_users", [])
+        if allowed and uid not in allowed:
+            await update.message.reply_text(
+                f"🔒 需要權限。你的 ID：<code>{uid}</code>",
+                parse_mode="HTML",
+            )
+            return
+        return await fn(update, context)
+    return wrapper
 
 
 async def _get(context: ContextTypes.DEFAULT_TYPE, path: str) -> dict | list:
@@ -27,14 +44,24 @@ async def _post(context: ContextTypes.DEFAULT_TYPE, path: str, data: dict) -> di
 # ── /start ──
 
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    uid = update.effective_user.id
     text = (
-        "👋 歡迎使用 <b>Ark Agent Platform</b>\n\n"
-        "我是你的 AI 團隊管理助手，可以幫你：\n"
-        "• 派工給 Agent（/assign 描述）\n"
-        "• 查看團隊狀態（/status）\n"
-        "• 追蹤費用（/costs）\n"
-        "• 管理佇列（/queue）\n\n"
-        "輸入 /help 查看所有指令"
+        "🤖 <b>Ark Agent Platform</b>\n\n"
+        "一個由 AI Agent 組成的專案團隊，常駐運行。\n"
+        "你只需要用自然語言下達需求，團隊會自動分工完成。\n\n"
+        "<b>團隊成員</b>\n"
+        "⚙️ admin — 服務監控、成本控制\n"
+        "🧠 pm — 需求分析、派工、驗收\n"
+        "🤖 ai-dev — LLM / Agent / RAG\n"
+        "💻 coder — 全端開發\n"
+        "🧪 qa — 測試、品質保證\n"
+        "📰 market — 市場研究\n"
+        "📊 data — 數據分析\n"
+        "📋 report — 報告產出\n\n"
+        "<b>使用方式</b>\n"
+        "• 直接打字 → pm-agent 接收並分派\n"
+        "• /help → 查看所有指令\n\n"
+        f"你的 Chat ID：<code>{uid}</code>"
     )
     await update.message.reply_text(text, parse_mode="HTML")
 
@@ -43,16 +70,18 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = (
-        "📖 <b>指令列表</b>\n\n"
-        "/status — 團隊即時狀態\n"
+        "📖 <b>基本指令</b>（所有人）\n"
+        "/start — 歡迎 + Chat ID\n"
+        "/status — 團隊狀態\n"
+        "/help — 本說明\n\n"
+        "🔒 <b>進階功能</b>（需白名單）\n"
+        "直接打字 → pm-agent 接收\n"
         "/agents — Agent 列表\n"
-        "/board — 看板摘要\n"
-        "/costs — 費用報告\n"
-        "/queue — 待處理佇列\n"
-        "/assign &lt;描述&gt; — 建立任務並派工\n"
-        "/stop &lt;agent&gt; — 中斷執行\n"
-        "/retry &lt;issue_id&gt; — 重試任務\n"
-        "/logs &lt;agent&gt; — 查看日誌\n"
+        "/board — 任務看板\n"
+        "/costs — 費用追蹤\n"
+        "/assign — 派工\n"
+        "/restart — 重啟 agent\n"
+        "/stop — 停止 agent\n"
     )
     await update.message.reply_text(text, parse_mode="HTML")
 
@@ -68,6 +97,7 @@ async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # ── /agents ──
 
+@require_whitelist
 async def cmd_agents(update: Update, context: ContextTypes.DEFAULT_TYPE):
     agents = await _get(context, "/api/agents")
     if not agents:
@@ -89,6 +119,7 @@ async def cmd_agents(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # ── /board ──
 
+@require_whitelist
 async def cmd_board(update: Update, context: ContextTypes.DEFAULT_TYPE):
     board = await _get(context, "/api/board")
     sections = []
@@ -113,6 +144,7 @@ async def cmd_board(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # ── /costs ──
 
+@require_whitelist
 async def cmd_costs(update: Update, context: ContextTypes.DEFAULT_TYPE):
     data = await _get(context, "/api/admin/costs")
     text = fmt_costs(data)
@@ -121,6 +153,7 @@ async def cmd_costs(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # ── /queue ──
 
+@require_whitelist
 async def cmd_queue(update: Update, context: ContextTypes.DEFAULT_TYPE):
     issues = await _get(context, "/api/admin/queue")
     text = fmt_queue(issues)
@@ -132,6 +165,7 @@ async def cmd_queue(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # ── /assign ──
 
+@require_whitelist
 async def cmd_assign(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text.replace("/assign", "").strip()
     if not text:
@@ -157,6 +191,7 @@ async def cmd_assign(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # ── /stop ──
 
+@require_whitelist
 async def cmd_stop(update: Update, context: ContextTypes.DEFAULT_TYPE):
     arg = update.message.text.replace("/stop", "").strip()
     if not arg:
@@ -171,6 +206,7 @@ async def cmd_stop(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # ── /retry ──
 
+@require_whitelist
 async def cmd_retry(update: Update, context: ContextTypes.DEFAULT_TYPE):
     arg = update.message.text.replace("/retry", "").strip()
     if not arg:
@@ -218,6 +254,7 @@ async def cmd_runtimes(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # ── /logs ──
 
+@require_whitelist
 async def cmd_logs(update: Update, context: ContextTypes.DEFAULT_TYPE):
     arg = update.message.text.replace("/logs", "").strip()
     if not arg:
