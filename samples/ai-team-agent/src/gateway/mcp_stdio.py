@@ -12,11 +12,10 @@ import httpx
 
 log = logging.getLogger(__name__)
 
-# MCP stdio log 寫入 stderr（因為 stdout 是 JSON-RPC 通道）
-_handler = logging.StreamHandler(sys.stderr)
-_handler.setFormatter(logging.Formatter("%(asctime)s [%(name)s] %(levelname)s %(message)s"))
-log.addHandler(_handler)
-log.setLevel(logging.INFO)
+# ⚠️ kiro-cli 把 stderr 任何輸出視為 MCP server 失敗（Transport closed）
+# 所有 log 導到 NullHandler；debug 時可改寫到檔案
+log.addHandler(logging.NullHandler())
+log.setLevel(logging.WARNING)
 
 # ── Tool 定義 ────────────────────────────────────────────────────
 
@@ -387,9 +386,5 @@ if __name__ == "__main__":
     args = parse_args()
     base_url = f"http://127.0.0.1:{args.port}"
     bridge = McpBridge(base_url=base_url, instance=args.instance, role=args.role)
-
-    # Startup log（寫入 stderr 供 debug）
-    import sys as _sys
-    print(f"[mcp_stdio] started: instance={args.instance} port={args.port} role={args.role}", file=_sys.stderr, flush=True)
 
     asyncio.run(main_loop(bridge))
