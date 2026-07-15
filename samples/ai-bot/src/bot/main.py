@@ -32,12 +32,9 @@ from src.memory.tg_handlers import (
 
 # Bot 指令選單（TG 左下角 / 按鈕）
 BOT_COMMANDS = [
-    BotCommand("start", "歡迎 + Chat ID"),
-    BotCommand("status", "團隊狀態"),
+    BotCommand("start", "歡迎 + 系統資訊"),
+    BotCommand("status", "平台狀態"),
     BotCommand("help", "使用說明"),
-    BotCommand("agents", "Agent 列表"),
-    BotCommand("recall", "搜尋記憶"),
-    BotCommand("skills", "技能清單"),
 ]
 
 

@@ -86,10 +86,14 @@ class GeminiProvider:
                 for p in parts:
                     if "function_call" in p:
                         fc = p["function_call"]
-                        genai_parts.append(types.Part.from_function_call(
+                        part_obj = types.Part.from_function_call(
                             name=fc["name"],
                             args=fc.get("args", {}),
-                        ))
+                        )
+                        # 還原 thought_signature（Gemini 3.x 必要）
+                        if "thought_signature" in p and p["thought_signature"]:
+                            part_obj.thought_signature = p["thought_signature"]
+                        genai_parts.append(part_obj)
                     elif "function_response" in p:
                         fr = p["function_response"]
                         genai_parts.append(types.Part.from_function_response(
@@ -124,9 +128,12 @@ class GeminiProvider:
             if hasattr(part, "function_call") and part.function_call and part.function_call.name:
                 fc = part.function_call
                 args = dict(fc.args) if fc.args else {}
+                # 保留 thought_signature（Gemini 3.x 必要）
+                thought_sig = getattr(part, "thought_signature", None)
                 function_calls.append(FunctionCall(
                     name=fc.name,
                     args=args,
+                    thought_signature=thought_sig,
                 ))
             elif hasattr(part, "text") and part.text:
                 text_parts.append(part.text)

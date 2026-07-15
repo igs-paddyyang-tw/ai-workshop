@@ -102,24 +102,46 @@ async def agent_loop(
             })
 
             # Append to messages（Gemini 格式：model 的 function_call + user 的 function_response）
+            fc_part = {"function_call": {"name": fc.name, "args": fc.args}}
+            if fc.thought_signature:
+                fc_part["thought_signature"] = fc.thought_signature
             messages.append({
                 "role": "model",
-                "parts": [{"function_call": {"name": fc.name, "args": fc.args}}],
+                "parts": [fc_part],
             })
             messages.append({
                 "role": "user",
                 "parts": [{"function_response": {"name": fc.name, "response": {"result": result_str}}}],
             })
 
-    # Max iterations 耗盡
-    log.warning("agent_loop max_iterations reached (%d)", max_iterations)
-    # 嘗試取最後一次有文字的 response
-    last_text = "⚠️ 任務太複雜（超過迭代上限），已完成的部分如上。"
-    if tool_calls_log:
-        last_text = f"⚠️ 已執行 {len(tool_calls_log)} 個工具呼叫，但未能完成最終回覆。請嘗試簡化問題。"
+    # Max iterations 耗盡 → 強制總結（不帶 tools，LLM 只能回文字）
+    log.warning("agent_loop max_iterations reached (%d), forcing summary", max_iterations)
 
+    summary_prompt = (
+        "你已經執行了多次工具呼叫，現在必須根據已取得的資訊直接回覆使用者。"
+        "不要再呼叫任何工具，直接用繁體中文整理回答。"
+    )
+    messages.append({"role": "user", "content": summary_prompt})
+
+    try:
+        final_response = await provider.chat(
+            messages=messages,
+            system=system_prompt,
+            tools=None,  # 不帶 tools，強制純文字
+        )
+        if final_response.text:
+            return AgentResult(
+                text=final_response.text,
+                tool_calls_log=tool_calls_log,
+                iterations=max_iterations + 1,
+                token_usage=total_usage,
+            )
+    except Exception as e:
+        log.error("agent_loop forced summary failed: %s", e)
+
+    # Fallback
     return AgentResult(
-        text=last_text,
+        text=f"⚠️ 已執行 {len(tool_calls_log)} 個工具呼叫，但未能完成最終回覆。請嘗試簡化問題。",
         tool_calls_log=tool_calls_log,
         iterations=max_iterations,
         token_usage=total_usage,

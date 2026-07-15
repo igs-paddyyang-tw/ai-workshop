@@ -34,7 +34,7 @@ upgraded_from: "docs/one-pagers/one-pager-chat-routing-simplify.md"
 - [x] 引入 Ark Agent（Gemini ReAct）作為自然語言的預設處理器
 - [x] 實現 `dispatch_to_agent` tool，讓 Gemini Function Calling 自動派工給 7 個專業 Agent
 - [x] 加入白名單權限控制（公開指令 vs 白名單功能）
-- [x] 精簡 Bot Menu 至 6 個指令
+- [x] 精簡 Bot Menu 至 6 個指令（公開 3 + 白名單 3）
 - [x] /start 顯示 chat_id；/help 分基本/進階兩段
 - [x] 實現 ProgressStack（堆疊式編輯訊息）提供即時進度回饋
 - [x] 實現 Chat Trace Log 記錄對話軌跡

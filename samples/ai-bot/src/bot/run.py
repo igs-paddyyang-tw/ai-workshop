@@ -34,6 +34,7 @@ async def main():
     from src.bot.main import create_app, BOT_COMMANDS
     bot_app = create_app()
     await bot_app.initialize()
+    await bot_app.bot.delete_my_commands()
     await bot_app.bot.set_my_commands(BOT_COMMANDS)
     await bot_app.updater.start_polling(drop_pending_updates=True)
     await bot_app.start()
