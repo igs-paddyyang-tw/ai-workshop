@@ -28,7 +28,7 @@ def main() -> None:
     print("═" * 50)
     print("  🤖 AI Agent 專家開發平台")
     print("═" * 50)
-    print(f"  Tier 0: ✅ Skills + Wiki + API（永遠可用）")
+    print(f"  Tier 0: ✅ Prompts + Skills + Wiki + MCP（永遠可用）")
     print(f"  Tier 1: {'✅' if tg_token else '⬚'} Telegram Bot")
     print(f"  Tier 2: {'✅' if gemini_key else '⬚'} Gemini AI + RAG")
 

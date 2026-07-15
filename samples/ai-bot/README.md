@@ -1,6 +1,10 @@
 # ai-bot — 🏗️ AI Agent 專家系統平台
 
-> 8 Agent + 四層搜尋 Wiki + A2A 跨機派工 + Web UI 6 頁 + Telegram 互動。帶走就能用。
+> 9 Agent + 四層搜尋 Wiki + Ark Agent 自動派工 + Web UI 6 頁 + Telegram 互動。帶走就能用。
+
+## 前置需求
+
+- Python 3.12+
 
 ## 快速啟動
 
@@ -20,7 +24,7 @@ start_bot.bat
 ══════════════════════════════════════════════════
   🤖 AI Agent 專家開發平台
 ══════════════════════════════════════════════════
-  Tier 0: ✅ Skills + Wiki + API（永遠可用）
+  Tier 0: ✅ Prompts + Skills + Wiki + MCP（永遠可用）
   Tier 1: ✅ Telegram Bot
   Tier 2: ✅ Gemini AI + RAG
   Tier 3: ✅ Agent CLI 常駐
@@ -161,45 +165,40 @@ team.yaml 含 transport: http → 跨機模式（遠端派工）
 | Agent 分身 | `/agents` 切換 | Agent CLI | 完整 .kiro/ workspace |
 | Skill 執行 | `/skill_id` 或關鍵字 | 本地 Python | Skill 內部邏輯 |
 
-### 對話路由架構（L1 → L4）
+### 對話路由架構（三路徑）
 
 ```
 使用者發訊息
      │
      ▼
-L1: 系統指令（硬編碼）
-     │ /reset → 清空 session
-     │ 命中 → 直接結束
+Path 1: /command → CommandHandler
+     │ 公開：/start /status /help
+     │ 白名單：/agents /recall /skills
      ▼
-L2: Skill 直呼（/ 開頭）
-     │ /news → NewsSkill
-     │ /summarize → SummarizeSkill
-     │ /任意 skill_id → 直接執行
-     │ 命中 → 直接結束
+Path 2: @agent-name msg → 強制指定 Agent（白名單）
+     │ 解析 target → Agent CLI 送出
      ▼
-L3: Planner 關鍵字路由
-     │ 「新聞」→ NewsSkill
-     │ 「摘要」「翻譯」→ 對應 Skill
-     │ 「派工」「assign」→ A2A 團隊派工
-     │ 命中 → 直接結束
-     ▼
-L4: 自然語言（統一走 ReAct Agent Loop）
+Path 3: 自然語言 → Ark Agent（白名單）
      │
-     ├── 🚀 Ark Agent（Default）
-     │    agent_loop + 5 tools（search_wiki, save_to_wiki,
-     │    recall_memory, save_memory, execute_skill）
-     │    LLM 自主判斷用哪個 tool
+     🚀 Ark Agent（Gemini ReAct, max 5 iterations）
      │
-     └── Agent 分身（Agent CLI）
-          spawn CLI backend → 完整 .kiro/ 環境
+     ├── 簡單問答 → 直接回覆（不派工）
+     └── 需要專業處理 → dispatch_to_agent(target, task)
+          │
+          ├── coder-agent（程式碼、API、DB）
+          ├── ai-dev-agent（Prompt、RAG、MCP）
+          ├── data-agent（數據分析、KPI）
+          ├── market-agent（競品、市場研究）
+          ├── report-agent（報告產出）
+          ├── qa-agent（測試、Review）
+          └── admin-agent（部署、費控、SOP）
 ```
 
-| 層 | 觸發 | 速度 | 用途 |
-|----|------|------|------|
-| L1 | `/reset` 等系統指令 | 即時 | 系統操作 |
-| L2 | `/skill_id args` | < 1s | 明確呼叫 Skill |
-| L3 | 關鍵字（新聞/翻譯/派工） | < 1s | 自然語言中的明顯意圖 |
-| L4 | 以上都沒命中 | 2-10s | 一般對話，LLM 自主判斷 |
+| 路徑 | 觸發 | 速度 | 用途 |
+|------|------|------|------|
+| /command | 斜線指令 | 即時 | 系統操作 |
+| @mention | `@agent-name msg` | 15-20s | 強制指定 Agent |
+| 自然語言 | 直接打字 | 3-120s | Ark Agent 判斷 + 自動派工 |
 
 ### Gemini ReAct Agent（Default 模式）
 
@@ -213,12 +212,13 @@ Default 模式具備 Tool Calling 能力（Function Calling + ReAct 迴圈）：
 純文字回覆 → 回覆使用者 → 寫 daily log
 ```
 
-**可用 Tools（6 個）：**
+**可用 Tools（7 個）：**
 
 | Tool | 功能 | 說明 |
 |------|------|------|
 | `search_wiki` | 搜尋知識庫 | 四層搜尋（exact → BM25 → hybrid → substring 兜底） |
 | `web_search` | 搜尋外部網路 | Gemini Grounding + Google Search（查無 wiki 時自動觸發） |
+| `dispatch_to_agent` | 派工給專業 Agent | Hub-and-Spoke：Ark Agent → 7 個 Agent（CLI 執行） |
 | `save_to_wiki` | 寫入知識庫 | 寫入 wiki/ + 自動 rebuild_index（metadata + BM25） |
 | `recall_memory` | 查歷史記憶 | FTS5 查詢 memory + shared wiki |
 | `save_memory` | 記錄持久事實 | append 到 `memory/memory.md` |
@@ -248,10 +248,19 @@ output/
 └── drafts/     ← 草稿
 ```
 
-### Reaction 動態
+### Reaction + ProgressStack
 
 ```
-👀 收到 → 🔥 處理中 → 👍 完成 / 💔 失敗
+👀 收到 → ProgressStack（⏳→✅→完成） → 👍 完成 / 👎 失敗
+```
+
+派工時使用者看到堆疊式進度更新（單一訊息 edit）：
+```
+🚀 [Ark Agent]
+
+✅ 分析意圖中
+✅ 查詢知識庫
+⏳ 派工中...
 ```
 
 ---
@@ -262,8 +271,7 @@ output/
 ai-bot/
 ├── start.py                        ← 一鍵啟動（含自檢）
 ├── start_bot.bat / stop_bot.bat    ← Windows
-├── team-ops.yaml                   ← 本地團隊範本
-├── team-distributed.yaml           ← 跨機團隊範本
+├── agents.yaml                     ← Agent 定義檔（唯一來源）
 ├── .env.example
 ├── requirements.txt
 ├── data/                           ← 運行資料
@@ -354,11 +362,10 @@ Agent 具備跨 session 記憶 + Skill 自動推薦能力：
 
 | Tier | 條件 | 能力 |
 |------|------|------|
-| 0 | 零設定 | Skills + Wiki + API + Web UI |
-| 1 | + TG Token | Bot + Inline Button + 9 對話模式 |
-| 2 | + Gemini Key | 🚀 Ark Agent（ReAct + 6 Tools + 記憶） |
-| 3 | + Agent CLI | 8 Agent 分身（kiro / agy / claude） |
-| 4 | + team.yaml | 團隊派工 + A2A 跨機 |
+| 0 | 零設定 | Prompts + Skills + Wiki + MCP |
+| 1 | + TG Token | Bot + Inline Button + 對話 |
+| 2 | + Gemini Key | 🚀 Ark Agent（ReAct + 7 Tools + 記憶 + 自動派工） |
+| 3 | + Agent CLI | 8 Agent 分身（agy / kiro / claude） |
 
 ### Agent 進程架構
 

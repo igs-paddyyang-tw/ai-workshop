@@ -67,6 +67,30 @@ def api_docs_page():
     return HTMLResponse(content=html)
 
 
+# ─── Chat Trace API ──────────────────────────────────────
+
+@app.get("/api/chat/traces")
+async def get_chat_traces(limit: int = 50):
+    """查詢最近 Chat Trace 記錄。"""
+    from src.memory.chat_trace import get_recent_traces, cleanup_old_traces
+    # 順便清理過期記錄
+    cleanup_old_traces()
+    traces = get_recent_traces(limit=limit)
+    return {"traces": traces, "count": len(traces)}
+
+
+@app.get("/api/chat/traces/{trace_id}")
+async def get_chat_trace_by_id(trace_id: str):
+    """取得單筆 Trace 詳情。"""
+    from src.memory.chat_trace import get_recent_traces
+    # 簡易實作：從 recent 中找
+    all_traces = get_recent_traces(limit=500)
+    for t in all_traces:
+        if t["trace_id"] == trace_id:
+            return t
+    return {"error": "not found"}
+
+
 # ─── API ─────────────────────────────────────────────
 
 @app.get("/health")
@@ -98,123 +122,36 @@ class ChatRequest(BaseModel):
 
 @app.post("/api/v1/chat")
 async def api_chat(req: ChatRequest):
-    """統一對話 API — 走跟 TG handle_message 一樣的路由。"""
-    import os
-    import re
-    from src.agent.cli import AVAILABLE_AGENTS, is_cli_available, agent_cli_chat
-
+    """統一對話 API — 走 Ark Agent ReAct Loop（與 TG handle_message 同路徑）。"""
     text = req.message.strip()
-    agent_id = req.agent_id
-    reply: str | None = None
-    source: str = ""
 
-    # Default 模式：走 Gemini
-    is_default = (agent_id == "default" or agent_id not in AVAILABLE_AGENTS)
+    try:
+        from src.llm.context_builder import build_default_system_prompt
+        from src.llm.agent_loop import agent_loop
+        import src.llm.tools  # noqa: F401 — 確保 tools 已註冊
 
-    # L3: Planner keyword 路由
-    from src.agent.planner import route, IntentType
-    plan = route(text)
+        system_prompt = await build_default_system_prompt(query=text)
+        result = await agent_loop(
+            user_message=text,
+            system_prompt=system_prompt,
+            max_iterations=5,
+        )
 
-    if plan.intent == IntentType.SKILL and plan.skill_id:
-        # 觸發 Skill
-        if plan.skill_id == "news":
-            try:
-                from src.skills.internal.news import NewsSkill
-                skill = NewsSkill()
-                result = await skill.execute({"max_items": 5})
-                if result.success:
-                    lines = [f"📰 *{result.data['source']}* — {result.data['count']} 則"]
-                    for i, art in enumerate(result.data["articles"], 1):
-                        lines.append(f"{i}. [{art['title']}]({art['url']})")
-                    reply = "\n".join(lines)
-                    source = "skill:news"
-            except Exception:
-                pass
+        reply = result.text or "⚠️ 無法回應"
 
-    # L4a: Agent CLI（僅 Agent 模式）
-    if not reply and not is_default and is_cli_available():
-        try:
-            reply = await agent_cli_chat(text, agent_id=agent_id)
-            if reply:
-                source = "cli"
-        except Exception:
-            reply = None
-
-    # L4b: Wiki RAG
-    if not reply:
-        wiki_engine = WikiEngine(agent_id=agent_id)
-        wiki_result = await wiki_engine.query(text, use_rag=True)
-        if wiki_result.get("answer"):
-            reply = wiki_result["answer"]
-            source = "wiki"
-
-    # L4c: Memory Search
-    memory_context = None
-    if not reply:
-        try:
-            from pathlib import Path as P
-            memory_dir = P(f"agents/{agent_id}-agent/knowledge/raw")
-            if memory_dir.exists():
-                keywords = text.lower().split()
-                for md in sorted(memory_dir.glob("*.md"), reverse=True)[:10]:
-                    content = md.read_text(encoding="utf-8")
-                    if any(kw in content.lower() for kw in keywords):
-                        memory_context = content[:500]
-                        break
-        except Exception:
-            pass
-
-    # L4d: ReAct Agent Loop（Default 模式）/ Gemini fallback
-    if not reply:
-        try:
-            if is_default:
-                from src.llm.context_builder import build_default_system_prompt
-                from src.llm.agent_loop import agent_loop
-                import src.llm.tools  # 確保 tools 已註冊
-
-                system_prompt = await build_default_system_prompt(query=text)
-                result = await agent_loop(
-                    user_message=text,
-                    system_prompt=system_prompt,
-                    max_iterations=5,
-                )
-                reply = result.text
-                source = "agent_loop"
-            else:
-                # Agent 模式但 CLI 不可用 → fallback Gemini
-                from src.llm.chat import simple_chat
-                soul_path = Path(f"agents/{agent_id}-agent/.kiro/steering/SOUL.md")
-                soul = soul_path.read_text(encoding="utf-8") if soul_path.exists() else ""
-                system = soul
-                if memory_context:
-                    system += f"\n\n## 相關記憶\n{memory_context}"
-                reply = await simple_chat(text, system=system)
-                source = "gemini"
-        except Exception as e:
-            reply = f"⚠️ 錯誤: {e}"
-            source = "error"
-
-    # 清理 output
-    if reply:
-        # 清 ANSI
-        reply = re.sub(r"\x1b\[[0-9;]*[a-zA-Z]", "", reply)
-        reply = re.sub(r"\[(?:\d+;)*\d*m", "", reply)
-        reply = re.sub(r"^>\s?", "", reply, flags=re.MULTILINE)
-        reply = re.sub(r"\n{3,}", "\n\n", reply).strip()
-
-    if not reply:
-        reply = "目前無法回應，請確認 GEMINI_API_KEY 已設定。"
-        source = "fallback"
-
-    agent_info = AVAILABLE_AGENTS.get(agent_id, {"name": "Default", "emoji": "🤖"})
-    return {
-        "reply": reply,
-        "agent_id": agent_id if not is_default else "default",
-        "agent_name": agent_info["name"],
-        "agent_emoji": agent_info["emoji"],
-        "source": source,
-        "sources": wiki_result.get("sources", []) if source == "wiki" else [],
-    }
+        return {
+            "reply": reply,
+            "source": "agent_loop",
+            "iterations": result.iterations,
+            "tools_used": [t["tool"] for t in result.tool_calls_log],
+        }
+    except Exception as e:
+        return {
+            "reply": f"⚠️ 錯誤：{e}",
+            "source": "error",
+            "iterations": 0,
+            "tools_used": [],
+        }
 
 
 @app.get("/api/v1/graph")

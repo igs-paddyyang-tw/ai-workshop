@@ -20,6 +20,7 @@ from src.bot.handlers import (
     cmd_history,
     cmd_mode,
     cmd_start,
+    cmd_status,
     handle_message,
 )
 from src.memory.tg_handlers import (
@@ -31,15 +32,18 @@ from src.memory.tg_handlers import (
 
 # Bot 指令選單（TG 左下角 / 按鈕）
 BOT_COMMANDS = [
-    BotCommand("start", "啟動 / 狀態"),
-    BotCommand("agents", "切換對話模式"),
-    BotCommand("reset", "重置對話"),
-    BotCommand("help", "進階指令"),
+    BotCommand("start", "歡迎 + Chat ID"),
+    BotCommand("status", "團隊狀態"),
+    BotCommand("help", "使用說明"),
+    BotCommand("agents", "Agent 列表"),
+    BotCommand("recall", "搜尋記憶"),
+    BotCommand("skills", "技能清單"),
 ]
 
 
 async def _post_init(application) -> None:
-    """Bot 啟動後設定指令選單。"""
+    """Bot 啟動後強制更新指令選單。"""
+    await application.bot.delete_my_commands()
     await application.bot.set_my_commands(BOT_COMMANDS)
 
 
@@ -52,6 +56,7 @@ def create_app():
 
     # 指令
     app.add_handler(CommandHandler("start", cmd_start))
+    app.add_handler(CommandHandler("status", cmd_status))
     app.add_handler(CommandHandler("help", cmd_help))
     app.add_handler(CommandHandler("agents", cmd_agents))
     app.add_handler(CommandHandler("mode", cmd_mode))

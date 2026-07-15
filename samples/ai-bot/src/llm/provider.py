@@ -15,6 +15,7 @@ class FunctionCall:
     name: str
     args: dict
     id: str = ""  # OpenAI 需要 tool_call_id
+    thought_signature: str | None = None  # Gemini 3.x thinking 模型必要
 
 
 @dataclass
@@ -63,7 +64,7 @@ def get_default_provider() -> LLMProvider:
         return _default_provider
 
     name = os.getenv("LLM_PROVIDER", "gemini")
-    model = os.getenv("LLM_MODEL", "gemini-2.5-flash")
+    model = os.getenv("LLM_MODEL", "gemini-3.5-flash")
     temperature = float(os.getenv("LLM_TEMPERATURE", "0.7"))
 
     if name == "gemini":

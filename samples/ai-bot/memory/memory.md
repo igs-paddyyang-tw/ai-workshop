@@ -34,6 +34,7 @@
 - 角色：個人開發者
 - 常用情境：iGaming 產品分析、競品比較（Ocean King、Super Ace）
 
+- 使用者偏好深色模式
 ## 進行中的長期事項
 
 - Gemini ReAct Agent Loop 已實作（search_wiki / save_to_wiki / recall_memory / execute_skill / web_search）
@@ -48,9 +49,14 @@
 - TG UX 簡化：4 選單按鈕（start/agents/reset/help）+ 9 按鈕 Agent 切換
 - 白名單機制：ADMIN_CHAT_IDS 限制自然語言對話，指令不擋
 - Agent CLI 架構：動態 spawn（非常駐），default-agent 已排除 CLI init
-- 對話路由統一：L4 全走 agent_loop，gemini_chat.py 已廢除改用 chat.py
+- 對話路由統一：三路徑架構（/command + @mention + 自然語言→Ark Agent 派工），移除舊 L1-L4 六層 if-else
 - LLM Provider 抽象層：Gemini/OpenAI/Anthropic 可切換（.env 一鍵）
-- CLI Backend 選項：kiro / agy / claude（預設 kiro）
-- 下一步：觀察 Mode B 完整閉環（搜尋→回覆→存入→再查命中）
-- 考慮 Agent 私有 wiki 也做同規格 lint
+- CLI Backend 選項：agy / kiro / claude（預設 agy）
+- Agent 定義：統一在 agents.yaml（不再硬編碼），dispatchable 欄位控制可派工清單
+- dispatch_to_agent tool：Gemini FC 自動派工給 7 個專業 Agent（Hub-and-Spoke）
+- ProgressStack：堆疊式 edit_message 進度回饋（⏳→✅→完成回覆）
+- Chat Trace：SQLite state/chat_trace.db 記錄路由軌跡（7 天保留）
+- Tier 0 定義：Prompts + Skills + Wiki + MCP（不再含 API）
+- 預設模型：gemini-3.5-flash（需測試可用性，fallback 2.5-flash）
+- PORT=8080（FastAPI Web UI + REST）
 ```

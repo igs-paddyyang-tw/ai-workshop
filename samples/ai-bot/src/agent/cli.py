@@ -1,7 +1,7 @@
-"""Agent CLI — 8 Agent 常駐服務（使用 AgentProcess）。
+"""Agent CLI — Agent 常駐服務（使用 AgentProcess）。
 
-啟動時建立 8 個 AgentProcess，對話時透過 send() 排隊執行。
-架構與 ai-team-agent 完全一致。
+啟動時從 agents.yaml 載入 Agent 定義，建立 AgentProcess 常駐服務。
+對話時透過 send() 排隊執行。
 """
 from __future__ import annotations
 
@@ -14,63 +14,49 @@ from src.agent.process import AgentProcess
 
 log = logging.getLogger("agent-cli")
 
-# ── 可用 Agent 清單 ──
-AVAILABLE_AGENTS = {
-    "default": {
-        "dir": ".",
-        "name": "Ark Agent",
-        "emoji": "🚀",
-        "desc": "通用 AI 助手（Gemini）",
-    },
-    "admin": {
-        "dir": "agents/admin-agent",
-        "name": "Admin Agent",
-        "emoji": "👑",
-        "desc": "管家 + 智能分流（預設）",
-    },
-    "pm": {
-        "dir": "agents/pm-agent",
-        "name": "PM Agent",
-        "emoji": "📋",
-        "desc": "專案經理 + 派工",
-    },
-    "ai-dev": {
-        "dir": "agents/ai-dev-agent",
-        "name": "AI Dev Agent",
-        "emoji": "🧠",
-        "desc": "AI 工程師 + Prompt 設計",
-    },
-    "coder": {
-        "dir": "agents/coder-agent",
-        "name": "Coder Agent",
-        "emoji": "💻",
-        "desc": "全端開發 + 程式碼實作",
-    },
-    "qa": {
-        "dir": "agents/qa-agent",
-        "name": "QA Agent",
-        "emoji": "🧪",
-        "desc": "品質保證 + 測試",
-    },
-    "data": {
-        "dir": "agents/data-agent",
-        "name": "Data Agent",
-        "emoji": "📊",
-        "desc": "數據分析（內部）",
-    },
-    "market": {
-        "dir": "agents/market-agent",
-        "name": "Market Agent",
-        "emoji": "🗺️",
-        "desc": "市場研究（外部）",
-    },
-    "report": {
-        "dir": "agents/report-agent",
-        "name": "Report Agent",
-        "emoji": "📝",
-        "desc": "報告產出（彙整）",
-    },
-}
+# ── 從 agents.yaml 載入 Agent 定義 ──
+
+BASE_DIR = Path(__file__).resolve().parents[2]
+_AGENTS_YAML = BASE_DIR / "agents.yaml"
+
+
+def _load_agents_config() -> dict:
+    """從 agents.yaml 載入 Agent 定義。找不到則回傳空 dict。"""
+    if not _AGENTS_YAML.exists():
+        log.warning("agents.yaml not found at %s", _AGENTS_YAML)
+        return {}
+    try:
+        import yaml
+        data = yaml.safe_load(_AGENTS_YAML.read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else {}
+    except Exception as e:
+        log.error("Failed to load agents.yaml: %s", e)
+        return {}
+
+
+def _get_available_agents() -> dict:
+    """取得 AVAILABLE_AGENTS dict（快取）。"""
+    global _agents_cache
+    if _agents_cache is not None:
+        return _agents_cache
+    _agents_cache = _load_agents_config()
+    return _agents_cache
+
+
+_agents_cache: dict | None = None
+
+# 向後相容：模組層級 AVAILABLE_AGENTS（lazy property 不可能，用函式 + 延遲載入）
+# 其他模組 import AVAILABLE_AGENTS 時會拿到這個 dict
+AVAILABLE_AGENTS = _load_agents_config()
+
+
+def get_dispatchable_agents() -> list[str]:
+    """取得可被 dispatch_to_agent 派工的 agent ID 列表。"""
+    agents = _get_available_agents()
+    return [
+        f"{aid}-agent" for aid, info in agents.items()
+        if info.get("dispatchable", False)
+    ]
 
 # ── Agent 服務管理 ──
 
@@ -110,6 +96,13 @@ def _resolve_cmd(backend: str) -> str | None:
     found = shutil.which(cmd)
     if found:
         return found
+    # Fallback: 已知安裝路徑（不自動加 PATH 的工具）
+    fallback_paths = {
+        "agy": os.path.join(os.environ.get("LOCALAPPDATA", ""), "agy", "bin", "agy.exe"),
+    }
+    fallback = fallback_paths.get(backend)
+    if fallback and os.path.isfile(fallback):
+        return fallback
     return None
 
 

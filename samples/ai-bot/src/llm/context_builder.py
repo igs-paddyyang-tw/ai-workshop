@@ -76,6 +76,21 @@ async def build_default_system_prompt(query: str = "", session=None) -> str:
         "- 絕對不要在同一輪中既搜尋又自動存入\n"
     )
 
+    # 7b. 派工規則（dispatch_to_agent）
+    parts.append(
+        "\n## 派工規則（dispatch_to_agent）\n"
+        "- 簡單問答、聊天、查知識庫 → 你直接回覆，不要派工\n"
+        "- 需要寫程式、API、DB 操作 → dispatch_to_agent(coder-agent)\n"
+        "- 需要 Prompt/RAG/MCP 設計 → dispatch_to_agent(ai-dev-agent)\n"
+        "- 需要數據分析、KPI → dispatch_to_agent(data-agent)\n"
+        "- 需要市場研究、競品分析 → dispatch_to_agent(market-agent)\n"
+        "- 需要產出報告 → dispatch_to_agent(report-agent)\n"
+        "- 需要測試/Review → dispatch_to_agent(qa-agent)\n"
+        "- 需要部署/費控/SOP → dispatch_to_agent(admin-agent)\n"
+        "- 不確定 → 你自己先回答，建議使用者用 @agent-name 指定\n"
+        "- 複雜多步任務 → 可多次派工（先查知識庫 → 派 agent A → 收到結果 → 派 agent B）\n"
+    )
+
     # 8. Skills 清單
     try:
         from src.llm.tool_registry import registry

@@ -51,54 +51,51 @@ def _load_soul(agent_id: str) -> str:
 
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user_id = update.effective_user.id
-    session = session_manager.get_or_create(user_id)
-    session.clear_history()
-
-    # 判斷當前模式
-    if session.is_default_mode:
-        mode_str = "⚡ Gemini（Default）"
-        agent_str = "🚀 Ark Agent"
-    else:
-        agent_name = session.agent_name
-        info = AVAILABLE_AGENTS.get(agent_name, {})
-        cli_ok = is_cli_available()
-        mode_str = "🧠 Agent CLI" if cli_ok else "⚠️ Agent CLI（未安裝）"
-        agent_str = f"{info.get('emoji', '🤖')} {info.get('name', agent_name)}"
-
-    # 顯示 Chat ID（供使用者填入 ADMIN_CHAT_IDS）
-    auth_status = "✅ 已授權" if _is_authorized(user_id) else "🔒 未授權（自然語言對話需將 Chat ID 加入 .env）"
+    is_allowed = _is_authorized(user_id)
+    status = "✅ 已授權" if is_allowed else "🔒 未授權"
 
     await update.message.reply_text(
-        f"🤖 AI Agent 已就緒！\n\n"
-        f"• 模式：{mode_str}\n"
-        f"• 對話：{agent_str}\n"
-        f"• 狀態：{auth_status}\n"
-        f"• Chat ID：`{user_id}`\n\n"
-        "💬 直接打字即可對話\n"
-        "/agents — 切換對話模式\n"
-        "/reset — 重置對話\n"
-        "/help — 進階指令",
+        f"👋 歡迎！\n\n"
+        f"• Chat ID：`{user_id}`\n"
+        f"• 狀態：{status}\n\n"
+        f"直接打字即可對話（需授權）\n"
+        f"輸入 /help 查看說明。",
         parse_mode="Markdown",
     )
 
 
 async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(
-        "📋 **進階指令**\n\n"
-        "**記憶**\n"
-        "/recall `關鍵詞` — 搜尋歷史記憶\n"
-        "/skills — 已學會的技能清單\n"
-        "/consolidate — 蒸餾記憶（daily → memory.md）\n\n"
-        "**對話**\n"
-        "/chat `問題` — 強制走 Gemini ReAct\n"
-        "/mode — 查看執行模式\n"
-        "/history — 對話歷史\n\n"
-        "**系統**\n"
-        "/start — 狀態 + Chat ID\n"
-        "/agents — 切換對話模式（9 選項）\n"
-        "/reset — 重置對話\n\n"
-        "💡 大部分功能直接打字即可（Bot 會自動查知識庫、記憶）",
-        parse_mode="Markdown",
+        "📖 *基本指令*（所有人）\n"
+        "/start — 歡迎 + Chat ID\n"
+        "/status — 團隊狀態\n"
+        "/help — 本說明\n\n"
+        "🔒 *進階功能*（需白名單）\n"
+        "直接打字 → Ark Agent 理解意圖 → 自動派工\n"
+        "@agent\\-name msg → 強制指定 Agent\n"
+        "/agents — Agent 列表\n"
+        "/recall `關鍵詞` — 搜尋記憶\n"
+        "/skills — 技能清單\n",
+        parse_mode="MarkdownV2",
+    )
+
+
+async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """公開指令：顯示 Bot 狀態概覽。"""
+    from src.agent.cli import is_cli_available, get_available_backend
+
+    cli_ok = is_cli_available()
+    backend = get_available_backend() if cli_ok else "無"
+    gemini_ok = "✅" if os.getenv("GEMINI_API_KEY") else "❌"
+    model = os.getenv("LLM_MODEL", "gemini-3.5-flash")
+
+    await update.message.reply_text(
+        f"📊 *系統狀態*\n\n"
+        f"• LLM：{gemini_ok} {model}\n"
+        f"• Agent CLI：{'✅ ' + backend if cli_ok else '❌ 未安裝'}\n"
+        f"• 路由：三路徑（command / @mention / 自然語言）\n"
+        f"• 派工：dispatch\\_to\\_agent（7 Agents）",
+        parse_mode="MarkdownV2",
     )
 
 
@@ -246,7 +243,8 @@ async def cmd_chat(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     # ── 呼叫 Gemini（帶 Tool Calling）──
     try:
         from src.llm.agent_loop import agent_loop
-        reply = await agent_loop(text, system=system_prompt)
+        result = await agent_loop(text, system_prompt=system_prompt)
+        reply = result.text or ""
     except Exception as e:
         log.error("Gemini chat error: %s", e)
         reply = f"⚠️ Gemini 錯誤：{e}"
@@ -489,98 +487,36 @@ async def _build_default_system_prompt(query: str, session) -> str:
 
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """主對話處理：Planner 六層路由 + Wiki RAG + memory。
+    """主對話處理：三路徑路由。
 
-    路由層級：
-      L1: /reset → 清空 session
-      L2: /skill_id args → 直接執行 Skill
-      L3: keyword → Planner 路由（Skill 或 Wiki）
-      L4: 預設 → Wiki RAG → Gemini fallback → 兜底
+    路由：
+      1. @agent-name msg → 強制指定 agent（白名單）
+      2. 自然語言 → Ark Agent（Gemini ReAct + 自動派工）（白名單）
     """
     text = update.message.text.strip()
     user_id = update.effective_user.id
 
-    # ── 白名單檢查（只擋自然語言對話，指令不擋）──
+    # ── 白名單檢查 ──
     if not _is_authorized(user_id):
-        log.warning("⛔ Unauthorized user=%s msg=%s", user_id, text[:50])
         await update.message.reply_text(
-            f"🔒 自然語言對話需授權。\n\n"
-            f"你的 Chat ID：`{user_id}`\n"
-            f"請將此 ID 加入 `.env` 的 `ADMIN_CHAT_IDS` 後重啟 Bot。",
+            f"🔒 需要權限。\n\nChat ID：`{user_id}`",
             parse_mode="Markdown",
         )
         return
 
     session = session_manager.get_or_create(user_id)
-    current_agent = session.current_agent
-    agent_info = AVAILABLE_AGENTS[current_agent]
-
-    # 記錄 user 這輪
     session.add_turn("user", text)
-    log.info("📨 user=%s agent=%s msg=%s", user_id, current_agent, text[:100])
+    log.info("📨 user=%s msg=%s", user_id, text[:100])
 
-    # ── 自動 consolidate：每天首次對話時蒸餾前一天 ──
+    # ── Chat Trace: 建立記錄 ──
+    from src.memory.chat_trace import create_trace, update_trace_decision, complete_trace, fail_trace
+    trace_id = create_trace(text)
+
+    # ── 自動 consolidate ──
     await _auto_consolidate_if_needed()
 
-    # ── Reaction: 👀 收到 + 立即 typing ──
+    # ── Reaction: 👀 收到 + typing ──
     await _set_reaction(update.message, "👀")
-    try:
-        await context.bot.send_chat_action(chat_id=update.message.chat_id, action="typing")
-    except Exception:
-        pass
-
-    # ── L1: /reset → 清空 session ──
-    if text.lower() in ("/reset", "重置"):
-        session.clear_history()
-        await _set_reaction(update.message, "👍")
-        await update.message.reply_text("🔄 對話已重置。")
-        return
-
-    # ── L2: /skill_id [args] → 直接執行 Skill ──
-    if text.startswith("/") and not text.startswith("//"):
-        parts = text[1:].split(maxsplit=1)
-        skill_id = parts[0].lower()
-        skill_args = parts[1] if len(parts) > 1 else ""
-        result = await _execute_skill_by_id(skill_id, skill_args)
-        if result is not None:
-            result = _clean_output(result)
-            session.add_turn("agent", result)
-            await _set_reaction(update.message, "👍")
-            header = f"{agent_info['emoji']} [{current_agent}-agent]\n"
-            await update.message.reply_text(header + result, parse_mode="Markdown", disable_web_page_preview=True)
-            return
-
-    # ── L3: keyword → Planner 路由 ──
-    from src.agent.planner import route, IntentType
-    plan = route(text)
-
-    if plan.intent == IntentType.SKILL and plan.skill_id:
-        reply = await _execute_skill_by_id(plan.skill_id, text)
-        if reply:
-            reply = _clean_output(reply)
-            session.add_turn("agent", reply)
-            await _set_reaction(update.message, "👍")
-            header = f"{agent_info['emoji']} [{current_agent}-agent]\n"
-            await update.message.reply_text(header + reply, parse_mode="Markdown", disable_web_page_preview=True)
-            return
-
-    if plan.intent == IntentType.TEAM:
-        # 團隊派工 — 走 A2ARouter
-        reply = await _handle_team_dispatch(text, update, context)
-        if reply:
-            reply = _clean_output(reply)
-            session.add_turn("agent", reply)
-            await _set_reaction(update.message, "👍")
-            header = f"🤝 [team]\n"
-            await update.message.reply_text(header + reply, disable_web_page_preview=True)
-            return
-
-    if plan.intent == IntentType.WIKI:
-        # Wiki 查詢不再攔截，統一走 L4 agent_loop 的 search_wiki tool
-        pass
-
-    # ── Reaction: 🔥 處理中 + 持續 typing ──
-    await _set_reaction(update.message, "🔥")
     done = asyncio.Event()
     timer_task = asyncio.create_task(
         _keep_action_alive(update.message.chat_id, "typing", done, context.bot)
@@ -589,112 +525,107 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     try:
         reply: str | None = None
 
-        # ── L4: 雙模式對話 ──
-        if session.is_default_mode:
-            # === Default 模式：ReAct Agent Loop ===
-            gemini_key = os.getenv("GEMINI_API_KEY", "") or os.getenv("LLM_PROVIDER", "")
-            if gemini_key:
-                try:
-                    from src.llm.context_builder import build_default_system_prompt
-                    from src.llm.agent_loop import agent_loop
-                    import src.llm.tools  # 確保 tools 已註冊
+        # ── Path 1: @mention → 強制指定 agent ──
+        if match := re.match(r"@([\w-]+)\s*(.*)", text, re.DOTALL):
+            target = match.group(1)
+            message = match.group(2).strip() or text
+            agent_id = target.replace("-agent", "")
+            update_trace_decision(trace_id, "@mention直送", target, target)
 
-                    system_prompt = await build_default_system_prompt(query=text, session=session)
-                    result = await agent_loop(
-                        user_message=text,
-                        system_prompt=system_prompt,
-                        session_history=None,  # context_builder 已含 history
-                        max_iterations=5,
-                    )
-                    reply = result.text
-                    if reply:
-                        log.info("  ✅ Agent Loop reply (%d chars, %d iterations, %d tools)",
-                                 len(reply), result.iterations, len(result.tool_calls_log))
-                except Exception as e:
-                    log.error("  ❌ Agent Loop error: %s", e)
-                    # Fallback 到純文字 simple_chat
-                    try:
-                        from src.llm.chat import simple_chat
-                        reply = await simple_chat(text, system=system_prompt if 'system_prompt' in dir() else "")
-                    except Exception:
-                        reply = None
-            else:
-                reply = (
-                    f"🔄 echo: {text}\n\n"
-                    "💡 開啟 AI：填入 GEMINI_API_KEY 或設定 LLM_PROVIDER\n"
-                    "或用 `/agents` 切換到 Agent 分身（需 Agent CLI）"
-                )
-        else:
-            # === Agent 模式：Agent CLI ===
-            agent_name = session.agent_name
             if is_cli_available():
-                log.debug("  → Agent CLI (%s)...", agent_name)
-                try:
-                    reply = await agent_cli_chat(text, agent_id=agent_name)
-                    if reply:
-                        log.info("  ✅ CLI reply (%d chars)", len(reply))
-                except Exception as e:
-                    log.error("  ❌ CLI error: %s", e)
-                    reply = None
-                if not reply:
-                    reply = "⚠️ Agent CLI 無回應（可能超時），請重試。"
+                reply = await agent_cli_chat(message, agent_id=agent_id)
             else:
-                reply = (
-                    f"⚠️ **{agent_name}-agent** 需要 Agent CLI\n\n"
-                    "安裝任一即可：\n"
-                    "• agy: `irm https://antigravity.google/cli/install.ps1 | iex`\n"
-                    "• kiro-cli: `npm i -g kiro-cli && kiro-cli login`\n"
-                    "• claude: `npm i -g @anthropic-ai/claude-cli`\n\n"
-                    "請先用 `/agents` 切回 🚀 Ark Agent。"
-                )
+                # fallback Gemini
+                from src.llm.chat import simple_chat
+                soul_path = Path(f"agents/{agent_id}-agent/.kiro/steering/SOUL.md")
+                soul = soul_path.read_text(encoding="utf-8") if soul_path.exists() else ""
+                reply = await simple_chat(message, system=soul)
 
-        # ── 回覆 + 記憶 + Reaction ──
-        if reply:
-            reply = _clean_output(reply)
+            if reply:
+                reply = _clean_output(reply)
+                session.add_turn("agent", reply)
+                complete_trace(trace_id, reply[:80], success=True)
+                await _set_reaction(update.message, "👍")
+                await update.message.reply_text(f"🤖 [{target}]\n{reply}")
+            else:
+                fail_trace(trace_id, f"{target} 不可用")
+                await _set_reaction(update.message, "👎")
+                await update.message.reply_text(f"⚠️ {target} 不可用")
+            return
+
+        # ── Path 2: 自然語言 → Ark Agent（ReAct + 自動派工）──
+        from src.llm.context_builder import build_default_system_prompt
+        from src.llm.agent_loop import agent_loop
+        from src.bot.progress import ProgressStack
+        import src.llm.tools  # noqa: F401 — 確保 tools 已註冊（含 dispatch_to_agent）
+
+        # 建立 ProgressStack
+        progress = ProgressStack(update.message.chat_id, context.bot)
+        await progress.init("分析意圖中...")
+
+        # on_tool_call 回調：更新進度
+        async def _on_tool(tool_name: str):
+            if tool_name == "dispatch_to_agent":
+                await progress.update("派工中...")
+            elif tool_name == "search_wiki":
+                await progress.update("查詢知識庫...")
+            elif tool_name == "web_search":
+                await progress.update("搜尋外部資訊...")
+            elif tool_name == "recall_memory":
+                await progress.update("回憶歷史...")
+
+        system_prompt = await build_default_system_prompt(query=text, session=session)
+        result = await agent_loop(
+            user_message=text,
+            system_prompt=system_prompt,
+            session_history=None,  # context_builder 已含 history
+            max_iterations=5,
+            on_tool_call=_on_tool,
+        )
+
+        if result.text:
+            reply = _clean_output(result.text)
             if len(reply) > 3000:
                 reply = reply[-3000:]
             session.add_turn("agent", reply)
-            # 對話記錄寫入 memory/daily（不寫 knowledge/raw）
+            log.info("  ✅ Agent Loop reply (%d chars, %d iterations, %d tools)",
+                     len(reply), result.iterations, len(result.tool_calls_log))
+
+            # Trace: 判斷是否有派工
+            dispatched = [t for t in result.tool_calls_log if t["tool"] == "dispatch_to_agent"]
+            if dispatched:
+                target = dispatched[-1]["args"].get("target_agent", "unknown")
+                update_trace_decision(trace_id, "派工", target, f"ark→{target}")
+            else:
+                update_trace_decision(trace_id, "直答", None, "ark")
+            complete_trace(trace_id, reply[:80], success=True)
+
+            await progress.complete(reply)
+            await _set_reaction(update.message, "👍")
+        else:
+            update_trace_decision(trace_id, "無回應", None, "ark")
+            fail_trace(trace_id, "agent_loop 無回覆")
+            await progress.fail("無法處理，請重試")
+            await _set_reaction(update.message, "👎")
+
+        # ── 對話寫入 daily log ──
+        if reply:
             try:
                 from src.memory.daily_log import write_daily_log
                 task_id = f"msg-{update.message.message_id}"
                 conversation = f"User: {text[:200]}\nAgent: {reply[:500]}"
-                if session.is_default_mode:
-                    asyncio.create_task(
-                        write_daily_log("_default", task_id, conversation)
-                    )
-                else:
-                    agent_name = session.agent_name or current_agent
-                    asyncio.create_task(
-                        write_daily_log(f"{agent_name}-agent", task_id, conversation)
-                    )
+                asyncio.create_task(write_daily_log("_default", task_id, conversation))
             except Exception as e:
                 log.warning("daily_log failed: %s", e)
-            # 更新 recent.md（最近 5 輪對話，供下次啟動時注入 system prompt）
             try:
                 _update_recent(session)
-            except Exception as e:
-                log.warning("recent.md update failed: %s", e)
-            await _set_reaction(update.message, "👍")
-            # Header
-            if session.is_default_mode:
-                header = "🚀 [Ark Agent]\n"
-            else:
-                agent_name = session.agent_name
-                info = AVAILABLE_AGENTS.get(agent_name, {})
-                header = f"{info.get('emoji', '🤖')} [{agent_name}-agent]\n"
-            full_text = header + reply
-            for i in range(0, len(full_text), 4000):
-                await update.message.reply_text(full_text[i:i+4000])
-            log.info("  📤 sent reply to user=%s (%d chars)", user_id, len(reply))
-        else:
-            await _set_reaction(update.message, "💔")
-            await update.message.reply_text("⚠️ 抱歉，我暫時無法回應，請稍後再試。")
-            log.error("  💔 no reply for user=%s msg=%s", user_id, text[:100])
+            except Exception:
+                pass
 
     except Exception as e:
         log.error("handle_message error: %s", e)
-        await _set_reaction(update.message, "💔")
+        fail_trace(trace_id, f"error: {type(e).__name__}")
+        await _set_reaction(update.message, "👎")
         await update.message.reply_text(f"⚠️ 處理失敗：{type(e).__name__}")
     finally:
         done.set()
