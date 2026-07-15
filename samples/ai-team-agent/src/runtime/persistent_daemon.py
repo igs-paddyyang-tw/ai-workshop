@@ -119,6 +119,15 @@ class PersistentDaemon:
             state.last_activity = time.time()
             self._failure_memory.clear(name)
             log.info("Instance %s is ready (pid=%s)", name, mp.pid)
+
+            # Debug: 擷取啟動時的完整 stdout（確認 MCP 狀態）
+            startup_output = mp.capture(lines=50)
+            if "MCP" in startup_output or "mcp" in startup_output or "tool" in startup_output.lower():
+                log.info("🔌 %s MCP startup output:\n%s", name, startup_output[-600:])
+            elif "error" in startup_output.lower() or "fail" in startup_output.lower():
+                log.warning("⚠️ %s startup has errors:\n%s", name, startup_output[-400:])
+            else:
+                log.info("🔌 %s startup output (no MCP keywords):\n%s", name, startup_output[-400:])
             # 啟動 queue worker
             if state._queue_task and not state._queue_task.done():
                 state._queue_task.cancel()
