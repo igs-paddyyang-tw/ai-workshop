@@ -1,9 +1,9 @@
 ﻿{
   "mcpServers": {
     "team": {
-      "command": "C:\\Windows\\py.exe",
+      "command": "py",
       "args": [
-        "D:\\kiro-cli\\projects\\ai-workshop\\samples\\ai-team-agent\\src\\gateway\\mcp_stdio.py",
+        "../../src/gateway/mcp_stdio.py",
         "--port",
         "33333",
         "--instance",
@@ -11,9 +11,9 @@
         "--role",
         "worker",
         "--allowed-targets",
-        "pm-agent,ai-dev-agent,coder-agent,qa-agent,market-agent,data-agent,report-agent",
+        "pm-agent,data-agent,market-agent,report-agent",
         "--home",
-        "D:\\kiro-cli\\projects\\ai-workshop\\samples\\ai-team-agent"
+        "../.."
       ]
     }
   }
