@@ -3,77 +3,81 @@
 ## 專案狀態（2026-07-15）
 
 - 四層架構完成：gateway / coordinator / runtime / business
-- Builder（ark-agent-team-builder）產出 110 項，與本專案 src/ 零差異
-- Workshop 教材 4 份（01-04），全部 50 min，已對齊四層架構
-- Repo 改名：ark-kiro-skills → ark-agent-skills
-- MCP stdio bridge 完成：`src/gateway/mcp_stdio.py`（轉發 tool call → FastAPI port 33333）
-- Agent 結構對齊 ai-bot：8 agent 全有 BRAIN + GUARDRAILS + memory + raw + output
+- 8 agent 常駐，MCP reply 路徑驗證通過
+- MCP stdio bridge：`src/gateway/mcp_stdio.py`（JSON-RPC over stdin/stdout）
+- 對話路由：統一 MCP `reply()` tool（常駐模式）/ 同步 stdout（spawn 模式）
 - knowledge/shared/ 已建立（raw 5 篇）
-- docs/ 結構已建立（specs/designs/plans/one-pagers）
-- **常駐化完成（Phase 1-2）**：PersistentDaemon + ManagedProcess + Health Loop
-- **對話路由修正完成（2026-07-15）**：統一 MCP reply 路徑
+- docs/ 結構已建立（specs/designs/plans/one-pagers/reports）
 
 ## 技術決策
 
-- LLM：kiro-cli spawn（複雜）+ Gemini Chat（簡單秒回）
+- LLM：kiro-cli（複雜任務）+ Gemini Chat（簡單秒回）
 - DB：SQLite dev / PostgreSQL prod
-- TG 命名空間：src/gateway/telegram/（避免與 python-telegram-bot 衝突）
-- A2A：檔案系統 SharedMemory（agent 可直接讀 knowledge/shared/）
 - Process：**雙模式 — persistent（預設）+ spawn（fallback）**
-- Timeout：300 秒（+ 活動偵測寬限 120 秒）
+- 常駐模式：`--legacy-ui --trust-all-tools --require-mcp-startup` + stdin pipe
 - MCP：stdio JSON-RPC bridge（需先啟動 bootstrap.py 才能用）
-- **回覆路徑決策（2026-07-15）：統一為 MCP reply() tool**
-  - 常駐模式：Agent 必須用 `reply()` tool 回覆，不再截取 stdout
-  - Spawn 模式：直接 await 拿 stdout 結果回覆（無 MCP）
-  - 移除 `_wait_for_reply` + `_push_reply`（stdout regex 截取）
-  - TelegramChannel 支援多使用者 routing（`_resolve_chat_id`）
-  - A2A callback 透過 `reply_to` metadata 實現
-- **常駐化方案：--legacy-ui + stdin pipe（PoC 2026-07-14 驗證通過）**
-  - `--legacy-ui` 是關鍵 flag：stdout 有結構化輸出
-  - `stderr=STDOUT` 合併後統一讀取
-  - Ready pattern: "ctrl-c to start chatting now" / "All tools are now trusted"
-  - ~~結束標記: "▸ Time:" 出現在回答末尾~~（已不再使用）
-  - ~~回應提取: regex `"> (.+)"`~~（已移除，改由 MCP reply 驅動）
-  - Graceful stop: `/quit` → code=0
-  - 參考實作: team-agent (D:\kiro-cli\projects\team-agent)
+- cwd：`agents/{name}/`（kiro-cli 從 cwd/.kiro/settings/mcp.json 載入 MCP）
+- Timeout：300 秒 + 活動偵測寬限 120 秒
+- 回覆路徑：Agent 用 MCP `reply(text, summary)` → POST /api/chat/reply → TG
 
-## 對話路由修正記錄（2026-07-15）
+## 對話路由設計（2026-07-15 定案）
 
-- 問題根因：三條回覆路徑打架（MCP reply / stdout 截取 / bootstrap callback）
-- 修正方案：方案 A — 統一 MCP reply
-- 改動 8 個檔案：
-  - `persistent_daemon.py` — 移除 stdout 截取，queue worker 只送不截
-  - `bootstrap.py` — 常駐模式不觸發 tg_reply_fn + TelegramChannel 配置重構
-  - `chat.py` — 多使用者 routing + A2A reply_to + 移除 complete_fn
-  - `messages.py` — 智慧 timeout guard + spawn 同步等待 + get_latest_pending_chat_id
-  - `mcp_stdio.py` — send_to_instance 加 reply_to callback
-  - 3 個 agent SOUL.md — 補 reply 指示（market/data/report）
-- 修正報告：`docs/reports/chat-routing-fix-report.md`
+### 常駐模式
+```
+User(TG) → handle_message → daemon.send_message → stdin pipe → Agent
+  → Agent 呼叫 MCP reply() → mcp_stdio → POST /api/chat/reply → TG
+```
 
-## 常駐化搬遷記錄（2026-07-14）
+### Spawn 模式（fallback）
+```
+User(TG) → handle_message → await agent.send(msg)
+  → fork kiro-cli --no-interactive msg → stdout → reply_text → TG
+```
 
-- 從 team-agent 移植 6 個模組到 src/runtime/：
-  - `managed_process.py` — ManagedProcess（ring buffer + pipe 保護）
-  - `kiro_backend.py` — KiroBackend（命令建構 + ready/error 偵測）
-  - `persistent_daemon.py` — PersistentDaemon（生命週期 + health loop + queue）
-  - `heartbeat.py` — 每 30s 寫 timestamp
-  - `failure_memory.py` — 錯誤模式追蹤
-  - `message_overflow.py` — SQLite backpressure 持久化
-- config.py 擴充：RestartPolicy / StartupConfig / persistent / auto_start
-- team.yaml 新增：startup.concurrency / defaults.persistent
-- 整合測試通過：啟動 → send 2 次（OK / 4）→ graceful stop ✅
+### 關鍵元件
+- `persistent_daemon.py` — queue worker 只送 stdin，不截 stdout
+- `mcp_stdio.py` — JSON-RPC bridge，11 tools（reply/send_to_instance/delegate_task...）
+- `chat.py` — TelegramChannel 多使用者 routing + A2A reply_to
+- `messages.py` — 智慧 timeout guard（300s + 活動偵測）
 
-## 踩坑紀錄
+## MCP 修復記錄（2026-07-15）
 
-- WSL2 用 localhost 連（不是 WSL IP）
-- venv 必要（PEP 668）
-- 多 Bot instance 衝突 → pkill 只留一個
-- build_team.py 無 --help flag（任何參數都當目錄名）
-- generators 用 repr() 不用 json.dumps()（避免 surrogate 問題）
-- 舊路徑 `src/ark_team_core/team_mcp.py` 重構後不存在 → mcp.json 全部更新為 `src/gateway/mcp_stdio.py`
-- **常駐化：無 --legacy-ui 時 stdout=0 bytes（TUI 吃掉輸出）**
-- **常駐化：MCP server 需要 backend API 先啟動，否則 connection closed**
-- **對話路由：stdout 截取 + MCP reply 同時存在 → 雙重回覆或零回覆**
-- **對話路由：TelegramChannel._chat_id 只綁一人 → 多使用者時回覆丟失**
-- **對話路由：spawn 模式 fire-and-forget → 使用者收不到回覆**
-- **MCP stdio：Windows asyncio connect_write_pipe 噴 WinError 6 → 改用 sys.stdout.write + run_in_executor**
+### 根因鏈（三層疊加）
+1. **cp950 UnicodeEncodeError** — tool description 含中文/Unicode（≤80字）→ `sys.stdout.write()` 用 Windows cp950 編碼 → crash → stderr traceback
+2. **stderr 輸出** — kiro-cli 把 MCP server 的 stderr 任何輸出視為 Transport closed → 判定 server 失敗
+3. **UTF-8 BOM** — PowerShell `Set-Content -Encoding UTF8` 預設加 BOM → kiro-cli JSON parser 報 "expected value at line 1 column 1"
+
+### 修正
+- `json.dumps(ensure_ascii=True)` — 所有 stdout JSON 用 ASCII 序列化
+- logging 改 `NullHandler`（不寫 stderr）
+- 移除所有 `print(..., file=stderr)`
+- 8 個 mcp.json 移除 UTF-8 BOM
+- mcp.json 用相對路徑 + `py` command（和原始 git 版本一致）
+
+### 排查過程中的錯誤方向（已恢復）
+- ~~cwd 改為 instances/~~ → 改回 `agents/{name}/`
+- ~~MCP reply 路徑 A（移除 stdout 截取）~~ → 正確方向，保留
+- ~~Workspace trust 問題~~ → 排除（mcp_enabled=true 但 server crash）
+- ~~啟動順序 race condition~~ → 排除（hub 先起 3 秒後才 spawn agent）
+- ~~--legacy-ui 不支援 MCP~~ → 排除（ark-team-agent 證明可以）
+
+## 踩坑紀錄（精簡版）
+
+| 問題 | 原因 | 修正 |
+|------|------|------|
+| MCP server versions 空 | cp950 encode error → stderr → Transport closed | ensure_ascii=True |
+| mcp.json parse 失敗 | UTF-8 BOM | 用 Python write_bytes 寫入（無 BOM） |
+| MCP tools 不載入 | stderr 有 debug log 輸出 | NullHandler，不寫 stderr |
+| Agent 不用 reply tool | MCP server 未成功載入 | 修好上面三個 |
+| stdout 截取 + MCP 重複回覆 | 兩條路徑並存 | 移除 _wait_for_reply，統一 MCP |
+| spawn 模式 fire-and-forget | asyncio.create_task 不等結果 | 改 await agent.send() |
+| TelegramChannel 單使用者 | _chat_id 只綁一人 | _resolve_chat_id 多使用者 routing |
+| instances/ 殘留 | cwd 改為 working_directory 後不再需要 | 刪除 + .gitignore |
+| 常駐模式無 --legacy-ui 時 stdout=0 | TUI 吃掉輸出 | 必須帶 --legacy-ui |
+| venv 必要 | PEP 668 | 用 .venv |
+| PowerShell Set-Content 加 BOM | Windows 預設行為 | 用 Python 寫檔 |
+
+## 參考實作
+
+- `D:\kiro-cli\projects\ark-team-agent` — 完整 MCP team agent（已驗證可跑）
+- `D:\kiro-cli\projects\ai-team-agent` — GitHub 版（spawn 模式，無常駐）
