@@ -80,18 +80,14 @@ class PersistentDaemon:
 
         state.status = InstanceStatus.STARTING
 
-        # instance_dir: kiro-cli 的實際運行目錄（乾淨，無舊 session 干擾）
-        inst_dir = Path("instances") / name
-        inst_dir.mkdir(parents=True, exist_ok=True)
-
-        # working_directory: agent 的知識/記憶目錄
+        # working_directory: agent 的運行目錄（含 .kiro/settings/mcp.json、steering、memory）
         cwd = Path(ic.working_directory)
         cwd.mkdir(parents=True, exist_ok=True)
 
         # 偵測 MCP config 是否變更
         actual_skip = skip_resume or ic.skip_resume
         if not actual_skip:
-            actual_skip = self._should_skip_resume(name, inst_dir)
+            actual_skip = self._should_skip_resume(name, cwd)
 
         # 建構命令
         cfg = KiroBackendConfig(
@@ -483,10 +479,10 @@ class PersistentDaemon:
         log.error("Instance %s startup timeout (%.0fs)", state.config.name, timeout)
         return False
 
-    def _should_skip_resume(self, name: str, inst_dir: Path) -> bool:
+    def _should_skip_resume(self, name: str, working_dir: Path) -> bool:
         """偵測 MCP config 變更 → 強制 skip_resume。"""
-        mcp_path = inst_dir / ".kiro" / "settings" / "mcp.json"
-        hash_file = inst_dir / ".kiro" / ".mcp_hash"
+        mcp_path = working_dir / ".kiro" / "settings" / "mcp.json"
+        hash_file = working_dir / ".kiro" / ".mcp_hash"
 
         if not mcp_path.exists():
             return False

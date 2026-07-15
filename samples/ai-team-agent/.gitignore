@@ -8,3 +8,5 @@ knowledge/wiki/*.md
 !knowledge/wiki/.gitkeep
 apps/web/node_modules/
 apps/web/.next/
+instances/
+state/
