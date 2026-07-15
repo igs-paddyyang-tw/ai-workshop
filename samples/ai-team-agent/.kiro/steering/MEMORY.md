@@ -3,7 +3,7 @@
 ## 專案狀態（2026-07-15）
 
 - 四層架構完成：gateway / coordinator / runtime / business
-- 8 agent 常駐，MCP reply 路徑驗證通過
+- 8 agent 常駐，**MCP reply 路徑驗證通過 ✅**（19:33:39 首次成功回覆）
 - MCP stdio bridge：`src/gateway/mcp_stdio.py`（JSON-RPC over stdin/stdout）
 - 對話路由：統一 MCP `reply()` tool（常駐模式）/ 同步 stdout（spawn 模式）
 - knowledge/shared/ 已建立（raw 5 篇）
@@ -69,6 +69,7 @@ User(TG) → handle_message → await agent.send(msg)
 | mcp.json parse 失敗 | UTF-8 BOM | 用 Python write_bytes 寫入（無 BOM） |
 | MCP tools 不載入 | stderr 有 debug log 輸出 | NullHandler，不寫 stderr |
 | Agent 不用 reply tool | MCP server 未成功載入 | 修好上面三個 |
+| reply 後 kiro-cli crash | Agent reply 後試圖再生成 → API 失敗 | wrapped msg 加「回覆後不要做其他動作」|
 | stdout 截取 + MCP 重複回覆 | 兩條路徑並存 | 移除 _wait_for_reply，統一 MCP |
 | spawn 模式 fire-and-forget | asyncio.create_task 不等結果 | 改 await agent.send() |
 | TelegramChannel 單使用者 | _chat_id 只綁一人 | _resolve_chat_id 多使用者 routing |

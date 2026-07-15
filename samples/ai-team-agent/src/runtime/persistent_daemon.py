@@ -115,15 +115,6 @@ class PersistentDaemon:
             state.last_activity = time.time()
             self._failure_memory.clear(name)
             log.info("Instance %s is ready (pid=%s)", name, mp.pid)
-
-            # Debug: 擷取啟動時的完整 stdout（確認 MCP 狀態）
-            startup_output = mp.capture(lines=50)
-            if "MCP" in startup_output or "mcp" in startup_output or "tool" in startup_output.lower():
-                log.info("🔌 %s MCP startup output:\n%s", name, startup_output[-600:])
-            elif "error" in startup_output.lower() or "fail" in startup_output.lower():
-                log.warning("⚠️ %s startup has errors:\n%s", name, startup_output[-400:])
-            else:
-                log.info("🔌 %s startup output (no MCP keywords):\n%s", name, startup_output[-400:])
             # 啟動 queue worker
             if state._queue_task and not state._queue_task.done():
                 state._queue_task.cancel()
@@ -222,18 +213,11 @@ class PersistentDaemon:
                     continue
 
                 if state.status == InstanceStatus.RUNNING and state.process:
-                    # 包裹訊息：提醒 Agent 必須用 reply tool 回覆
-                    wrapped = f"[使用者訊息] {text}\n\n（請用 reply tool 回覆使用者，不要直接輸出文字）"
+                    # 包裹訊息：提醒 Agent 用 reply tool 回覆後結束
+                    wrapped = f"[使用者訊息] {text}\n\n（用 reply tool 回覆使用者，回覆後不要做其他動作）"
                     await state.process.send_input(wrapped)
                     state.last_activity = time.time()
                     log.info("📤 sent to %s (%d chars)", name, len(text))
-
-                    # Debug: 15 秒後擷取 stdout 確認 agent 狀態
-                    await asyncio.sleep(15)
-                    if state.process:
-                        recent = state.process.capture(lines=30)
-                        if recent:
-                            log.info("📋 %s stdout preview:\n%s", name, recent[-800:])
 
                     # 動態間隔（避免 stdin 塞爆）
                     qsize = state._msg_queue.qsize()
