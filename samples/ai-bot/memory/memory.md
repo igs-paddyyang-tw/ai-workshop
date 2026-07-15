@@ -12,7 +12,8 @@
 - BRAIN.md 規範已更新，包含強制查詢規則、Output vs Wiki 判斷規則，Output 只提醒不主動刪除，競品分析內容應存入 Wiki
 - search_wiki 查無結果後會引導進行 web_search
 - 外部搜尋結果原則上只回覆不自動存入知識庫
-- save_to_wiki 寫入後會自動 rebuild_index (metadata + BM25 + FTS5)，確保搜尋最新內容
+- save_to_wiki 寫入後會自動 rebuild_index (metadata + BM25 + FTS5), 確保搜尋最新內容
+- 新聞 Skill（`/news`）是 Kiro CLI / Ark Agent 系統預設的 L2 快捷技能，可繞過 AI 思考直接命中 L2 路由
 
 ## 工具怪癖
 
