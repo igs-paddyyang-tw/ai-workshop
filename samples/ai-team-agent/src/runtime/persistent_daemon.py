@@ -467,6 +467,8 @@ class PersistentDaemon:
                 continue
 
             if KiroBackend.is_ready(output):
+                # 等待 MCP server 完成連線（kiro-cli 先顯示 banner 再連 MCP）
+                await asyncio.sleep(5)
                 return True
 
             err = KiroBackend.detect_error(output)
