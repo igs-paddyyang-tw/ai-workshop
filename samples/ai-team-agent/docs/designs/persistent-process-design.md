@@ -279,9 +279,18 @@ SIGTERM / shutdown()
 
 ---
 
-## 6. 修正後架構：Persistent Session Pool
+## 6. ~~修正後架構：Persistent Session Pool~~ — 未採用
 
-基於 PoC 結論，常駐化策略從「互動模式 pipe」改為「Session Pool + Pre-warm」。
+> **決策記錄（2026-07-29）：** 本節所描述的 Session Pool + Pre-warm 架構**未採用**。
+> 實際選用了 §3 的 `ManagedProcess`（stdin pipe 常駐進程）方案，由 `PersistentDaemon` 統一管理。
+>
+> 保留此節僅作為決策脈絡參考，不代表待實作功能。
+> `SessionPoolState` 和 `PreWarmPool` 為本節衍生的 model，同樣**不會實作**。
+
+---
+
+<details>
+<summary>展開查看原始 Session Pool 設計（供參考）</summary>
 
 ### 核心概念
 
@@ -309,27 +318,16 @@ SIGTERM / shutdown()
 | Cold start | 每次 2-5 秒 | 首次 2-5 秒，後續可 pre-warm |
 | Pre-warm | 無 | 可提前 spawn 等待（準備好進程） |
 
-### Pre-warm 機制
+### Pre-warm 機制（未採用）
 
 ```python
 class PreWarmPool:
     """預先 spawn 進程，等到收到任務時立即用。"""
-
-    async def warm_up(self, agent_name: str) -> None:
-        """背景 spawn kiro-cli --no-interactive --resume-id {sid}
-           但不帶 message — 讓進程載入 context 後待命。"""
-        # 注意：kiro-cli 需要 message 才會執行
-        # 替代方案：spawn + 極輕量 ping message 預熱 context
-
-    async def acquire(self, agent_name: str, message: str) -> str:
-        """取得一個已就緒的進程，送入 message。"""
+    async def warm_up(self, agent_name: str) -> None: ...
+    async def acquire(self, agent_name: str, message: str) -> str: ...
 ```
 
-### 進一步降低延遲的方式
-
-1. **Session ID 固定**：每個 agent 用固定 session ID，`--resume-id` 直接指定
-2. **Overlap spawn**：任務完成後立即預啟動下一個進程（背景）
-3. **MCP 快取**：MCP server 只在第一次載入，後續 resume 跳過
+</details>
 
 ---
 
