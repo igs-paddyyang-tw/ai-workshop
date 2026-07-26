@@ -137,91 +137,33 @@ shared:
 
 ---
 
-## 5. ADR-4：mc-agent 路由設計
+## 5. ADR-4：TEAM.md 全員統一設計
 
-**決策：** 新增 mc-agent 作為獨立路由層（manager），不改 src/ 程式碼。
+**決策（2026-07-27 修正）：** 不加 mc-agent。改為統一 8 個 agent 的 TEAM.md 內容。
 
-**架構圖：**
+**原始問題：** 各 agent TEAM.md 只列 4-5 人，instance 名稱有誤（`dev-agent` 而非 `coder-agent`）。
 
-```
-使用者 TG 私訊
-  │
-  ▼
-mc-agent（manager）
-  ├─ 意圖：維運/系統/部署
-  │    └─→ send_to_instance("admin-agent", "使用者訊息：{原文}")
-  │              └─→ 執行 → send_to_instance("mc-agent", "[回報] 結果")
-  │                              └─→ mc-agent reply 使用者
-  │
-  └─ 意圖：開發/功能/數據/報告
-       └─→ send_to_instance("pm-agent", "使用者訊息：{原文}")
-                 └─→ 派工 workers → send_to_instance("mc-agent", "[回報] 結果")
-                                         └─→ mc-agent reply 使用者
+**解法：** 更新全部 8 個 TEAM.md，統一使用完整 8 人清單，每個 agent 清楚標示「你的身份」。
 
-例外：使用者 @mention worker → worker 直接 reply（不繞路 mc-agent）
-```
-
-**mc-agent .kiro/ 結構：**
-
-```
-agents/mc-agent/
-├── .kiro/
-│   ├── steering/
-│   │   ├── SOUL.md   ← 路由身份 + 精簡 persona
-│   │   ├── BRAIN.md  ← 意圖分流邏輯 + 等待回報規則
-│   │   ├── TEAM.md   ← 9 人清單 + 指揮鏈
-│   │   └── MEMORY.md ← 空白範本（系統自更新）
-│   └── settings/
-│       ├── mcp.json  ← --role manager
-│       └── skills.json ← manager 角色技能
-├── memory/
-│   ├── daily/
-│   ├── memory.md
-│   └── recent.md
-├── knowledge/
-│   ├── raw/
-│   └── wiki/
-└── output/
-    ├── reports/
-    ├── skills/
-    ├── exports/
-    └── drafts/
-```
-
-**team.yaml 新增（manager agent）：**
+**team.yaml 8 agents 設計：**
 
 ```yaml
-mc-agent:
-  working_directory: agents/mc-agent
-  description: "👑 Manager — 訊息路由、任務調度、團隊管理"
-  role: manager
-  persistent: true
-  private_chat: 937896656   # 使用者 chat_id
+# admin + pm：常駐（persistent: true，繼承 defaults）
+# 6 workers：動態（persistent: false，需求觸發啟動）
+instances:
+  admin-agent: {role: admin}     # 常駐
+  pm-agent:    {role: leader}    # 常駐
+  coder-agent: {role: worker, persistent: false}
+  qa-agent:    {role: worker, persistent: false}
+  ai-dev-agent:{role: worker, persistent: false}
+  market-agent:{role: worker, persistent: false}
+  data-agent:  {role: worker, persistent: false}
+  report-agent:{role: worker, persistent: false}
 ```
 
-**BRAIN.md 意圖分流規則（mc-agent 專屬）：**
-
+**指揮鏈（更新）：**
 ```
-維運關鍵字：部署、服務、監控、重啟、成本、維運、錯誤、崩潰
-→ send_to_instance("admin-agent", "使用者訊息：{原文}")
-→ 等待 [回報]，不主動 reply
-
-開發關鍵字：需求、功能、開發、實作、測試、設計、規劃
-→ send_to_instance("pm-agent", "使用者訊息：{原文}")
-→ 等待 [回報]，不主動 reply
-
-資料/報告關鍵字：市場、數據、分析、報告、圖表
-→ send_to_instance("pm-agent", "使用者訊息：{原文}，請調度合適 worker")
-→ 等待 [回報]
-
-其他（簡單問答）→ 直接 reply
-```
-
-**admin-agent 回報協議（調整）：**
-
-```
-來自 mc-agent 的任務 → 執行 → send_to_instance("mc-agent", "[回報] 結果")
-來自 @mention → 執行 → 直接 reply
+使用者 → admin（預設入口）→ pm-agent（分析+派工）→ worker（執行）→ pm-agent（驗收）→ reply
 ```
 
 ---

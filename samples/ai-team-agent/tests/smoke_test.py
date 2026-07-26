@@ -39,6 +39,46 @@ class TestTier0Structure:
         agents = [d.name for d in (base / "agents").iterdir() if d.is_dir()]
         assert len(agents) >= 3
 
+    def test_team_yaml_8_agents(self):
+        """team.yaml 預設 8 agents 配置驗證。"""
+        import yaml
+        base = Path(__file__).parent.parent
+        team_yaml = base / "team.yaml"
+        assert team_yaml.exists(), "team.yaml 不存在"
+        data = yaml.safe_load(team_yaml.read_text(encoding="utf-8"))
+
+        instances = data.get("instances", {})
+        assert len(instances) == 8, f"team.yaml 應有 8 agents，目前 {len(instances)}"
+
+        expected = {"admin-agent", "pm-agent", "coder-agent", "qa-agent",
+                    "ai-dev-agent", "market-agent", "data-agent", "report-agent"}
+        assert set(instances.keys()) == expected, f"缺少或多餘的 agent: {set(instances.keys()) ^ expected}"
+
+        # 驗證 admin + pm 是常駐（persistent: true，或繼承 defaults）
+        defaults_persistent = data.get("defaults", {}).get("persistent", False)
+        admin = instances.get("admin-agent", {})
+        pm = instances.get("pm-agent", {})
+        admin_persistent = admin.get("persistent", defaults_persistent)
+        pm_persistent = pm.get("persistent", defaults_persistent)
+        assert admin_persistent, "admin-agent 應為 persistent: true"
+        assert pm_persistent, "pm-agent 應為 persistent: true"
+
+    def test_team_yaml_variants(self):
+        """team-ops.yaml 和 team-dev.yaml 存在且格式正確。"""
+        import yaml
+        base = Path(__file__).parent.parent
+
+        for fname, expected_workers in [("team-ops.yaml", {"market-agent", "data-agent", "report-agent"}),
+                                         ("team-dev.yaml", {"ai-dev-agent", "coder-agent", "qa-agent"})]:
+            path = base / fname
+            assert path.exists(), f"{fname} 不存在"
+            data = yaml.safe_load(path.read_text(encoding="utf-8"))
+            instances = set(data.get("instances", {}).keys())
+            assert "admin-agent" in instances, f"{fname}: 缺少 admin-agent"
+            assert "pm-agent" in instances, f"{fname}: 缺少 pm-agent"
+            for w in expected_workers:
+                assert w in instances, f"{fname}: 缺少 {w}"
+
     def test_knowledge_dir(self):
         base = Path(__file__).parent.parent
         knowledge = base / "knowledge"

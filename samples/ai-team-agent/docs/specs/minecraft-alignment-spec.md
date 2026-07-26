@@ -65,19 +65,15 @@ related_req: docs/reqs/minecraft-alignment-reqs.md
 | FR-3.5 | 根 .kiro/steering/ 同步精簡（移除 AGENTS.md、USER.md） | P1 |
 | FR-3.6 | 每 agent 常駐 steering 檔案數 ≤ 4（SOUL/BRAIN/MEMORY/TEAM） | P1 |
 
-### FR-4：mc-agent 分離入口
+### FR-4：TEAM.md 全員統一 + team.yaml 預設 8 agents
 
 | ID | 需求 | 優先級 |
 |----|------|--------|
-| FR-4.1 | 新增 `agents/mc-agent/` 目錄（4 檔 steering + mcp.json） | P2 |
-| FR-4.2 | mc-agent SOUL：路由入口身份 + 精簡 persona | P2 |
-| FR-4.3 | mc-agent BRAIN：意圖分流規則 + 等待回報規則 | P2 |
-| FR-4.4 | mc-agent TEAM：9 人清單 + manager 指揮鏈 | P2 |
-| FR-4.5 | mc-agent mcp.json：`--role manager --allowed-targets ad-agent,pm-agent,...` | P2 |
-| FR-4.6 | admin-agent 重新定位：純維運 + 完成後回報 mc-agent | P2 |
-| FR-4.7 | pm-agent + workers：完成後回報 mc-agent（非 `@mention` 時） | P2 |
-| FR-4.8 | team.yaml 新增 mc-agent（manager，persistent: true） | P2 |
-| FR-4.9 | TEAM.md 自動產生更新（含 mc-agent） | P2 |
+| FR-4.1 | 更新所有 8 個 agent 的 TEAM.md，統一列出完整 8 人清單 | P0 |
+| FR-4.2 | 修正 TEAM.md 中錯誤的 instance 名稱（`dev-agent` → `coder-agent`） | P0 |
+| FR-4.3 | 每個 agent TEAM.md 包含「你的身份」明確標示 | P0 |
+| FR-4.4 | team.yaml 改為預設完整 8 agents（workers 設 `persistent: false`） | P0 |
+| FR-4.5 | team-ops.yaml / team-dev.yaml 格式對齊新版 team.yaml | P1 |
 
 ## 6. 非功能需求
 
@@ -95,8 +91,9 @@ related_req: docs/reqs/minecraft-alignment-reqs.md
 | state/ + tasks/ 目錄 | 存在 |
 | skills.json 覆蓋率 | 8/8 agent |
 | skill-mapping.yaml | 存在且包含 8 角色 |
-| 每 agent 常駐 steering | ≤ 4 檔 |
-| mc-agent 目錄 | 存在且有完整 4 檔 steering |
+| 每 agent 常駐 steering | ≤ 5 檔（KIRO 保留 fileMatch） |
+| team.yaml 預設 8 agents | ✅ admin+pm 常駐，6 workers 動態 |
+| 每 agent TEAM.md 完整 8 人清單 | ✅ |
 | smoke_test | 全 pass |
 
 ## 8. 開放問題

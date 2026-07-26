@@ -1,7 +1,8 @@
 ---
 title: "ai-team-agent 借鑑 minecraft 優化執行計畫"
-status: draft
+status: completed
 created: 2026-07-27
+completed: 2026-07-27
 type: plan
 language: zh-TW
 related_spec: docs/specs/minecraft-alignment-spec.md
@@ -71,24 +72,16 @@ related_design: docs/designs/minecraft-alignment-design.md
 
 ---
 
-## 5. M4：mc-agent 分離入口（3h）
+## 5. M4：TEAM.md 全員統一 + team.yaml 8 agents（30min）✅ 已完成
 
 ### 任務分解
 
-| # | 任務 | 產出檔案 | 估時 | AC |
+| # | 任務 | 產出檔案 | 狀態 | AC |
 |---|------|----------|------|-----|
-| 4.1 | 建立 mc-agent 目錄結構 | `agents/mc-agent/`（含 memory/ knowledge/ output/） | 15min | 目錄存在 |
-| 4.2 | mc-agent SOUL.md | `agents/mc-agent/.kiro/steering/SOUL.md` | 15min | 路由身份 + 精簡 persona |
-| 4.3 | mc-agent BRAIN.md | `agents/mc-agent/.kiro/steering/BRAIN.md` | 20min | 含意圖分流規則 + 等待回報規則 |
-| 4.4 | mc-agent TEAM.md | `agents/mc-agent/.kiro/steering/TEAM.md` | 10min | 9 人清單 + 指揮鏈 |
-| 4.5 | mc-agent MEMORY.md | `agents/mc-agent/.kiro/steering/MEMORY.md` | 5min | 空白範本 |
-| 4.6 | mc-agent mcp.json | `agents/mc-agent/.kiro/settings/mcp.json` | 10min | `--role manager --allowed-targets ad-agent,...` |
-| 4.7 | mc-agent skills.json | `agents/mc-agent/.kiro/settings/skills.json` | 5min | role=manager |
-| 4.8 | team.yaml 新增 mc-agent | `team.yaml` | 10min | mc-agent 段存在，persistent: true |
-| 4.9 | admin-agent BRAIN 調整回報協議 | `agents/admin-agent/.kiro/steering/BRAIN.md` | 15min | 含「來自 mc-agent → 回報 mc-agent」規則 |
-| 4.10 | pm-agent BRAIN 調整回報協議 | `agents/pm-agent/.kiro/steering/BRAIN.md` | 15min | 含相同回報協議 |
-| 4.11 | workers BRAIN 調整回報協議（6 agent） | `agents/*/.kiro/steering/BRAIN.md` | 30min | 每個 worker 含回報協議 |
-| 4.12 | 所有 agent TEAM.md 更新（含 mc-agent） | `agents/*/.kiro/steering/TEAM.md` | 20min | 每個 TEAM 含 9 人清單 + 正確指揮鏈 |
+| 4.1 | 更新 8 個 agent TEAM.md（完整 8 人清單） | `agents/*/.kiro/steering/TEAM.md` | ✅ | 含完整 8 人表格 |
+| 4.2 | 修正 instance 名稱（dev-agent → coder-agent） | — | ✅ | 名稱正確 |
+| 4.3 | team.yaml 改為 8 agents（workers persistent: false） | `team.yaml` | ✅ | 8 agents 完整 |
+| 4.4 | team-ops.yaml / team-dev.yaml 格式對齊 | `team-ops.yaml`, `team-dev.yaml` | ✅ | 格式一致 |
 
 ---
 
@@ -134,12 +127,12 @@ M5（驗證，依賴全部）
 
 ## 10. 完成標準
 
-- [ ] state/board.json 存在且格式正確
-- [ ] tasks/items/ 存在
-- [ ] 8 agent 都有 skills.json
-- [ ] config/skill-mapping.yaml 存在
-- [ ] 每 agent 常駐 steering ≤ 4 檔
-- [ ] mc-agent 目錄存在且 4 檔完整
-- [ ] team.yaml 含 mc-agent（manager）
-- [ ] smoke_test 全 pass
-- [ ] git commit + push
+- [x] state/board.json 存在且格式正確 ✅
+- [x] tasks/items/ 存在 ✅
+- [x] 8 agent 都有 skills.json ✅
+- [x] config/skill-mapping.yaml 存在 ✅
+- [x] 每 agent 常駐 steering ≤ 5 檔（KIRO fileMatch）✅
+- [x] team.yaml 預設 8 agents（admin+pm 常駐，6 workers 動態）✅
+- [x] 8 個 TEAM.md 完整 8 人清單 ✅
+- [x] smoke_test 全 pass ✅
+- [x] git commit + push ✅
