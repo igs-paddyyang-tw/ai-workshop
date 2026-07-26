@@ -187,3 +187,40 @@ async def runtime_status(request: Request):
     if daemon:
         return {"mode": "persistent", "instances": daemon.get_status()}
     return {"mode": "spawn", "instances": []}
+
+
+@router.patch("/{agent_id}/persistent")
+async def toggle_persistent(agent_id: str, body: dict, request: Request):
+    """切換 agent 的 persistent 模式（true = 常駐，false = 動態）。"""
+    enabled: bool = body.get("persistent", True)
+    daemon = getattr(request.app.state, "persistent_daemon", None)
+    if not daemon:
+        from fastapi import HTTPException
+        raise HTTPException(400, "Persistent mode not available (no daemon)")
+
+    if enabled:
+        ok = await daemon.start_instance(agent_id)
+    else:
+        ok = await daemon.stop_instance(agent_id)
+
+    return {
+        "agent_id": agent_id,
+        "persistent": enabled,
+        "status": "ok" if ok else "failed",
+    }
+
+
+@router.post("/{agent_id}/rotate")
+async def rotate_session(agent_id: str, request: Request):
+    """輪換 agent session（清除對話歷史，重新建立常駐進程）。"""
+    daemon = getattr(request.app.state, "persistent_daemon", None)
+    if not daemon:
+        from fastapi import HTTPException
+        raise HTTPException(400, "Session rotate not available (no daemon)")
+
+    ok = await daemon.restart_instance(agent_id)
+    return {
+        "agent_id": agent_id,
+        "rotated": ok,
+        "status": "ok" if ok else "failed",
+    }

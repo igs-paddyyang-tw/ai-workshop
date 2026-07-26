@@ -160,6 +160,22 @@ class TestTier0Structure:
             d = base / "output" / category
             assert d.exists(), f"output/{category}/ 不存在"
 
+    def test_state_and_tasks_dirs(self):
+        """state/ + tasks/items/ 持久化目錄必須存在。"""
+        base = Path(__file__).parent.parent
+        assert (base / "state").exists(), "state/ 目錄不存在"
+        assert (base / "state" / "heartbeat").exists(), "state/heartbeat/ 不存在"
+        assert (base / "state" / "board.json").exists(), "state/board.json 不存在"
+        assert (base / "tasks" / "items").exists(), "tasks/items/ 不存在"
+
+    def test_kiro_fileMatch(self):
+        """KIRO.md 必須有 inclusion: fileMatch frontmatter（不佔常駐 context）。"""
+        base = Path(__file__).parent.parent
+        kiro = base / ".kiro" / "steering" / "KIRO.md"
+        assert kiro.exists(), ".kiro/steering/KIRO.md 不存在"
+        content = kiro.read_text(encoding="utf-8")
+        assert "inclusion: fileMatch" in content, "KIRO.md 缺少 inclusion: fileMatch"
+
     def test_skills_json_exists(self):
         """每個 agent 必須有 .kiro/settings/skills.json，格式正確。"""
         import json

@@ -147,16 +147,11 @@ async def _skills_pending(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def cmd_mode(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """顯示當前 Tier。"""
-    # 從 app.state 讀取 tier（由 bootstrap.py 注入），不直接 import runtime
+    # 從 bot_data 讀取 tier_status（由 bootstrap.py 注入）
     tier_status = context.bot_data.get("tier_status")
     if tier_status is None:
-        # fallback：直接偵測
-        try:
-            from runtime.tier import detect_tier
-            tier_status = detect_tier()
-        except Exception:
-            await update.message.reply_text("⚠️ 無法取得 Tier 資訊")
-            return
+        await update.message.reply_text("⚠️ Tier 資訊尚未載入，請重啟服務後再試")
+        return
 
     check = "✅"
     empty = "⬚"
