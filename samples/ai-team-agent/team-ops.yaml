@@ -6,8 +6,6 @@
 
 channel:
   bot_token_env: TELEGRAM_BOT_TOKEN
-  # group_id: -100xxxxxxxxxx    # 有值 = Group Topics；無值 = 純私聊
-  # general_topic_id: 4
 
 access:
   mode: locked
@@ -16,6 +14,11 @@ access:
 defaults:
   backend: kiro-cli
   model: auto
+  persistent: true
+
+startup:
+  concurrency: 2
+  stagger_delay_ms: 3000
 
 cost_guard:
   daily_limit_usd: 15.0
@@ -30,32 +33,35 @@ hang_detector:
 instances:
   admin-agent:
     working_directory: agents/admin-agent
-    description: "⚙️ 管理者 — 服務監控、重啟、成本控制"
+    description: "👑 Admin — 預設入口、服務監控、成本控制"
     role: admin
     skip_resume: true
 
   pm-agent:
     working_directory: agents/pm-agent
-    description: "🧠 專案經理 — 需求分析、派工、驗收"
+    description: "🧠 Leader — 需求分析、任務拆解、派工驗收"
     role: leader
     skip_resume: true
 
   market-agent:
     working_directory: agents/market-agent
-    description: "📰 市場研究員 — 社群輿情、競品監控、產業新聞爬取"
+    description: "📰 Market — 競品監控、輿情分析、新聞爬取"
     role: worker
+    persistent: false
     skip_resume: true
 
   data-agent:
     working_directory: agents/data-agent
-    description: "📊 數據分析師 — 內部營運數據分析、趨勢洞察、KPI 追蹤"
+    description: "📊 Data — 數據分析、KPI 追蹤、遊戲指標洞察"
     role: worker
+    persistent: false
     skip_resume: true
 
   report-agent:
     working_directory: agents/report-agent
-    description: "📋 報告專員 — Markdown/HTML 報告產出、圖表渲染、定期摘要"
+    description: "📋 Report — Markdown/HTML 報告產出、圖表渲染、定期摘要"
     role: worker
+    persistent: false
     skip_resume: true
 
 health_port: 33333

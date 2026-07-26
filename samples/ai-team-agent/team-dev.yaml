@@ -6,16 +6,19 @@
 
 channel:
   bot_token_env: TELEGRAM_BOT_TOKEN
-  # group_id: -100xxxxxxxxxx
-  # general_topic_id: 4
 
 access:
   mode: locked
-  allowed_users: []
+  allowed_users: []              # 填入你的 Telegram user_id
 
 defaults:
   backend: kiro-cli
   model: auto
+  persistent: true
+
+startup:
+  concurrency: 2
+  stagger_delay_ms: 3000
 
 cost_guard:
   daily_limit_usd: 15.0
@@ -30,32 +33,35 @@ hang_detector:
 instances:
   admin-agent:
     working_directory: agents/admin-agent
-    description: "⚙️ 管理者 — 服務監控、重啟、成本控制"
+    description: "👑 Admin — 預設入口、服務監控、成本控制"
     role: admin
     skip_resume: true
 
   pm-agent:
     working_directory: agents/pm-agent
-    description: "🧠 專案經理 — 需求分析、任務拆解、派工驗收"
+    description: "🧠 Leader — 需求分析、任務拆解、派工驗收"
     role: leader
     skip_resume: true
 
   ai-dev-agent:
     working_directory: agents/ai-dev-agent
-    description: "🤖 AI 工程師 — AI 架構設計、Prompt 工程、LLM 整合"
+    description: "🤖 AI Dev — LLM 整合、Prompt 工程、MCP 開發"
     role: worker
+    persistent: false
     skip_resume: true
 
   coder-agent:
     working_directory: agents/coder-agent
-    description: "💻 全端工程師 — FastAPI / React / DB 實作"
+    description: "💻 Coder — 全端開發、API 實作、資料庫設計"
     role: worker
+    persistent: false
     skip_resume: true
 
   qa-agent:
     working_directory: agents/qa-agent
-    description: "🧪 QA 工程師 — 測試策略、自動化測試、程式碼審查"
+    description: "🧪 QA — 測試策略、自動化測試、Code Review"
     role: worker
+    persistent: false
     skip_resume: true
 
 health_port: 33333
