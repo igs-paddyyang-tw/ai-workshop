@@ -1,16 +1,16 @@
 # Ark Agent Team Platform
 
-> 多 Agent 協作平台 — 基於四層架構（Gateway / Coordinator / Runtime / Business）
+> 多 Agent 協作平台 — 8 agents 遊戲開發場景，四層架構（Gateway / Coordinator / Runtime / Business）
 
 ## 快速開始
 
 ```bash
 python -m venv .venv
-.venv\Scripts\activate        # Windows
-# source .venv/bin/activate   # Linux/Mac
+source .venv/bin/activate   # Linux/Mac
+# .venv\Scripts\activate    # Windows
 
 pip install -r requirements.txt
-cp .env.example .env          # 填入 TELEGRAM_BOT_TOKEN 等
+cp .env.example .env        # 填入 TELEGRAM_BOT_TOKEN + GEMINI_API_KEY
 
 python start.py
 ```
@@ -25,93 +25,90 @@ src/
 └── business/         # 業務層：Skills、News、Web Search
 ```
 
+## 團隊配置
+
+3 種 team.yaml 場景：
+
+| 設定 | 指令 | 成員 |
+|------|------|------|
+| **完整 8 人（預設）** | `python start.py` | admin + pm + coder + qa + ai-dev + market + data + report |
+| 研發 5 人 | `cp team-dev.yaml team.yaml` | admin + pm + ai-dev + coder + qa |
+| 營運 5 人 | `cp team-ops.yaml team.yaml` | admin + pm + market + data + report |
+
+### Agent 角色與指揮鏈
+
+```
+使用者 → admin-agent（預設入口）→ pm-agent（分析+派工）→ workers（執行）→ pm-agent（驗收）→ reply
+```
+
+| Agent | 角色 | 職責 | 模式 |
+|-------|------|------|------|
+| admin-agent | admin | 預設入口、服務監控、成本控制 | 常駐 |
+| pm-agent | leader | 需求分析、任務拆解、派工驗收 | 常駐 |
+| coder-agent | worker | 全端開發、API 實作 | 動態 |
+| qa-agent | worker | 測試策略、Code Review | 動態 |
+| ai-dev-agent | worker | LLM 整合、Prompt 工程、MCP 開發 | 動態 |
+| market-agent | worker | 競品監控、輿情分析、新聞爬取 | 動態 |
+| data-agent | worker | 數據分析、KPI 追蹤、遊戲指標 | 動態 |
+| report-agent | worker | 報告產出、圖表渲染、定期摘要 | 動態 |
+
 ## 進程模式
 
 透過 `team.yaml` 切換：
 
-| 模式 | 命令 | 延遲 | MCP Tools |
-|------|------|------|-----------|
-| 常駐 (Persistent) | `--legacy-ui --require-mcp-startup` | < 100ms | ✅ 載入 |
-| Spawn (fallback) | `--no-interactive msg` | 2-5s | ✅ 每次重新載入 |
+| 模式 | 延遲 | MCP Tools |
+|------|------|-----------|
+| 常駐 (Persistent) | < 100ms | ✅ |
+| Spawn (fallback) | 2-5s | ✅ |
 
-常駐模式特性：
-- Health Loop（30 秒巡檢、自動重啟、指數退避）
-- Message Queue + SQLite Overflow（backpressure 保護）
-- Heartbeat + FailureMemory（錯誤偵測 → soft-pause）
+## .kiro 駕馭架構（5 檔制）
 
-## 對話回覆機制
+每個 Agent 的 `.kiro/steering/` 有 5 個檔案：
 
-### 常駐模式（MCP reply 驅動）
+| 檔案 | 職責 | 載入 |
+|------|------|------|
+| SOUL.md | 人格、身份、使用者資訊 | 常駐 |
+| BRAIN.md | 三層資源規則、品質護欄、MCP 工具 | 常駐 |
+| MEMORY.md | 專案狀態、技術決策、踩坑 | 常駐 |
+| TEAM.md | 完整 8 人清單 + 指揮鏈 + 協作規則 | 常駐 |
+| KIRO.md | Python 程式碼規範 | fileMatch（src/**/*.py）|
 
-```
-User(TG) → handle_message → daemon.send_message → stdin pipe → Agent
-  → Agent 呼叫 MCP reply(text) → mcp_stdio → POST /api/chat/reply → TG
-```
-
-### Spawn 模式（同步等待）
+## 知識庫
 
 ```
-User(TG) → handle_message → await agent.send(msg) → stdout → TG
-```
+agents/{name}/knowledge/
+├── wiki/    ← 私有知識（含遊戲業務場景）
+└── raw/     ← 原始文件
 
-## MCP 注意事項（Windows）
-
-kiro-cli 的 MCP stdio 有三個 Windows 特有限制：
-
-1. **stderr = 死亡** — MCP server 的 stderr 有任何輸出 → kiro-cli 判定 Transport closed
-2. **UTF-8 BOM = 死亡** — mcp.json 有 BOM → JSON parser 失敗（PowerShell `Set-Content -Encoding UTF8` 會加 BOM）
-3. **cp950 encode = 死亡** — stdout 含非 ASCII 字元且未用 `ensure_ascii=True` → UnicodeEncodeError → stderr traceback
-
-解決方案：
-- `json.dumps(ensure_ascii=True)` 所有 stdout 輸出
-- logging 用 `NullHandler`（不寫 stderr）
-- 用 Python 寫 mcp.json（避免 BOM）
-
-## Agent 團隊
-
-| Agent | 角色 | 職責 |
-|-------|------|------|
-| admin-agent | admin | 服務監控、重啟、成本控制、分流 |
-| pm-agent | leader | 需求分析、派工、驗收 |
-| coder-agent | worker | 全端開發 |
-| ai-dev-agent | worker | AI/LLM 工程 |
-| qa-agent | worker | 測試、品質保證 |
-| data-agent | worker | 數據分析 |
-| market-agent | worker | 市場研究 |
-| report-agent | worker | 報告產出 |
-
-## Agent 目錄結構
-
-```
-agents/{name}/          ← kiro-cli 的 cwd（MCP 從這裡載入）
-├── .kiro/
-│   ├── steering/       # SOUL + BRAIN
-│   └── settings/       # mcp.json（無 BOM！）
-├── knowledge/
-│   ├── wiki/           # 私有知識庫
-│   └── raw/            # 原始文件
-├── memory/
-│   ├── memory.md       # 持久事實
-│   └── daily/          # 每日紀錄
-└── output/
+knowledge/shared/wiki/  ← 全域共用
 ```
 
 ## MCP 工具（11 tools）
 
-| 工具 | 用途 |
+`reply` / `send_to_instance` / `delegate_task` / `query_team_status` / `broadcast_all` / `create_task` / `update_task` / `list_tasks` / `wiki_query` / `record_spend` / `log_to_leader`
+
+## MCP 注意事項（Windows）
+
+1. **stderr = 死亡** — MCP server stderr 有輸出 → Transport closed
+2. **UTF-8 BOM = 死亡** — mcp.json 有 BOM → JSON parser 失敗
+3. **cp950 encode = 死亡** — stdout 含非 ASCII 且未 `ensure_ascii=True` → crash
+
+## API
+
+| 分類 | 端點 |
 |------|------|
-| `reply(text, summary)` | 回覆使用者（唯一出口） |
-| `send_to_instance(instance, msg)` | 跨 agent 通訊 |
-| `delegate_task(instance, task)` | 委派任務 |
-| `query_team_status()` | 團隊狀態 |
-| `broadcast_all(message)` | 廣播全員 |
-| `create_task` / `update_task` / `list_tasks` | 任務管理 |
-| `wiki_query(query)` | 知識庫搜尋 |
-| `record_spend(amount_usd)` | 記錄成本 |
-| `log_to_leader(text)` | 回報 leader |
+| Agents | `GET /api/agents` / `GET /api/agents/{id}/health` / `PATCH /api/agents/{id}/persistent` / `POST /api/agents/{id}/rotate` |
+| Chat | `POST /api/chat/reply` / `POST /api/chat/send` |
+| Memory | `POST /api/v1/memory/recall` / `GET /api/v1/memory/daily/{agent}` |
+| Wiki | `GET /api/v1/wiki/search` / `POST /api/v1/wiki/ingest` |
+| Skills | `GET /api/v1/skills` / `POST /api/v1/skills/invoke` |
+| Health | `GET /api/health` |
 
-**前提：** 需先 `python start.py` 啟動 backend（port 33333）。
+## 品質指標（2026-07-29）
 
-## 環境變數
-
-參見 `.env.example`。
+| 指標 | 狀態 |
+|------|------|
+| smoke_test | ✅ 17 passed |
+| Spec Drift Score | ✅ ~97/100 |
+| API 端點覆蓋 | ✅ 100% |
+| 依賴規則違規 | ✅ 0 |
