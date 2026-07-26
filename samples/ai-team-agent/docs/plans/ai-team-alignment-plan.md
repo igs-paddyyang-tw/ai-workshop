@@ -5,8 +5,8 @@ created: 2026-07-27
 completed: 2026-07-27
 type: plan
 language: zh-TW
-related_spec: docs/specs/minecraft-alignment-spec.md
-related_design: docs/designs/minecraft-alignment-design.md
+related_spec: docs/specs/ai-team-alignment-spec.md
+related_design: docs/designs/ai-team-alignment-design.md
 ---
 
 # ai-team-agent 借鑑 minecraft 優化執行計畫

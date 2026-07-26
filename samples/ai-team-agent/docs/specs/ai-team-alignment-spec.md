@@ -4,7 +4,7 @@ status: draft
 created: 2026-07-27
 type: spec
 language: zh-TW
-related_req: docs/reqs/minecraft-alignment-reqs.md
+related_req: docs/reqs/ai-team-alignment-reqs.md
 ---
 
 # ai-team-agent 借鑑 minecraft 優化規格
