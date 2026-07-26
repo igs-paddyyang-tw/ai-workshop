@@ -160,6 +160,63 @@ class TestTier0Structure:
             d = base / "output" / category
             assert d.exists(), f"output/{category}/ 不存在"
 
+    def test_skills_json_exists(self):
+        """每個 agent 必須有 .kiro/settings/skills.json，格式正確。"""
+        import json
+        base = Path(__file__).parent.parent
+        agents_dir = base / "agents"
+        missing, invalid = [], []
+        for agent_dir in agents_dir.iterdir():
+            if not agent_dir.is_dir():
+                continue
+            skills_json = agent_dir / ".kiro" / "settings" / "skills.json"
+            if not skills_json.exists():
+                missing.append(agent_dir.name)
+                continue
+            try:
+                data = json.loads(skills_json.read_text(encoding="utf-8"))
+                if "role" not in data or "skills" not in data:
+                    invalid.append(agent_dir.name)
+            except json.JSONDecodeError:
+                invalid.append(agent_dir.name)
+        assert missing == [], f"缺少 skills.json：{missing}"
+        assert invalid == [], f"skills.json 格式錯誤（缺 role/skills）：{invalid}"
+
+    def test_skill_mapping_yaml_exists(self):
+        """config/skill-mapping.yaml 必須存在且含 roles + shared。"""
+        import yaml
+        base = Path(__file__).parent.parent
+        mapping = base / "config" / "skill-mapping.yaml"
+        assert mapping.exists(), "config/skill-mapping.yaml 不存在"
+        data = yaml.safe_load(mapping.read_text(encoding="utf-8"))
+        assert "roles" in data, "skill-mapping.yaml 缺少 roles 區塊"
+        assert "shared" in data, "skill-mapping.yaml 缺少 shared 區塊"
+        assert len(data["roles"]) >= 5, f"roles 應至少 5 個角色，目前 {len(data['roles'])}"
+
+    def test_team_md_8_members(self):
+        """每個 agent TEAM.md 必須包含完整 8 人清單和「你的身份」標示。"""
+        base = Path(__file__).parent.parent
+        agents_dir = base / "agents"
+        issues = []
+        expected_agents = {"admin-agent", "pm-agent", "coder-agent", "qa-agent",
+                           "ai-dev-agent", "market-agent", "data-agent", "report-agent"}
+        for agent_dir in agents_dir.iterdir():
+            if not agent_dir.is_dir():
+                continue
+            team_md = agent_dir / ".kiro" / "steering" / "TEAM.md"
+            if not team_md.exists():
+                issues.append(f"{agent_dir.name}: TEAM.md 不存在")
+                continue
+            content = team_md.read_text(encoding="utf-8")
+            # 驗證 8 人清單
+            for a in expected_agents:
+                if a not in content:
+                    issues.append(f"{agent_dir.name}: TEAM.md 缺少 {a}")
+            # 驗證身份標示
+            if "你的身份" not in content and "你 " not in content and "← 你" not in content:
+                issues.append(f"{agent_dir.name}: TEAM.md 缺少身份標示")
+        assert issues == [], f"TEAM.md 問題：{issues}"
+
 
 class TestTier0Skills:
     """Skills 系統驗證。"""

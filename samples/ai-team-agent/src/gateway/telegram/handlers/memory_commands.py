@@ -147,19 +147,27 @@ async def _skills_pending(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def cmd_mode(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """顯示當前 Tier。"""
-    from runtime.tier import detect_tier
+    # 從 app.state 讀取 tier（由 bootstrap.py 注入），不直接 import runtime
+    tier_status = context.bot_data.get("tier_status")
+    if tier_status is None:
+        # fallback：直接偵測
+        try:
+            from runtime.tier import detect_tier
+            tier_status = detect_tier()
+        except Exception:
+            await update.message.reply_text("⚠️ 無法取得 Tier 資訊")
+            return
 
-    status = detect_tier()
     check = "✅"
     empty = "⬚"
 
     lines = [
         "📊 <b>執行模式</b>\n",
         f"  Tier 0: {check} Skills + Wiki + API",
-        f"  Tier 1: {check if status.tg_ok else empty} Telegram Bot",
-        f"  Tier 2: {check if status.llm_ok else empty} Gemini AI",
-        f"  Tier 3: {check if status.cli_ok else empty} kiro-cli Agent",
-        f"  Tier 4: {check if status.team_ok else empty} Team A2A",
-        f"\n  🏷️ 當前 Tier: <b>{status.tier}</b>",
+        f"  Tier 1: {check if tier_status.tg_ok else empty} Telegram Bot",
+        f"  Tier 2: {check if tier_status.llm_ok else empty} Gemini AI",
+        f"  Tier 3: {check if tier_status.cli_ok else empty} kiro-cli Agent",
+        f"  Tier 4: {check if tier_status.team_ok else empty} Team A2A",
+        f"\n  🏷️ 當前 Tier: <b>{tier_status.tier}</b>",
     ]
     await update.message.reply_text("\n".join(lines), parse_mode="HTML")

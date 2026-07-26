@@ -21,22 +21,18 @@ from gateway.api.board import router as board_router
 from gateway.api.memory import router as memory_router
 from gateway.api.wiki import router as wiki_router
 from gateway.api.skills import router as skills_router
-from coordinator.services.cost_tracker import on_agent_output
-from coordinator.services.audit_logger import on_any_event
 
 bus = EventBus()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
-    # Use externally injected bus if available, otherwise create one
+    # Use externally injected bus if available (injected by bootstrap.py which wires services)
     if hasattr(app.state, "bus") and app.state.bus:
         _bus = app.state.bus
     else:
+        # Standalone mode: start bus without service subscriptions
         _bus = bus
-        _bus.subscribe(EventType.AGENT_OUTPUT, on_agent_output)
-        for et in EventType:
-            _bus.subscribe(et, on_any_event)
         await _bus.start()
         app.state.bus = _bus
     yield

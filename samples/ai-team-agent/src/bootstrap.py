@@ -374,6 +374,7 @@ async def main() -> None:
         tg_app.bot_data["skill_registry"] = skill_registry
         tg_app.bot_data["growth_detector"] = growth
         tg_app.bot_data["gemini_fn"] = _gemini_fn
+        tg_app.bot_data["tier_status"] = tier_status  # 供 /mode 使用（解耦 runtime.tier 直接 import）
 
         # 註冊 handlers
         from gateway.telegram.handlers.commands import (
