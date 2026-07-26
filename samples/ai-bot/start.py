@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import os
 import sys
-import subprocess
 from pathlib import Path
 
 
@@ -94,7 +93,7 @@ def main() -> None:
     memory_size = f"{len(memory_md.read_text(encoding='utf-8').split())}" if memory_md.exists() else "0"
     print(f"  🧠 Memory: daily {daily_count}d | memory.md ~{memory_size} words")
 
-    # Bot 子進程
+    # Bot 連線驗證（實際 polling 由 FastAPI lifespan 統一管理）
     bot_proc = None
     if tg_token:
         import httpx
@@ -103,20 +102,13 @@ def main() -> None:
             bot_info = resp.json()
             if bot_info.get("ok"):
                 bot_name = bot_info["result"]["username"]
-                print(f"  🤖 Bot: @{bot_name} 已連線")
+                print(f"  🤖 Bot: @{bot_name} 已連線（由 FastAPI lifespan 啟動 polling）")
             else:
                 print(f"  ❌ Bot Token 無效: {bot_info.get('description', '')}")
                 tg_token = ""
         except Exception as e:
             print(f"  ❌ Bot 連線失敗: {e}")
             tg_token = ""
-
-    if tg_token:
-        bot_proc = subprocess.Popen(
-            [sys.executable, "-m", "src.bot.run"],
-            env={**os.environ, "PYTHONIOENCODING": "utf-8"},
-        )
-        print(f"  🤖 Bot: 子進程已啟動 (PID={bot_proc.pid})")
     else:
         if not os.getenv("TELEGRAM_BOT_TOKEN", ""):
             print(f"  ⚠️  無 TG Token → 僅 API 模式")
@@ -216,16 +208,12 @@ def main() -> None:
     print(f"  ⏱️  Ready in {time.time() - _start_time:.1f}s")
     print()
 
-    # API Server
+    # API Server（Bot polling 由 FastAPI lifespan 統一管理）
     import uvicorn
     try:
         uvicorn.run("src.server.main:app", host="0.0.0.0", port=8000, reload=False)
     except KeyboardInterrupt:
-        print("\n  👋 Bot 已停止")
-    finally:
-        if bot_proc:
-            bot_proc.terminate()
-            bot_proc.wait(timeout=5)
+        print("\n  👋 服務已停止")
 
 
 def _check_dependencies() -> None:

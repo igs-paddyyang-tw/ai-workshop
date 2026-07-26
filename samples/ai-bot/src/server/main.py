@@ -1,15 +1,58 @@
 """FastAPI — AI Agent 專家平台 API + Web UI。"""
+from __future__ import annotations
+
+import logging
+import os
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
+from pydantic import BaseModel
+
 from src.skills.registry import SkillRegistry
 from src.wiki.engine import WikiEngine
-from pydantic import BaseModel
+
+log = logging.getLogger(__name__)
 
 TEMPLATES_DIR = Path(__file__).resolve().parents[2] / "templates"
 
-app = FastAPI(title="AI Agent 專家平台 API")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """啟動所有服務，shutdown 時優雅關閉。"""
+    registry = SkillRegistry()
+    count = registry.auto_discover("src.skills.internal")
+    log.info("📦 Skills loaded: %s", count)
+
+    # Wiki Engine
+    wiki_engine = WikiEngine()
+    wiki_engine.build_index()
+    app.state.wiki_engine = wiki_engine
+    app.state.registry = registry
+
+    # Telegram Bot — 由 lifespan 統一管理 polling
+    bot_app = None
+    token = os.getenv("TELEGRAM_BOT_TOKEN")
+    if token:
+        from src.bot.main import create_app
+        bot_app = create_app(registry=registry)
+        await bot_app.initialize()
+        await bot_app.start()
+        await bot_app.updater.start_polling(drop_pending_updates=False)
+        log.info("🤖 Telegram Bot started polling")
+    else:
+        log.warning("⚠️ TELEGRAM_BOT_TOKEN 未設定，Bot 不啟動")
+
+    yield
+
+    if bot_app:
+        await bot_app.updater.stop()
+        await bot_app.stop()
+        await bot_app.shutdown()
+
+
+app = FastAPI(title="AI Agent 專家平台 API", lifespan=lifespan)
 engine = WikiEngine()
 
 # ── Memory API Router ──
