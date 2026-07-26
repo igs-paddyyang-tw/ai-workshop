@@ -7,6 +7,13 @@ python-dotenv==1.0.1
 pyyaml==6.0.1
 google-genai>=1.0.0
 
+# 選配：Skills 使用（沒裝也能跑核心功能）
+openai>=1.0.0
+beautifulsoup4>=4.12.0
+jinja2>=3.1.0
+feedparser>=6.0.0
+apscheduler>=3.10.0
+
 # 選配：Wiki 搜尋優化（沒裝也能跑，graceful fallback）
 bm25s>=0.3.0
 jieba>=0.42.1
