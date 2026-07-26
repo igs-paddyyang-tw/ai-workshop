@@ -52,6 +52,74 @@ class TestTier0Structure:
         sql_files = list(migrations.glob("*.sql"))
         assert len(sql_files) >= 4  # 001-004
 
+    def test_steering_4_files(self):
+        """每個 agent 必須有 4 檔 steering（SOUL/BRAIN/MEMORY/TEAM）。"""
+        base = Path(__file__).parent.parent
+        agents_dir = base / "agents"
+        agents = [d for d in agents_dir.iterdir() if d.is_dir()]
+        assert len(agents) >= 3, "至少 3 個 agent"
+
+        required = ["SOUL.md", "BRAIN.md", "MEMORY.md", "TEAM.md"]
+        missing = []
+        for agent_dir in agents:
+            steering_dir = agent_dir / ".kiro" / "steering"
+            for f in required:
+                if not (steering_dir / f).exists():
+                    missing.append(f"{agent_dir.name}/{f}")
+
+        assert missing == [], f"缺少 steering 檔案：{missing}"
+
+    def test_brain_inclusion_always(self):
+        """每個 agent BRAIN.md 必須有 inclusion: always frontmatter。"""
+        base = Path(__file__).parent.parent
+        agents_dir = base / "agents"
+        bad = []
+        for agent_dir in agents_dir.iterdir():
+            if not agent_dir.is_dir():
+                continue
+            brain = agent_dir / ".kiro" / "steering" / "BRAIN.md"
+            if brain.exists():
+                content = brain.read_text(encoding="utf-8")
+                if "inclusion: always" not in content:
+                    bad.append(agent_dir.name)
+        assert bad == [], f"BRAIN.md 缺少 inclusion: always：{bad}"
+
+    def test_memory_daily_dirs(self):
+        """每個 agent 必須有 memory/daily/ 目錄（情節記憶）。"""
+        base = Path(__file__).parent.parent
+        agents_dir = base / "agents"
+        missing = []
+        for agent_dir in agents_dir.iterdir():
+            if not agent_dir.is_dir():
+                continue
+            daily_dir = agent_dir / "memory" / "daily"
+            if not daily_dir.exists():
+                missing.append(agent_dir.name)
+        assert missing == [], f"缺少 memory/daily/：{missing}"
+
+    def test_root_brain_exists(self):
+        """根目錄 .kiro/steering/BRAIN.md 必須存在。"""
+        base = Path(__file__).parent.parent
+        brain = base / ".kiro" / "steering" / "BRAIN.md"
+        assert brain.exists(), "根 .kiro/steering/BRAIN.md 不存在"
+        content = brain.read_text(encoding="utf-8")
+        assert "三層資源" in content, "BRAIN.md 缺少三層資源內容"
+
+    def test_hooks_exist(self):
+        """根目錄 .kiro/hooks/ 必須有 hook 檔案。"""
+        base = Path(__file__).parent.parent
+        hooks_dir = base / ".kiro" / "hooks"
+        assert hooks_dir.exists(), ".kiro/hooks/ 不存在"
+        hooks = list(hooks_dir.glob("*.hook"))
+        assert len(hooks) >= 1, "沒有 hook 檔案"
+
+    def test_output_dirs(self):
+        """根目錄 output/ 四區必須存在。"""
+        base = Path(__file__).parent.parent
+        for category in ["reports", "skills", "exports", "drafts"]:
+            d = base / "output" / category
+            assert d.exists(), f"output/{category}/ 不存在"
+
 
 class TestTier0Skills:
     """Skills 系統驗證。"""
