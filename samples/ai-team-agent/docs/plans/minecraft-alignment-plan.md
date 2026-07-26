@@ -1,0 +1,145 @@
+---
+title: "ai-team-agent 借鑑 minecraft 優化執行計畫"
+status: draft
+created: 2026-07-27
+type: plan
+language: zh-TW
+related_spec: docs/specs/minecraft-alignment-spec.md
+related_design: docs/designs/minecraft-alignment-design.md
+---
+
+# ai-team-agent 借鑑 minecraft 優化執行計畫
+
+## 1. 里程碑總覽
+
+| M# | 名稱 | 預估 | 依賴 |
+|----|------|------|------|
+| M1 | state/tasks 持久化目錄 | 30min | — |
+| M2 | skills.json + skill-mapping.yaml | 45min | — |
+| M3 | Steering 精簡（8→4 檔） | 1.5h | — |
+| M4 | mc-agent 分離入口 | 3h | M2, M3 |
+| M5 | smoke_test 更新 + 驗證 | 30min | M1-M4 |
+
+**總計：~6h**
+
+---
+
+## 2. M1：state/tasks 持久化目錄（30min）
+
+### 任務分解
+
+| # | 任務 | 產出檔案 | 估時 | AC |
+|---|------|----------|------|-----|
+| 1.1 | 建立 state/ 目錄結構 | `state/heartbeat/.gitkeep`、`state/.gitkeep` | 5min | 目錄存在 |
+| 1.2 | 初始化 board.json 骨架 | `state/board.json` | 5min | 格式正確（`{"version":"1.0","tasks":[],"updated_at":null}`） |
+| 1.3 | 建立 tasks/items/ 目錄 | `tasks/items/.gitkeep` | 5min | 目錄存在 |
+| 1.4 | 更新 smoke_test 加入驗證 | `tests/smoke_test.py` | 15min | state/ + tasks/ 目錄存在測試通過 |
+
+---
+
+## 3. M2：skills.json + skill-mapping.yaml（45min）
+
+### 任務分解
+
+| # | 任務 | 產出檔案 | 估時 | AC |
+|---|------|----------|------|-----|
+| 2.1 | 建立 config/skill-mapping.yaml | `config/skill-mapping.yaml` | 15min | 含 8 角色 + shared |
+| 2.2 | 建立 admin-agent skills.json | `agents/admin-agent/.kiro/settings/skills.json` | 5min | role=admin，含角色技能 + shared |
+| 2.3 | 建立 pm-agent skills.json | `agents/pm-agent/.kiro/settings/skills.json` | 5min | role=leader |
+| 2.4 | 建立 coder-agent skills.json | `agents/coder-agent/.kiro/settings/skills.json` | 3min | role=worker-coder |
+| 2.5 | 建立 qa-agent skills.json | `agents/qa-agent/.kiro/settings/skills.json` | 3min | role=worker-qa |
+| 2.6 | 建立 ai-dev-agent skills.json | `agents/ai-dev-agent/.kiro/settings/skills.json` | 3min | role=worker-ai-dev |
+| 2.7 | 建立 data-agent skills.json | `agents/data-agent/.kiro/settings/skills.json` | 3min | role=worker-data |
+| 2.8 | 建立 market-agent skills.json | `agents/market-agent/.kiro/settings/skills.json` | 3min | role=worker-market |
+| 2.9 | 建立 report-agent skills.json | `agents/report-agent/.kiro/settings/skills.json` | 3min | role=worker-report |
+
+---
+
+## 4. M3：Steering 精簡（1.5h）
+
+### 任務分解
+
+| # | 任務 | 產出檔案 | 估時 | AC |
+|---|------|----------|------|-----|
+| 3.1 | 根 .kiro/steering/BRAIN.md 加入 MCP 工具段 | `.kiro/steering/BRAIN.md` | 15min | 含工具表格 |
+| 3.2 | 刪除根 AGENTS.md | `.kiro/steering/AGENTS.md` | 2min | 檔案不存在 |
+| 3.3 | 根 .kiro/steering/SOUL.md 加入使用者資訊 | `.kiro/steering/SOUL.md` | 5min | 含使用者偏好段 |
+| 3.4 | 刪除根 USER.md | `.kiro/steering/USER.md` | 2min | 檔案不存在 |
+| 3.5 | 每 agent BRAIN.md 加入工具表格（8 agent） | `agents/*/. kiro/steering/BRAIN.md` | 30min | 每個 BRAIN 有工具段 |
+| 3.6 | 每 agent SOUL.md 加入使用者資訊（8 agent） | `agents/*/.kiro/steering/SOUL.md` | 20min | 每個 SOUL 有使用者資訊段 |
+| 3.7 | 刪除各 agent 多餘 steering 檔 | `agents/*/.kiro/steering/AGENTS.md` 等 | 5min | 每 agent ≤ 4 常駐檔 |
+
+---
+
+## 5. M4：mc-agent 分離入口（3h）
+
+### 任務分解
+
+| # | 任務 | 產出檔案 | 估時 | AC |
+|---|------|----------|------|-----|
+| 4.1 | 建立 mc-agent 目錄結構 | `agents/mc-agent/`（含 memory/ knowledge/ output/） | 15min | 目錄存在 |
+| 4.2 | mc-agent SOUL.md | `agents/mc-agent/.kiro/steering/SOUL.md` | 15min | 路由身份 + 精簡 persona |
+| 4.3 | mc-agent BRAIN.md | `agents/mc-agent/.kiro/steering/BRAIN.md` | 20min | 含意圖分流規則 + 等待回報規則 |
+| 4.4 | mc-agent TEAM.md | `agents/mc-agent/.kiro/steering/TEAM.md` | 10min | 9 人清單 + 指揮鏈 |
+| 4.5 | mc-agent MEMORY.md | `agents/mc-agent/.kiro/steering/MEMORY.md` | 5min | 空白範本 |
+| 4.6 | mc-agent mcp.json | `agents/mc-agent/.kiro/settings/mcp.json` | 10min | `--role manager --allowed-targets ad-agent,...` |
+| 4.7 | mc-agent skills.json | `agents/mc-agent/.kiro/settings/skills.json` | 5min | role=manager |
+| 4.8 | team.yaml 新增 mc-agent | `team.yaml` | 10min | mc-agent 段存在，persistent: true |
+| 4.9 | admin-agent BRAIN 調整回報協議 | `agents/admin-agent/.kiro/steering/BRAIN.md` | 15min | 含「來自 mc-agent → 回報 mc-agent」規則 |
+| 4.10 | pm-agent BRAIN 調整回報協議 | `agents/pm-agent/.kiro/steering/BRAIN.md` | 15min | 含相同回報協議 |
+| 4.11 | workers BRAIN 調整回報協議（6 agent） | `agents/*/.kiro/steering/BRAIN.md` | 30min | 每個 worker 含回報協議 |
+| 4.12 | 所有 agent TEAM.md 更新（含 mc-agent） | `agents/*/.kiro/steering/TEAM.md` | 20min | 每個 TEAM 含 9 人清單 + 正確指揮鏈 |
+
+---
+
+## 6. M5：smoke_test 更新 + 驗證（30min）
+
+### 任務分解
+
+| # | 任務 | 產出檔案 | 估時 | AC |
+|---|------|----------|------|-----|
+| 5.1 | 新增 state/tasks 驗證 | `tests/smoke_test.py` | 10min | test_state_dirs_exist pass |
+| 5.2 | 新增 skills.json 驗證 | `tests/smoke_test.py` | 10min | test_skills_json_exists pass |
+| 5.3 | 新增 mc-agent 結構驗證 | `tests/smoke_test.py` | 5min | test_mc_agent_steering pass |
+| 5.4 | 全跑 smoke_test | — | 5min | 全 pass |
+
+---
+
+## 7. 執行順序
+
+```
+M1 + M2（並行，無依賴）
+     ↓
+M3（Steering 精簡，獨立）
+     ↓
+M4（mc-agent，依賴 M2 skills.json + M3 steering 模板）
+     ↓
+M5（驗證，依賴全部）
+```
+
+## 8. 風險與緩解
+
+| 風險 | 機率 | 影響 | 緩解 |
+|------|------|------|------|
+| mc-agent 加入後使用者需更新 kiro-cli workspace | 中 | 低 | README 新增 mc-agent 說明段落 |
+| 刪除 AGENTS.md 後某 agent 找不到工具說明 | 低 | 中 | 確認 BRAIN 已包含工具表格再刪除 |
+| team.yaml 舊範本（ops/dev）不含 mc-agent | 低 | 低 | 舊範本維持不動，說明「精簡模式」 |
+| Steering 合併後 context 格式混亂 | 低 | 中 | 每次合併後人工 review SOUL/BRAIN |
+
+## 9. 回滾計畫
+
+- M1-M3：git revert（純新增/修改，可安全回退）
+- M4 mc-agent：git revert team.yaml + 刪除 agents/mc-agent/（風險最高但可恢復）
+- 合併 steering 前：先 git commit 做 checkpoint
+
+## 10. 完成標準
+
+- [ ] state/board.json 存在且格式正確
+- [ ] tasks/items/ 存在
+- [ ] 8 agent 都有 skills.json
+- [ ] config/skill-mapping.yaml 存在
+- [ ] 每 agent 常駐 steering ≤ 4 檔
+- [ ] mc-agent 目錄存在且 4 檔完整
+- [ ] team.yaml 含 mc-agent（manager）
+- [ ] smoke_test 全 pass
+- [ ] git commit + push
