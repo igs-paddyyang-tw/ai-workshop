@@ -64,6 +64,9 @@ python start.py
 | 部署 | python start.py | Docker Compose |
 | Web UI | Jinja 6 頁 | Next.js + API |
 | TG 指令 | /recall /skills /consolidate /mode | /recall /skills /consolidate /mode |
+| **駕馭工程（.kiro/）** | ✅ 4 檔制 + Loop 10 Skills | ✅ 4 檔制 + Loop 10 Skills（2026-07-27 對齊）|
+| **BRAIN.md** | ✅ 三層資源 + Output 策略 | ✅ 對齊（含品質護欄）|
+| **Bot 啟動** | ✅ FastAPI lifespan | ✅ FastAPI lifespan |
 
 ## Tier 分級（兩專案共用概念）
 
