@@ -1,0 +1,11 @@
+{
+  "role": "worker-market",
+  "skills": [
+    "ark-web-scraper",
+    "ark-news-daily",
+    "ark-landing-page",
+    "ark-wiki-engine",
+    "ark-code-spec-validator",
+    "ark-doc-coauthoring"
+  ]
+}

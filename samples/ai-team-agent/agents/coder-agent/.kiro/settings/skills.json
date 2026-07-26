@@ -1,0 +1,11 @@
+{
+  "role": "worker-coder",
+  "skills": [
+    "ark-webapp-generator",
+    "ark-frontend-design",
+    "ark-db-query",
+    "ark-wiki-engine",
+    "ark-code-spec-validator",
+    "ark-doc-coauthoring"
+  ]
+}

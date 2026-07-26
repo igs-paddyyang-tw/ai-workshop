@@ -82,30 +82,27 @@ tasks/
 
 ---
 
-### REQ-4：mc-agent 分離入口
+### REQ-4：~~mc-agent 分離入口~~ — 已移除
 
-**問題：** admin-agent 同時承擔「接收使用者訊息 + 判斷意圖 + 路由 + 執行維運」四個職責，context 容易混淆，難以維護。
+**決策（2026-07-27 修正）：** mc-agent 是 minecraft-team-agent 的業務特化設計（遊戲開發平台需要專責路由層），**不適合移植**到 ai-team-agent 教學範本。
 
-**參考：** minecraft 路由協議：
-```
-使用者 → mc-agent（純路由，不執行）
-  ├─ 維運/系統 → ad-agent → [回報] mc-agent → reply 使用者
-  └─ 開發/分析 → pm-agent → workers → [回報] mc-agent → reply 使用者
+原因：
+- ai-team-agent 用途是「遊戲開發平台」教學，admin-agent 作為預設入口已符合課程場景
+- 第四堂課學員手動新增的 agent 是 designer-agent，不是 mc-agent
+- 增加 mc-agent 對學員來說是不必要的認知負擔
 
-例外：使用者 @mention worker → worker 直接 reply
-```
+---
+
+### REQ-4（替代）：TEAM.md 全員統一 + team.yaml 預設 8 agents
+
+**問題：** 各 agent 的 TEAM.md 只列 4-5 人，且 instance 名稱錯誤（`dev-agent` 應為 `coder-agent`），指揮鏈不一致。
 
 **解法：**
-- 新增 `agents/mc-agent/` 目錄（4 檔 steering + mcp.json）
-- admin-agent 重新定位為純維運，完成後回報 mc-agent
-- pm-agent + workers 完成後回報 mc-agent
-- team.yaml 新增 mc-agent（manager role，persistent: true）
-- bootstrap.py mc-agent 輸出走特殊 notify 路徑（不被 tg_reply_fn 重複發送）
+- 更新所有 8 個 agent 的 TEAM.md，統一列出完整 8 人清單
+- 每個 agent TEAM.md 有「你的身份」清楚標示
+- team.yaml 改為預設完整 8 agents（workers 設 `persistent: false`）
 
-**驗收：**
-- mc-agent 目錄存在且有完整 steering
-- team.yaml 含 mc-agent（manager role）
-- smoke_test 通過（含 mc-agent 結構驗證）
+**驗收：** 8 個 TEAM.md 全部包含 8 人清單，agent instance 名稱正確。
 
 ---
 
@@ -115,8 +112,8 @@ tasks/
 |---|------|--------|------|---------|
 | REQ-1 | state/tasks 持久化 | P0 | 無 | 30min |
 | REQ-2 | skills.json + skill-mapping | P0 | 無 | 45min |
-| REQ-3 | Steering 精簡 8→4 | P1 | 無 | 1.5h |
-| REQ-4 | mc-agent 分離入口 | P2 | REQ-2, REQ-3 | 3-4h |
+| REQ-3 | Steering 精簡 8→5 | P1 | 無 | 1.5h |
+| REQ-4 | TEAM.md 全員統一 + team.yaml 8 agents | P0 | 無 | 30min |
 
 ## 約束
 

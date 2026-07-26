@@ -1,0 +1,12 @@
+{
+  "role": "admin",
+  "skills": [
+    "ark-env-doctor",
+    "ark-docker-deploy",
+    "ark-dashboard-health",
+    "ark-security-audit",
+    "ark-wiki-engine",
+    "ark-code-spec-validator",
+    "ark-doc-coauthoring"
+  ]
+}
