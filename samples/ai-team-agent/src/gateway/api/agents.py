@@ -52,6 +52,11 @@ class AgentHealthResponse(BaseModel):
     consecutive_failures: int = 0
     last_heartbeat: str | None = None
 
+
+class PersistentToggleRequest(BaseModel):
+    """切換 agent persistent 模式的 request body。"""
+    persistent: bool
+
 @router.get("/sessions")
 async def agent_sessions_list():
     conn = await get_async_db()
@@ -190,22 +195,21 @@ async def runtime_status(request: Request):
 
 
 @router.patch("/{agent_id}/persistent")
-async def toggle_persistent(agent_id: str, body: dict, request: Request):
+async def toggle_persistent(agent_id: str, body: PersistentToggleRequest, request: Request):
     """切換 agent 的 persistent 模式（true = 常駐，false = 動態）。"""
-    enabled: bool = body.get("persistent", True)
     daemon = getattr(request.app.state, "persistent_daemon", None)
     if not daemon:
         from fastapi import HTTPException
         raise HTTPException(400, "Persistent mode not available (no daemon)")
 
-    if enabled:
+    if body.persistent:
         ok = await daemon.start_instance(agent_id)
     else:
         ok = await daemon.stop_instance(agent_id)
 
     return {
         "agent_id": agent_id,
-        "persistent": enabled,
+        "persistent": body.persistent,
         "status": "ok" if ok else "failed",
     }
 
