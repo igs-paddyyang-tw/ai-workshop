@@ -2,12 +2,9 @@
 from __future__ import annotations
 
 import logging
-import os
 import re
 from datetime import datetime
 from pathlib import Path
-
-import httpx
 
 from .indexer import load_metadata, rebuild_index
 
@@ -59,10 +56,7 @@ class WikiEngine:
         exact_hits = search_exact(q, scoped)
         if exact_hits and exact_hits[0].get("score", 0) >= 1.0:
             results = self._format_results(exact_hits[:5])
-            if not use_rag:
-                return {"results": results, "answer": None, "sources": []}
-            answer = await self._rag_answer(q, results)
-            return {"results": results, "answer": answer, "sources": [r["file"] for r in results]}
+            return {"results": results, "answer": None, "sources": []}
 
         # ── Layer 1: BM25 ──
         bm25_hits: list[dict] = []
@@ -99,11 +93,7 @@ class WikiEngine:
         if rerank_ok() and len(results) > 3:
             results = await rerank(q, results, top_k=5)
 
-        if not use_rag or not results:
-            return {"results": results, "answer": None, "sources": []}
-
-        answer = await self._rag_answer(q, results)
-        return {"results": results, "answer": answer, "sources": [r["file"] for r in results[:5]]}
+        return {"results": results, "answer": None, "sources": []}
 
     def _format_results(self, hits: list[dict]) -> list[dict]:
         """格式化為前端友善格式。"""
@@ -117,46 +107,6 @@ class WikiEngine:
             }
             for h in hits
         ]
-
-    async def _rag_answer(self, question: str, results: list[dict]) -> str | None:
-        """使用 Gemini 合成答案。"""
-        api_key = os.getenv("GEMINI_API_KEY", "")
-        if not api_key or api_key == "your_gemini_api_key_here":
-            return None
-
-        # 讀完整文件作為 context
-        context_parts: list[str] = []
-        for r in results[:5]:
-            file_path = self._resolve_path(r["file"])
-            if file_path and file_path.exists():
-                content = file_path.read_text(encoding="utf-8")[:2000]
-                context_parts.append(f"[{r['title']}]\n{content}")
-            else:
-                context_parts.append(f"[{r['title']}]\n{r['snippet']}")
-
-        context = "\n\n---\n\n".join(context_parts)
-        prompt = (
-            f"根據以下知識庫內容回答問題，使用繁體中文。\n"
-            f"在回答結尾用「📚 參考：」列出引用的來源。\n"
-            f"如果知識庫沒有相關內容，說「目前知識庫沒有這方面的資料」。\n\n"
-            f"知識庫內容：\n{context}\n\n問題：{question}"
-        )
-
-        model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
-
-        try:
-            async with httpx.AsyncClient(timeout=30) as client:
-                resp = await client.post(url, json={
-                    "contents": [{"parts": [{"text": prompt}]}],
-                })
-                if resp.status_code != 200:
-                    return None
-                data = resp.json()
-                return data["candidates"][0]["content"]["parts"][0]["text"]
-        except Exception as e:
-            log.warning("RAG answer failed: %s", e)
-            return None
 
     def _resolve_path(self, relative_path: str) -> Path | None:
         """解析相對路徑到實際 wiki 檔案。"""

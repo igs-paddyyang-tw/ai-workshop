@@ -57,11 +57,7 @@ async def cmd_consolidate(update: Update, context: ContextTypes.DEFAULT_TYPE):
     from coordinator.memory.consolidate import consolidate
 
     agent_name = context.bot_data.get("current_agent", "pm-agent")
-
-    # 取得 gemini_fn
-    gemini_fn = context.bot_data.get("gemini_fn")
-
-    result = await consolidate(agent_name, gemini_fn=gemini_fn)
+    result = await consolidate(agent_name)
     preview = result[:300] if result else "（無內容可蒸餾）"
 
     await update.message.reply_text(
@@ -160,9 +156,8 @@ async def cmd_mode(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "📊 <b>執行模式</b>\n",
         f"  Tier 0: {check} Skills + Wiki + API",
         f"  Tier 1: {check if tier_status.tg_ok else empty} Telegram Bot",
-        f"  Tier 2: {check if tier_status.llm_ok else empty} Gemini AI",
-        f"  Tier 3: {check if tier_status.cli_ok else empty} kiro-cli Agent",
-        f"  Tier 4: {check if tier_status.team_ok else empty} Team A2A",
+        f"  Tier 2: {check if tier_status.cli_ok else empty} kiro-cli Agent",
+        f"  Tier 3: {check if tier_status.team_ok else empty} Team A2A",
         f"\n  🏷️ 當前 Tier: <b>{tier_status.tier}</b>",
     ]
     await update.message.reply_text("\n".join(lines), parse_mode="HTML")

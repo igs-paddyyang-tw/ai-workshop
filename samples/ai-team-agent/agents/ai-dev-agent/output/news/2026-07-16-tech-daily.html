@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🗞️ 科技日報 — 2026-07-16</title>
+<style>
+  :root { --bg: #0d1117; --card: #161b22; --accent: #58a6ff; --text: #c9d1d9; --muted: #8b949e; --green: #3fb950; --orange: #d29922; --purple: #bc8cff; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); padding: 2rem; line-height: 1.6; }
+  .container { max-width: 900px; margin: 0 auto; }
+  h1 { color: #fff; font-size: 2rem; margin-bottom: 0.5rem; }
+  .meta { color: var(--muted); margin-bottom: 2rem; font-size: 0.9rem; }
+  .section { margin-bottom: 2.5rem; }
+  .section-title { font-size: 1.3rem; color: var(--accent); border-bottom: 1px solid #21262d; padding-bottom: 0.5rem; margin-bottom: 1rem; }
+  .section-title.ai { color: var(--purple); }
+  .section-title.lang { color: var(--green); }
+  .section-title.general { color: var(--orange); }
+  .news-item { background: var(--card); border-radius: 8px; padding: 1rem 1.2rem; margin-bottom: 0.8rem; border-left: 3px solid var(--accent); }
+  .news-item.ai { border-left-color: var(--purple); }
+  .news-item.lang { border-left-color: var(--green); }
+  .news-item.general { border-left-color: var(--orange); }
+  .news-item h3 { font-size: 1rem; margin-bottom: 0.3rem; }
+  .news-item h3 a { color: #fff; text-decoration: none; }
+  .news-item h3 a:hover { color: var(--accent); }
+  .news-item .source { color: var(--muted); font-size: 0.8rem; }
+  .news-item .summary { color: var(--text); font-size: 0.9rem; margin-top: 0.4rem; }
+  .footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #21262d; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🗞️ 科技日報</h1>
+  <p class="meta">📅 2026-07-16（週三）｜來源：Hacker News + TechCrunch</p>
+
+  <!-- AI 類 -->
+  <div class="section">
+    <h2 class="section-title ai">🤖 AI / 機器學習</h2>
+
+    <div class="news-item ai">
+      <h3><a href="https://thinkingmachines.ai/news/introducing-inkling/" target="_blank">Thinking Machines 發佈首個開源模型 Inkling</a></h3>
+      <span class="source">TechCrunch / HN (607 pts)</span>
+      <p class="summary">Mira Murati 創辦的 Thinking Machines Lab 推出 Inkling 開源模型，主張「非一體適用」AI 策略。</p>
+    </div>
+
+    <div class="news-item ai">
+      <h3><a href="https://techcrunch.com/category/artificial-intelligence/" target="_blank">Anthropic + Blackstone 押注 AI 實施即下一個兆元商機</a></h3>
+      <span class="source">TechCrunch</span>
+      <p class="summary">不只做模型，Anthropic 與 Blackstone 聯手佈局企業 AI 落地實施服務。</p>
+    </div>
+
+    <div class="news-item ai">
+      <h3><a href="https://techcrunch.com/" target="_blank">Microsoft 據報內訓業務員淡化 OpenAI 與 Anthropic</a></h3>
+      <span class="source">TechCrunch</span>
+      <p class="summary">Microsoft 內部培訓銷售人員，引導客戶選擇自家 AI 方案而非合作夥伴產品。</p>
+    </div>
+
+    <div class="news-item ai">
+      <h3><a href="https://neomindlabs.com" target="_blank">在 13 年老 Xeon 無 GPU 上跑 Gemma 4 26B — 5 tokens/sec</a></h3>
+      <span class="source">Hacker News (221 pts)</span>
+      <p class="summary">純 CPU 推理的極限測試：舊硬體也能跑大模型，量化 + 最佳化的勝利。</p>
+    </div>
+
+    <div class="news-item ai">
+      <h3><a href="https://greg.technology" target="_blank">LLM + MikroTik 路由器自動化網路管理</a></h3>
+      <span class="source">Hacker News (30 pts)</span>
+      <p class="summary">將 LLM 接入 MikroTik 網路設備，用自然語言管理路由器配置。</p>
+    </div>
+
+    <div class="news-item ai">
+      <h3><a href="https://freestyle.sh" target="_blank">Designing APIs for Agents — 為 AI Agent 設計 API</a></h3>
+      <span class="source">Hacker News (40 pts)</span>
+      <p class="summary">探討如何設計 Agent 友善的 API 接口，讓 LLM 更高效率地呼叫服務。</p>
+    </div>
+
+    <div class="news-item ai">
+      <h3><a href="https://github.com/xai-org/grok-build" target="_blank">xAI 開源 Grok Build 工具</a></h3>
+      <span class="source">Hacker News (212 pts)</span>
+      <p class="summary">Elon Musk 旗下 xAI 將 Grok Build 開源，引發社群熱議。</p>
+    </div>
+
+    <div class="news-item ai">
+      <h3><a href="https://siegelendowment.org" target="_blank">報告：政府/企業/非營利應投資自由開源 AI</a></h3>
+      <span class="source">Hacker News (57 pts)</span>
+      <p class="summary">Siegel 基金會發佈報告，呼籲各界增加對開源 AI 的投資。</p>
+    </div>
+  </div>
+
+  <!-- 程式語言 / 開發工具 -->
+  <div class="section">
+    <h2 class="section-title lang">💻 程式語言 / 開發工具</h2>
+
+    <div class="news-item lang">
+      <h3><a href="https://mort.coffee/home/sqlite-editions/" target="_blank">SQLite 應該有 Rust 風格的 Editions 機制</a></h3>
+      <span class="source">Hacker News (68 pts)</span>
+      <p class="summary">提議 SQLite 採用版本 Edition 系統，在不破壞向後相容性的情況下演進語意。</p>
+    </div>
+
+    <div class="news-item lang">
+      <h3><a href="https://sqlite.org" target="_blank">SQLite 中的 NUL 字元問題</a></h3>
+      <span class="source">Hacker News (17 pts)</span>
+      <p class="summary">深入探討 SQLite 字串中 NUL 字元的行為與潛在安全影響。</p>
+    </div>
+
+    <div class="news-item lang">
+      <h3><a href="https://github.com/frmoded" target="_blank">E-- 語言：在英文與 Python 之間自由調節的語言</a></h3>
+      <span class="source">Hacker News (8 pts)</span>
+      <p class="summary">Show HN 專案，可在自然語言描述和 Python 程式碼之間無段切換。</p>
+    </div>
+
+    <div class="news-item lang">
+      <h3><a href="https://github.com/welcome-to-the-sunny-side" target="_blank">misa77 壓縮 codec：解壓速度是 LZ4 的 2 倍，壓縮率更優</a></h3>
+      <span class="source">Hacker News (128 pts)</span>
+      <p class="summary">新型壓縮演算法，在解碼速度和壓縮率雙雙超越 LZ4。</p>
+    </div>
+
+    <div class="news-item lang">
+      <h3><a href="https://clig.dev" target="_blank">Command Line Interface Guidelines — CLI 設計指南</a></h3>
+      <span class="source">Hacker News (47 pts)</span>
+      <p class="summary">全面性的 CLI 工具設計最佳實踐指南，涵蓋命名、輸出、錯誤處理等。</p>
+    </div>
+
+    <div class="news-item lang">
+      <h3><a href="https://puter.com" target="_blank">Firefox in WebAssembly — 在瀏覽器中跑 Firefox</a></h3>
+      <span class="source">Hacker News (112 pts)</span>
+      <p class="summary">Puter.com 成功將 Firefox 編譯為 WASM 並在瀏覽器中運行。</p>
+    </div>
+
+    <div class="news-item lang">
+      <h3><a href="https://swerdlow.dev" target="_blank">Brainless：模仿 Claude Code / Codex / Grok 風格的 Shadcn 元件</a></h3>
+      <span class="source">Hacker News (77 pts)</span>
+      <p class="summary">開源 UI 元件庫，快速打造 AI Agent 終端風格的介面。</p>
+    </div>
+
+    <div class="news-item lang">
+      <h3><a href="https://github.com/projectargus-cc" target="_blank">OpenJDK Panama FFM 低延遲本地 LLM Runner（Java 22）</a></h3>
+      <span class="source">Hacker News (26 pts)</span>
+      <p class="summary">利用 Java 22 的 FFM API 直接呼叫 llama.cpp，實現低延遲 Java LLM 推理。</p>
+    </div>
+  </div>
+
+  <!-- 綜合科技 -->
+  <div class="section">
+    <h2 class="section-title general">🌐 綜合科技</h2>
+
+    <div class="news-item general">
+      <h3><a href="https://reuters.com" target="_blank">Stripe + Advent 聯合出價收購 PayPal</a></h3>
+      <span class="source">Hacker News (323 pts) / Reuters</span>
+      <p class="summary">支付巨頭整併震撼彈：Stripe 與 Advent 聯手收購 PayPal。</p>
+    </div>
+
+    <div class="news-item general">
+      <h3><a href="https://techcrunch.com/" target="_blank">Tesla 致命車禍 NTSB 確認：駕駛油門踩到底 100%</a></h3>
+      <span class="source">TechCrunch</span>
+      <p class="summary">NTSB 調查確認德州致命 Tesla 事故中駕駛全力踩下加速踏板。</p>
+    </div>
+
+    <div class="news-item general">
+      <h3><a href="https://techcrunch.com/" target="_blank">SpaceX IPO 定價降至 $135，Starship 發射在即</a></h3>
+      <span class="source">TechCrunch</span>
+      <p class="summary">SpaceX 股價在二級市場滑落至 $135 IPO 定價，新一代 Starship 即將發射。</p>
+    </div>
+
+    <div class="news-item general">
+      <h3><a href="https://techcrunch.com/" target="_blank">Daniel Ek 的 Neko Health 再融 $700M</a></h3>
+      <span class="source">TechCrunch</span>
+      <p class="summary">Spotify 創辦人的全身掃描健康新創 Neko Health 完成新一輪 7 億美元融資。</p>
+    </div>
+
+    <div class="news-item general">
+      <h3><a href="https://techcrunch.com/" target="_blank">OpenAI 推出 $230 Codex 專用鍵盤</a></h3>
+      <span class="source">TechCrunch</span>
+      <p class="summary">在硬體訴訟風波中，OpenAI 與 Work Louder 聯名推出程式碼專用鍵盤。</p>
+    </div>
+
+    <div class="news-item general">
+      <h3><a href="https://techcrunch.com/" target="_blank">OnePlus 據報計畫退出美國和歐洲市場</a></h3>
+      <span class="source">TechCrunch</span>
+      <p class="summary">中國手機品牌 OnePlus 傳出將縮減美歐業務。</p>
+    </div>
+
+    <div class="news-item general">
+      <h3><a href="https://dev.moe" target="_blank">Telegram 資料中心之謎（2022）</a></h3>
+      <span class="source">Hacker News (240 pts)</span>
+      <p class="summary">深入調查 Telegram 全球資料中心的地理分布與架構秘密。</p>
+    </div>
+
+    <div class="news-item general">
+      <h3><a href="https://techcrunch.com/" target="_blank">Vint Cerf 正在規劃讓 AI Agent 進入開放網路</a></h3>
+      <span class="source">TechCrunch</span>
+      <p class="summary">「網際網路之父」Vint Cerf 制定計畫，為 AI Agent 建立開放網路互動標準。</p>
+    </div>
+
+    <div class="news-item general">
+      <h3><a href="https://techcrunch.com/" target="_blank">Greylock 新基金刻意控制在 $1.5B</a></h3>
+      <span class="source">TechCrunch</span>
+      <p class="summary">頂級 VC Greylock 表示可以募更多，但刻意限縮基金規模以保持投資紀律。</p>
+    </div>
+  </div>
+
+  <div class="footer">
+    <p>🤖 由 ai-dev-agent 自動產出 ｜ 資料來源：Hacker News、TechCrunch ｜ 2026-07-16 08:30 UTC+8</p>
+  </div>
+</div>
+</body>
+</html>

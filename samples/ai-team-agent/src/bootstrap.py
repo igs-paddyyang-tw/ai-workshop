@@ -73,13 +73,6 @@ async def main() -> None:
     from coordinator.memory.daily_log import write_daily_log
     from coordinator.memory.indexer import rebuild_memory_index
 
-    # Gemini LLM fn（供 memory 使用）
-    _gemini_fn = None
-    gemini_key = os.environ.get("GEMINI_API_KEY", "")
-    if gemini_key:
-        from gateway.gemini_chat import gemini_chat
-        _gemini_fn = gemini_chat
-
     async def _on_agent_output_memory(event: Event):
         """AGENT_OUTPUT → daily_log 自動寫入。"""
         data = event.data
@@ -92,7 +85,6 @@ async def main() -> None:
                 agent_name=agent_name,
                 task_id=data.get("task_id", "auto"),
                 conversation=output[:3000],
-                gemini_fn=_gemini_fn,
             )
             await bus.emit(Event(
                 type=EventType.MEMORY_WRITTEN,
@@ -122,11 +114,7 @@ async def main() -> None:
     skill_count = skill_registry.auto_discover("business.skills.internal")
     log.info("Skills: %d loaded", skill_count)
 
-    # ── 1c. GrowthDetector（自我成長）──
-    from coordinator.services.growth import GrowthDetector
-
-    growth = GrowthDetector(gemini_fn=_gemini_fn, event_bus=bus)
-    bus.subscribe(EventType.AGENT_OUTPUT, growth.on_agent_output)
+    # ── 1c. GrowthDetector 已移除（需 Gemini LLM，非必要功能）──
 
     # ── 2. Backend API ──
     import uvicorn
@@ -372,8 +360,6 @@ async def main() -> None:
         tg_app.bot_data["persistent_daemon"] = persistent_daemon
         tg_app.bot_data["handled_agents"] = _tg_handled_agents
         tg_app.bot_data["skill_registry"] = skill_registry
-        tg_app.bot_data["growth_detector"] = growth
-        tg_app.bot_data["gemini_fn"] = _gemini_fn
         tg_app.bot_data["tier_status"] = tier_status  # 供 /mode 使用（解耦 runtime.tier 直接 import）
 
         # 註冊 handlers
