@@ -83,21 +83,12 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.edit_message_text(text, parse_mode="HTML")
 
     elif data == "refresh_board":
-        # 改用 /api/board（回傳 kanban 分組格式）而非 /api/issues（flat list）
         async with httpx.AsyncClient(timeout=10) as c:
             r = await c.get(f"{_api(context)}/api/board")
         board = r.json() if r.status_code == 200 else {}
-        # board 是 {pending:[...], assigned:[...], completed:[...]} 格式
-        # 轉成 fmt_board 接受的 flat list
+        # fmt_board 直接接受 board dict（tasks + issues 合併格式）
         from gateway.telegram.formatters import fmt_board
-        flat = []
-        for status_key, items in board.items():
-            if isinstance(items, list):
-                for item in items:
-                    if isinstance(item, dict) and "status" not in item:
-                        item = {**item, "status": status_key}
-                    flat.append(item)
-        await query.edit_message_text(fmt_board(flat), parse_mode="HTML")
+        await query.edit_message_text(fmt_board(board), parse_mode="HTML")
 
     elif data == "new_issue":
         await query.edit_message_text("請用 /assign 描述 來建立新任務")

@@ -74,9 +74,9 @@
 |-------|------|---------|
 | 短期修復 A（get_board 合併） | ✅ 完成 | 2026-07-27 |
 | Phase 1：MCP 改寫 tasks 表 | ✅ 完成 | 2026-07-27 |
-| Phase 2：資料遷移 | ⏳ 待決策（建議暫保留雙表） | — |
-| Phase 3：status 統一 | ⏳ 待執行 | — |
-| Phase 4：廢棄 /api/issues | ⏳ 待執行 | — |
+| Phase 2：資料遷移 | ✅ 暫緩（保留雙表 fallback） | — |
+| Phase 3：status 統一 | ✅ 完成 | 2026-07-27 |
+| Phase 4：廢棄 /api/issues | ✅ 完成（加 Deprecation header） | 2026-07-27 |
 
 ## 約束
 

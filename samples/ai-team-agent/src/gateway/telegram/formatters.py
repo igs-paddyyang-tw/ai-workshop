@@ -30,9 +30,25 @@ def fmt_completed(issue: dict, agent_name: str, duration_s: float, cost: float) 
 
 
 def fmt_board(issues: list[dict]) -> str:
-    """看板摘要。"""
-    running = [i for i in issues if i.get("status") == "assigned"]
-    pending = [i for i in issues if i.get("status") == "pending"]
+    """看板摘要 — 支援 flat list（舊 issues 格式）和 board dict（新 tasks 格式）。"""
+    # 若傳入 dict（board 格式），先轉 flat list
+    if isinstance(issues, dict):
+        flat: list[dict] = []
+        for status_key, items in issues.items():
+            for item in items:
+                if "status" not in item:
+                    item = {**item, "status": status_key}
+                flat.append(item)
+        issues = flat
+
+    # tasks 表狀態 → 顯示分類映射
+    RUNNING_STATUSES = {"assigned", "claimed", "executing", "in_progress"}
+    PENDING_STATUSES = {"pending", "queued", "backlog"}
+    BLOCKED_STATUSES = {"blocked"}
+
+    running = [i for i in issues if i.get("status") in RUNNING_STATUSES]
+    pending = [i for i in issues if i.get("status") in PENDING_STATUSES]
+    blocked = [i for i in issues if i.get("status") in BLOCKED_STATUSES]
     completed = [i for i in issues if i.get("status") == "completed"]
 
     lines = ["📋 <b>Board</b>", "━━━━━━━━━━━━━━━━━━━"]
@@ -47,6 +63,11 @@ def fmt_board(issues: list[dict]) -> str:
         for i in pending[:5]:
             p = ["", "🔴", "🟠", "🔵", "⚪"][min(i.get("priority", 3), 4)]
             lines.append(f"├ #{i['id']} {i['title']} {p}")
+
+    if blocked:
+        lines.append(f"\n🚫 <b>阻塞</b> ({len(blocked)})")
+        for i in blocked[:3]:
+            lines.append(f"├ #{i['id']} {i['title']}")
 
     if completed:
         lines.append(f"\n✅ <b>已完成</b> ({len(completed)})")

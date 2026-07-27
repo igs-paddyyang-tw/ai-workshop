@@ -114,7 +114,7 @@ TOOLS: list[dict[str, Any]] = [
         "inputSchema": {
             "type": "object",
             "properties": {
-                "status": {"type": "string", "description": "篩選狀態（pending/assigned/completed）"},
+                "status": {"type": "string", "description": "篩選狀態（pending=待處理, assigned=進行中, completed=已完成, failed=失敗, blocked=阻塞）"},
             },
         },
     },

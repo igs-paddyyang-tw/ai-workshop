@@ -1,11 +1,16 @@
 from __future__ import annotations
 import uuid
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel
 from coordinator.db.models import get_async_db, insert, fetch_all, fetch_one, now_iso
 from coordinator.events.types import EventType, Event
 
 router = APIRouter()
+
+_DEPRECATED_NOTE = (
+    "Deprecated: use POST /api/tasks and PATCH /api/tasks/{id}/complete instead. "
+    "This endpoint will be removed in a future version."
+)
 
 class IssueCreate(BaseModel):
     title: str
@@ -21,7 +26,10 @@ class IssueStatusUpdate(BaseModel):
     output: str = ""
 
 @router.get("")
-async def list_issues(status: str | None = None):
+async def list_issues(status: str | None = None, response: Response = None):
+    if response:
+        response.headers["Deprecation"] = "true"
+        response.headers["X-Deprecation-Notice"] = _DEPRECATED_NOTE
     conn = await get_async_db()
     try:
         if status:
@@ -31,7 +39,11 @@ async def list_issues(status: str | None = None):
         await conn.close()
 
 @router.post("", status_code=201)
-async def create_issue(body: IssueCreate, request: Request):
+async def create_issue(body: IssueCreate, request: Request, response: Response = None):
+    """Deprecated: use POST /api/tasks instead."""
+    if response:
+        response.headers["Deprecation"] = "true"
+        response.headers["X-Deprecation-Notice"] = _DEPRECATED_NOTE
     conn = await get_async_db()
     try:
         issue_id = str(uuid.uuid4())[:8]
