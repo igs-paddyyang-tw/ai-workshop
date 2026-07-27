@@ -3,7 +3,7 @@ inclusion: always
 ---
 # Memory
 
-## 專案狀態（2026-07-27 14:49 更新）
+## 專案狀態（2026-07-27 15:26 更新）
 
 - 四層架構完成：gateway / coordinator / runtime / business
 - 8 agent 常駐，**pm-agent → leader-agent 更名完成 ✅**
@@ -21,6 +21,8 @@ inclusion: always
 - agent.json `file://` 路徑修正：`.kiro/` → `../`（kiro-cli 從 json 所在目錄解析）
 - **.kiro 主入口重構 ✅**：`admin-agent.json` → `ai-team-agent.json`（通用 orchestrator，解除與子 agent 身分重疊）
 - **子 agent pm-agent 引用清除 ✅**：admin/market/data 的 SOUL.md 全部對齊 leader-agent + 8 人團隊
+- **send_message race condition 修正 ✅**：立即設 STARTING 防重複通知 + 等待迴圈
+- **MCP 就緒偵測改主動探測 ✅**：HTTP probe 取代 30s stdout regex（啟動快 ~26s）
 
 ## 技術決策
 

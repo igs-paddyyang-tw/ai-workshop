@@ -139,9 +139,10 @@ ALLOWED_USERS=your-telegram-user-id   # 取得方式：對 Bot 傳 /start
 | 依賴規則違規 | ✅ 0 |
 | leader-agent 回覆 | ✅ 修復（7-8 秒，MCP reply 正常）|
 | config.py health loop | ✅ 修復（idle_timeout_minutes AttributeError）|
-| 指揮鏈 | ✅ leader 入口，admin 背景角色（全 8 agent 對齊）|
+| 指揮鏈 | ✅ IDE→ai-team-agent / TG→leader-agent（雙入口分離）|
 | Skills 安裝 | ✅ 所有 agent 補齊共用 skills + leader 核心 skills |
 | 駕馭工程 | ✅ BRAIN/SOUL/TEAM/MEMORY 全面強化（from ai-bot 移植）|
+| .kiro 主入口 | ✅ ai-team-agent.json（通用 orchestrator）|
 | 根目錄記憶架構 | ✅ memory/ 目錄建立（memory.md / recent.md / daily/）|
 | 任務系統統一 | ✅ MCP tools 改寫 tasks 表，看板正確顯示 completed |
 | /api/issues | ✅ 標記 Deprecated，fallback 仍可用 |
