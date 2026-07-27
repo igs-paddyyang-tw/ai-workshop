@@ -87,14 +87,21 @@ admin-agent（背景：服務監控、成本控制，不處理使用者需求）
 ## 知識庫
 
 ```
+knowledge/
+└── shared/          ← 唯一來源（single source of truth）
+    ├── raw/         ← 唯讀原始資料（人類丟入，AI 不改）
+    ├── wiki/        ← 結構化知識頁面（AI ingest 產出）
+    ├── .index/      ← 搜尋索引（自動生成）
+    ├── schema.md    ← 知識庫規範
+    ├── index.md     ← 所有 wiki 頁面索引
+    └── log.md       ← 操作日誌
+
 agents/{name}/knowledge/
 ├── wiki/    ← 私有知識
 └── raw/     ← 原始文件
-
-knowledge/shared/
-├── wiki/    ← 全域共用（跨 agent）
-└── raw/     ← 共用原始資料
 ```
+
+> runtime 資料（tasks/artifacts/decisions/agent_profiles）存放於 `data/`，不在 knowledge/。
 
 ## MCP 工具（11 tools）
 
@@ -146,3 +153,5 @@ ALLOWED_USERS=your-telegram-user-id   # 取得方式：對 Bot 傳 /start
 | 根目錄記憶架構 | ✅ memory/ 目錄建立（memory.md / recent.md / daily/）|
 | 任務系統統一 | ✅ MCP tools 改寫 tasks 表，看板正確顯示 completed |
 | /api/issues | ✅ 標記 Deprecated，fallback 仍可用 |
+| knowledge/ 整理 | ✅ 三層合一，knowledge/shared/ 為唯一來源 |
+| SharedMemory 路徑 | ✅ runtime 資料（tasks/artifacts）改寫到 data/ |
