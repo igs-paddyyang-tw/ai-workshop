@@ -24,6 +24,16 @@ inclusion: always
    - 每層查無再往下，**不可跳層**
 4. recall 與 Wiki 都沒有 → **明說不知道，不要編造**
 
+### Wiki 檢索路徑速查
+
+| 層級 | 路徑 | 說明 |
+|------|------|------|
+| 私有 | `agents/{name}/knowledge/wiki/` | agent 專屬知識 |
+| 共用 | `knowledge/shared/wiki/` | 跨 agent 共享（優先查） |
+| 原始 | `knowledge/shared/raw/` | 唯讀原始資料 |
+
+#[[file:knowledge/shared/index.md]]
+
 ### 強制查詢規則
 
 - 任何涉及「事實、比較、評價」的問題，仍必須走 Wiki 檢索流程（3a → 3b → 3c）
@@ -68,10 +78,10 @@ inclusion: always
 
 ```
 output/
-├── reports/    ← 一次性報告 — 30 天後提醒清理
-├── skills/     ← Skill 即時產出 — 7 天後提醒清理
-├── exports/    ← 資料匯出 — 14 天後提醒清理
-└── drafts/     ← 未完成草稿 — 30 天後提醒清理
+├── reports/    ← 一次性報告（週報、摘要）— 命名：{date}_{topic}.md — 30 天後提醒清理
+├── skills/     ← Skill 即時產出（新聞、翻譯）— 命名：{date}_{skill}.md — 7 天後提醒清理
+├── exports/    ← 資料匯出（CSV/JSON）— 命名：{date}_{dataset}.{ext} — 14 天後提醒清理
+└── drafts/     ← 未完成草稿 — 命名：{topic}-draft.md — 30 天後提醒清理
 ```
 
 ### Output vs Wiki 判斷
@@ -79,6 +89,15 @@ output/
 > 「三個月後有人問同樣的問題，這份資料還能直接引用嗎？」
 > - **能** → Wiki（知識資產）
 > - **不能** → Output（交付物，可過期）
+
+| 場景 | 去處 | 理由 |
+|------|------|------|
+| 產品規格 / 機制分析 | wiki/ | 事實性知識，可反覆引用 |
+| 市場趨勢綜合整理 | wiki/ | 半年內可引用的綜合分析 |
+| 週報 / 簡報 | output/reports/ | 一次性交付，時效性強 |
+| Skill 產出（新聞/翻譯） | output/skills/ | 每日產出，過期無價值 |
+| 匯出的 CSV/JSON | output/exports/ | 資料快照，非知識 |
+| 未完成草稿 | output/drafts/ | 完成後歸位或刪除 |
 
 ### 清理策略
 

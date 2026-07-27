@@ -3,12 +3,20 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import io
 import json
 import logging
 import sys
 from typing import Any
 
 import httpx
+
+# ── Windows UTF-8 pipe 修正 ──────────────────────────────────────
+# Windows 預設 cp950/cp1252 在 stdin/stdout 遇到非 BMP 字元會產生 surrogate
+# 強制用 UTF-8 + errors='replace' 避免 crash
+if sys.platform == "win32":
+    sys.stdin = io.TextIOWrapper(sys.stdin.buffer, encoding="utf-8", errors="replace")
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace", write_through=True)
 
 log = logging.getLogger(__name__)
 

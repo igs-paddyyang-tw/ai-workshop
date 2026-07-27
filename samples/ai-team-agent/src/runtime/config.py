@@ -56,6 +56,7 @@ class TeamConfig:
         """動態 agent idle 多久後自動 evict（分鐘），0 = 不 evict。預設 60。"""
         return int(self.hang_detector.get("escalation_minutes", 60))
 
+
 def load_config(path: str | Path) -> TeamConfig:
     p = Path(path)
     data = yaml.safe_load(p.read_text(encoding="utf-8"))

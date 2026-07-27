@@ -32,7 +32,7 @@ scope: ai-team-agent (post leader-agent rename)
 | # | 輸入訊息 | 預期行為 | 驗收標準 |
 |---|---------|---------|---------|
 | T01 | `你好，介紹一下團隊成員有誰、各自負責什麼` | leader-agent 回覆 | 回覆含 8 個 agent 名稱與職責 |
-| T02 | `目前有哪些任務在進行中？` | leader-agent 查詢任務板 | 回覆任務清單或「目前無進行中任務」|
+| T02 | `直` | leader-agent 查詢任務板 | 回覆任務清單或「目前無進行中任務」|
 | T03 | `幫我整理今天完成了什麼` | leader-agent 摘要今日工作 | 有實質內容，非空白回覆 |
 
 ---
@@ -49,7 +49,7 @@ scope: ai-team-agent (post leader-agent rename)
 | T07 | `@qa-agent 針對去重排序 function，設計 3 個 pytest 測試案例` | qa-agent | lazy spawn 通知 + 測試案例回覆 |
 | T08 | `@ai-dev-agent RAG 架構中 chunk size 如何選擇？` | ai-dev-agent | 技術說明，長度合理（> 50 字）|
 | T09 | `@market-agent 搜尋最近一週 Claude AI 的重要更新` | market-agent | 回覆近期 Claude 相關資訊 |
-| T10 | `@data-agent 分析一下目前 8 個 agent 的分工是否平衡` | data-agent | 有分析內容，含具體觀察 |
+| T10 | ` | data-agent | 有分析內容，含具體觀察 |
 | T11 | `@report-agent 幫我產出一份今日工作摘要，使用 Markdown 格式` | report-agent | 回覆含 Markdown 標題與列表 |
 
 ---

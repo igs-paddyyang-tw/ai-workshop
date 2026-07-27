@@ -269,19 +269,25 @@ async def main() -> None:
 
     async def _on_complete_with_db(task_id: str, output: str) -> None:
         await _original_on_complete(task_id, output)
-        conn = get_db()
-        conn.execute(
-            "UPDATE issues SET status=?, completed_at=?, updated_at=? WHERE id=?",
-            ("completed", now_iso(), now_iso(), task_id))
-        conn.commit()
+        conn = await get_async_db()
+        try:
+            await conn.execute(
+                "UPDATE issues SET status=?, completed_at=?, updated_at=? WHERE id=?",
+                ("completed", now_iso(), now_iso(), task_id))
+            await conn.commit()
+        finally:
+            await conn.close()
 
     async def _on_failed_with_db(task_id: str, reason: str) -> None:
         await _original_on_failed(task_id, reason)
-        conn = get_db()
-        conn.execute(
-            "UPDATE issues SET status=?, updated_at=? WHERE id=?",
-            ("failed", now_iso(), task_id))
-        conn.commit()
+        conn = await get_async_db()
+        try:
+            await conn.execute(
+                "UPDATE issues SET status=?, updated_at=? WHERE id=?",
+                ("failed", now_iso(), task_id))
+            await conn.commit()
+        finally:
+            await conn.close()
 
     router.on_complete = _on_complete_with_db
     router.on_failed = _on_failed_with_db
@@ -294,10 +300,13 @@ async def main() -> None:
         if not assignee:
             log.warning("Task %s has no assignee", issue_id)
             return
-        conn = get_db()
-        issue = fetch_one(conn, "SELECT title, description, priority FROM issues WHERE id=?", (issue_id,))
-        if not issue:
-            return
+        conn = await get_async_db()
+        try:
+            issue = await fetch_one(conn, "SELECT title, description, priority FROM issues WHERE id=?", (issue_id,))
+            if not issue:
+                return
+        finally:
+            await conn.close()
 
         handoff = TaskHandoff(
             task_id=issue_id,

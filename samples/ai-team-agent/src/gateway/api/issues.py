@@ -36,8 +36,9 @@ async def create_issue(body: IssueCreate, request: Request):
     try:
         issue_id = str(uuid.uuid4())[:8]
         now = now_iso()
+        initial_status = "assigned" if body.assignee else "pending"
         data = {"id": issue_id, "title": body.title, "description": body.description,
-                "status": "pending", "priority": body.priority, "assignee": body.assignee,
+                "status": initial_status, "priority": body.priority, "assignee": body.assignee,
                 "created_at": now, "updated_at": now}
         await insert(conn, "issues", data)
         bus = request.app.state.bus

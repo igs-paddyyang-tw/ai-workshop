@@ -7,6 +7,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import logging
+import re
 import time
 from dataclasses import dataclass, field
 from enum import StrEnum
@@ -220,8 +221,8 @@ class PersistentDaemon:
                     continue
 
                 if state.status == InstanceStatus.RUNNING and state.process:
-                    # 包裹訊息：提醒 Agent 用 reply tool 回覆後結束
-                    wrapped = f"[使用者訊息] {text}\n\n（用 reply tool 回覆使用者，回覆後不要做其他動作）"
+                    # 包裹訊息：提醒 Agent 用 reply tool 回覆後結束（單行，避免 send_input 換行被截）
+                    wrapped = f"[使用者訊息] {text} （收到後立刻用 reply tool 回覆使用者，這是最優先的事，回覆後不要做其他動作）"
                     await state.process.send_input(wrapped)
                     state.last_activity = time.time()
                     log.info("📤 sent to %s (%d chars)", name, len(text))
@@ -445,7 +446,7 @@ class PersistentDaemon:
                 "last_activity": state.last_activity,
                 "uptime_seconds": uptime_seconds,
                 "memory_mb": memory_mb,
-                "tasks_total": state.process._output_count if state.process else 0,
+                "tasks_total": state.process.output_count if state.process else 0,
                 "last_heartbeat": None,
             })
         return result
@@ -474,7 +475,21 @@ class PersistentDaemon:
 
             if KiroBackend.is_ready(output):
                 # 等待 MCP server 完成連線（kiro-cli 先顯示 banner 再連 MCP）
-                await asyncio.sleep(5)
+                # 最多等 30 秒，確認 MCP tools 已載入（出現 tool 載入訊息）
+                for _ in range(6):
+                    await asyncio.sleep(5)
+                    output = state.process.capture(lines=100)
+                    clean = KiroBackend._strip(output)
+                    # MCP 成功：看到 tool 數量或 MCP connected 訊息
+                    if re.search(r"MCP.*connect|tool.*loaded|tools.*available|\d+ tool", clean, re.I):
+                        log.info("Instance %s MCP connected", state.config.name)
+                        return True
+                    # MCP 失敗：require-mcp-startup 下會出現錯誤訊息
+                    if re.search(r"MCP.*fail|transport.*closed|server.*fail|No MCP", clean, re.I):
+                        log.error("Instance %s MCP connection failed", state.config.name)
+                        return False
+                # 5*6=30秒後仍無 MCP 確認訊息 → 視為成功（相容舊版 kiro-cli）
+                log.warning("Instance %s MCP status unknown after 30s, proceeding", state.config.name)
                 return True
 
             err = KiroBackend.detect_error(output)

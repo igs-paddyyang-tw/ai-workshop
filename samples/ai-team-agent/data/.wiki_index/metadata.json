@@ -1,0 +1,934 @@
+[
+  {
+    "path": "agent-design-notes.md",
+    "abs_path": "knowledge\\shared\\wiki\\agent-design-notes.md",
+    "title": "AI Agent 五層架構設計筆記",
+    "tags": [
+      "architecture",
+      "agent",
+      "design"
+    ],
+    "scope": "shared",
+    "agent": "_shared",
+    "body_preview": "# AI Agent 五層架構設計筆記\n\n## 架構總覽\n\n```\nL1 入口層 (Gateway)     — Telegram / Web / CLI\nL2 協調層 (Coordinator) — TaskGraph / A2A / LLM Router\nL3 服務層 (Services)    — 排程 / 事件 / 通知\nL4 執行層 (Runtime)     — Agent Skills / Workflow\nL5 知識層 (Knowledge)   — Wiki / Memory / FTS5\n```\n\n## 設計原則\n\n1. **關注點分離**：每層只做一件事\n2. **向上依賴**：L5 不知道 L1 的存在\n3. **事件驅動**：層間用事件通訊，不直接呼叫\n4. **可替換**：每層的實作可獨立抽換\n\n## Workshop 對應\n\n| 層 | Workshop |\n|----|----------|\n| L1 | 01 Agent（Bot 入口）+ 05 管理（Dashboard） |\n| L2 | 04 Agent Team（TaskGraph + Disco"
+  },
+  {
+    "path": "analytics-methods.md",
+    "abs_path": "knowledge\\shared\\wiki\\analytics-methods.md",
+    "title": "數據分析方法",
+    "tags": [
+      "data",
+      "analytics",
+      "kpi",
+      "metrics"
+    ],
+    "scope": "shared",
+    "agent": "_shared",
+    "body_preview": "# 數據分析方法\n\n## 數據源\n\n- SQLite（`data/*.db`）\n- 外部 API\n- CSV 匯入\n\n## 核心 KPI\n\n| 指標 | 說明 |\n|------|------|\n| 日活（DAU） | 每日活躍使用者 |\n| 留存率 | 次日/7日/30日 |\n| 轉換率 | 目標行為完成比例 |\n| 成本效率 | 投入/產出比 |\n\n## 趨勢分析\n\n- 同比（YoY）：年對年比較\n- 環比（MoM）：月對月比較\n- 移動平均：平滑短期波動\n\n## 輸出規範\n\n每份分析必須包含：表格 + 圖表 + 一句話洞察。"
+  },
+  {
+    "path": "chat-routing-architecture.md",
+    "abs_path": "knowledge\\shared\\wiki\\chat-routing-architecture.md",
+    "title": "對話路由架構（L1-L4）",
+    "tags": [
+      "architecture",
+      "routing",
+      "agent-loop",
+      "planner"
+    ],
+    "scope": "shared",
+    "agent": "_shared",
+    "body_preview": "# 對話路由架構（L1 → L4）\n\nai-bot 的對話進入後經過 4 層路由，由快到慢、由確定到彈性：\n\n## 流程圖\n\n```\n使用者發訊息\n     │\n     ▼\nL1: 系統指令（硬編碼）\n     │ /reset → 清空 session\n     │ 命中 → 直接結束\n     ▼\nL2: Skill 直呼（/ 開頭）\n     │ /news, /summarize, /translate, /任意 skill_id\n     │ 命中 → 執行 Skill handler → 直接結束\n     ▼\nL3: Planner 關鍵字路由\n     │ 「新聞」「today news」→ NewsSkill\n     │ 「摘要」「翻譯」→ 對應 Skill\n     │ 「派工」「assign」→ A2A 團隊派工\n     │ 命中 → 直接結束\n     ▼\nL4: 自然語言（統一走 ReAct Agent Loop）\n     │\n     ├── 🚀 Ark Agent（Default 模式）\n     │    context_builder → sy"
+  },
+  {
+    "path": "cli-backend-setup.md",
+    "abs_path": "knowledge\\shared\\wiki\\cli-backend-setup.md",
+    "title": "CLI Backend 安裝與設定指南",
+    "tags": [
+      "cli",
+      "agy",
+      "antigravity",
+      "kiro-cli",
+      "claude",
+      "backend",
+      "安裝",
+      "設定",
+      "教學",
+      "workshop"
+    ],
+    "scope": "shared",
+    "agent": "_shared",
+    "body_preview": "# CLI Backend 安裝與設定指南\n\n> AI Agent 分身的執行引擎設定。支援 kiro-cli / agy (Antigravity CLI) / claude。\n\n## 概覽\n\nai-bot 的 Agent 分身（admin, coder, ai-dev 等）透過 CLI backend 執行深度推理任務。\n系統支援三種 backend，透過 `.env` 的 `CLI_BACKEND` 切換：\n\n| Backend | 指令 | 特色 | 適合場景 |\n|---------|------|------|----------|\n| kiro-cli | `kiro-cli` | 深度推理、Spec 產出 | 架構設計、文件產出 |\n| agy | `agy` | 免費配額、Google 生態、快速 | 日常開發、快速迭代 |\n| claude | `claude` | 長上下文、精準分析 | 大量文本分析、報告 |\n\n## 架構\n\n```\nTG Bot / API\n    │\n    ▼\n┌─────────────┐     .env: CLI_BACKEND=ag"
+  },
+  {
+    "path": "coding-standards.md",
+    "abs_path": "knowledge\\shared\\wiki\\coding-standards.md",
+    "title": "全團隊程式碼規範",
+    "tags": [
+      "coding",
+      "standards",
+      "python",
+      "typescript"
+    ],
+    "scope": "shared",
+    "agent": "_shared",
+    "body_preview": "# 全團隊程式碼規範\n\n## Python\n\n| 項目 | 規則 |\n|------|------|\n| 版本 | 3.12+ |\n| 型別標註 | `str | None`、`list[str]`（不用 Optional/List） |\n| async | 所有 I/O 用 `async/await` |\n| 路徑 | 用 `Path` 物件 |\n| 編碼 | 檔案讀寫加 `encoding=\"utf-8\"` |\n| YAML | 用 `yaml.safe_load()` |\n| 日誌 | `log = logging.getLogger(__name__)` + `%s` 格式 |\n| docstring | 模組第一行 `\"\"\"一句話說明。\"\"\"` |\n| import | `from __future__ import annotations` 放第二行 |\n\n## 檔案結構\n\n```python\n\"\"\"模組一句話說明。\"\"\"\nfrom __future__ import annotations\n\nimport logging\nfrom pathlib import Path\n"
+  },
+  {
+    "path": "communication-protocol.md",
+    "abs_path": "knowledge\\shared\\wiki\\communication-protocol.md",
+    "title": "Agent 間溝通協議",
+    "tags": [
+      "communication",
+      "protocol",
+      "a2a"
+    ],
+    "scope": "shared",
+    "agent": "_shared",
+    "body_preview": "# Agent 間溝通協議\n\n## 訊息標記格式\n\n| 標記 | 用途 | 範例 |\n|------|------|------|\n| `[DONE] summary=...` | 任務完成回報 | `[DONE] summary=API 已實作完成，3 個端點` |\n| `[PROGRESS] step=N/M msg=...` | 進度回報 | `[PROGRESS] step=2/5 msg=資料庫設計完成` |\n| `[ARTIFACT] path=... msg=...` | 產出物通知 | `[ARTIFACT] path=src/api.py msg=新增 3 個端點` |\n| `[BLOCKER] need=... msg=...` | 卡關求助 | `[BLOCKER] need=coder-agent msg=需要 API 規格` |\n| `[FAIL] reason=... msg=...` | 任務失敗 | `[FAIL] reason=timeout msg=LLM 回應超時` |\n\n## 回報時機\n\n| 情境 | 何時回報 |\n|------|-------"
+  },
+  {
+    "path": "fishing-vs-slot-comparison.md",
+    "abs_path": "knowledge\\shared\\wiki\\fishing-vs-slot-comparison.md",
+    "title": "捕魚機 vs 老虎機 — 產品定位比較",
+    "tags": [
+      "fishing-game",
+      "slot-game",
+      "comparison",
+      "market-strategy"
+    ],
+    "scope": "shared",
+    "agent": "_shared",
+    "body_preview": "# 捕魚機 vs 老虎機 — 產品定位比較\n\n## 產品類型比較\n\n| 維度 | 捕魚機（Ocean King 系列） | 老虎機（Super Ace 系列） |\n|------|--------------------------|------------------------|\n| 操作方式 | 主動射擊（技巧型） | 被動轉盤（運氣型） |\n| 玩家參與度 | 高（即時操作） | 低（按鈕等結果） |\n| 單局時間 | 持續（無明確結束） | 極短（3-5 秒/轉） |\n| 社交性 | 強（多人同場競爭） | 弱（獨立遊玩） |\n| 技巧占比 | 30%（瞄準+時機） | 5%（下注策略） |\n| 畫面需求 | 高（3D 即時渲染） | 中（2D 動畫為主） |\n| 機台成本 | 高（大螢幕+多人座位） | 低（單人機台） |\n\n## 目標玩家差異\n\n### 捕魚機玩家\n- 偏好「操作感」和「成就感」\n- 喜歡多人互動和競爭\n- 願意花時間在單一場次\n- 年齡層偏年輕（20-35）\n\n### 老虎機玩家\n- 偏好「期待感」和「驚喜感」\n- 接受獨立遊玩\n- 喜歡快節奏高頻率\n-"
+  },
+  {
+    "path": "llm-integration-guide.md",
+    "abs_path": "knowledge\\shared\\wiki\\llm-integration-guide.md",
+    "title": "LLM 整合指南",
+    "tags": [
+      "llm",
+      "prompt",
+      "ai",
+      "integration"
+    ],
+    "scope": "shared",
+    "agent": "_shared",
+    "body_preview": "# LLM 整合指南\n\n## 模型選擇策略\n\n- **gemini-2.5-flash**：低延遲、高吞吐，適合即時對話與批次處理\n- **opus**：深度推理，適合複雜分析與架構決策\n\n## System Prompt 八段式結構\n\n1. 身份（Identity）\n2. 人格（Personality）\n3. 能力（Capabilities）\n4. 邊界（Boundaries）\n5. 流程（Workflow）\n6. 格式（Output Format）\n7. 成長（Learning）\n8. 禁制（Restrictions）\n\n## 評估維度\n\n| 維度 | 指標 |\n|------|------|\n| 準確度 | 任務完成率、正確率 |\n| 延遲 | 首 token 延遲、總回應時間 |\n| 成本 | Token 用量 × 單價 |\n\n## MCP 工具整合\n\nLLM 透過 MCP（Model Context Protocol）呼叫外部能力，實現 Agent 工具鏈。"
+  },
+  {
+    "path": "market-research-methods.md",
+    "abs_path": "knowledge\\shared\\wiki\\market-research-methods.md",
+    "title": "市場研究方法",
+    "tags": [
+      "market",
+      "research",
+      "intelligence"
+    ],
+    "scope": "shared",
+    "agent": "_shared",
+    "body_preview": "# 市場研究方法\n\n## 資訊來源\n\n- Hacker News、TechCrunch、RSS feed\n- 社群媒體監控\n- 官方發布/新聞稿\n\n## 品質分級\n\n| 等級 | 來源類型 | 信心度 |\n|------|---------|--------|\n| 一手 | 官方公告、文檔 | 高 |\n| 二手 | 媒體報導 | 中 |\n| 三手 | 轉述、社群 | 低 |\n\n## 驗證規則\n\n- 至少 2 個獨立來源交叉確認\n- 不確定內容標記 (?)\n\n## 產出格式\n\n情報摘要 + 來源標注 + 信心等級（高/中/低）"
+  },
+  {
+    "path": "ocean-king-analysis.md",
+    "abs_path": "knowledge\\shared\\wiki\\ocean-king-analysis.md",
+    "title": "Ocean King 捕魚機系列競品分析",
+    "tags": [
+      "fishing-game",
+      "arcade",
+      "ocean-king",
+      "competitive-analysis"
+    ],
+    "scope": "shared",
+    "agent": "_shared",
+    "body_preview": "# Ocean King 捕魚機系列競品分析\n\n## 系列概覽\n\nOcean King 是 IGS 開發的街機捕魚遊戲系列，從 Ocean King 1 發展到 Ocean King 4，是全球最知名的捕魚機品牌之一。\n\n## 各版本特色比較\n\n### Ocean King 2: Thunder Dragon\n- **難度等級**：最高 Level 25\n- **特色 Boss**：Thunder Dragon（雷龍）\n- **畫面**：高品質 3D 海底場景\n- **玩家數**：支援 4-10 人同機台對戰\n- **特殊武器**：雷電連鎖、冰凍彈\n\n### Ocean King 3: Monster Awaken\n- **難度等級**：最高 Level 30（比 OK2 多 5 級，營運商利潤更高）\n- **特色 Boss**：Flaming Dragon（火龍）、Mystic Dragon（幻龍）\n- **新增機制**：\n  - Flaming Dragon：召喚 7 波龍浪，每波 4 條龍攻擊魚群\n  - Thunder Dragon：產生 8 波雷龍\n  - Mystic Dr"
+  },
+  {
+    "path": "ocean-king-vs-super-ace.md",
+    "abs_path": "knowledge\\shared\\wiki\\ocean-king-vs-super-ace.md",
+    "title": "Ocean King vs Super Ace 玩家選擇指南",
+    "tags": [
+      "ocean-king",
+      "super-ace",
+      "fishing-game",
+      "slot-game",
+      "comparison"
+    ],
+    "scope": "shared",
+    "agent": "_shared",
+    "body_preview": "# Ocean King vs Super Ace 玩家選擇指南\n\n## 核心差異\n\n沒有絕對的「哪個比較好」，取決於玩家偏好：\n\n| 維度 | Ocean King（捕魚機） | Super Ace（老虎機） |\n|------|---------------------|-------------------|\n| 玩法 | 主動射擊、技巧型 | 被動轉盤、運氣型 |\n| 參與度 | 高（即時操作） | 低（按鈕等結果） |\n| 單局時間 | 較長（持續遊玩） | 極短（3-5 秒/轉） |\n| 社交性 | 多人同場競爭 | 獨立遊玩 |\n| 特色機制 | Boss 戰、武器升級 | Cascading Reels、Golden Card、RTP 97% |\n\n## 適合玩家\n\n### Ocean King 適合\n- 喜歡操作感、成就感\n- 享受多人互動與競技\n- 年齡層偏年輕（20-35 歲）\n\n### Super Ace 適合\n- 喜歡期待感、驚喜感\n- 偏好快節奏獨立遊玩\n- 年齡層較廣（25-50 歲）\n\n## 選擇建議\n\n- 喜歡**主動操作、與人競爭、持續遊戲體驗** "
+  },
+  {
+    "path": "overview.md",
+    "abs_path": "knowledge\\shared\\wiki\\overview.md",
+    "title": "共用知識庫概覽",
+    "tags": [
+      "shared",
+      "team",
+      "overview"
+    ],
+    "scope": "shared",
+    "agent": "_shared",
+    "body_preview": "# 共用知識庫\n\n所有 Agent 共用的通用知識，包含：\n\n## 團隊與規範\n\n| 頁面 | 說明 |\n|------|------|\n| [[team-roles]] | 團隊角色職責定義 |\n| [[coding-standards]] | 全團隊程式碼規範 |\n| [[communication-protocol]] | Agent 間溝通協議 |\n| [[react-agent-architecture]] | ai-bot ReAct Agent 技術架構 |\n\n## 市場與產品分析\n\n| 頁面 | 說明 |\n|------|------|\n| [[ocean-king-analysis]] | Ocean King 捕魚機系列競品分析 |\n| [[super-ace-analysis]] | Super Ace 超級王牌老虎機競品分析 |\n| [[fishing-vs-slot-comparison]] | 捕魚機 vs 老虎機 — 產品定位比較 |\n| [[ocean-king-vs-super-ace]] | Ocean King vs Super Ace 玩家選擇指"
+  },
+  {
+    "path": "pg-soft-2025-new-games.md",
+    "abs_path": "knowledge\\shared\\wiki\\pg-soft-2025-new-games.md",
+    "title": "PG Soft 2025 新遊戲",
+    "tags": [
+      "[]"
+    ],
+    "scope": "shared",
+    "agent": "_shared",
+    "body_preview": "PG Soft 在 2025 年推出了多款新遊戲，並榮獲「SiGMA Euro-Med 2025 最佳老虎機遊戲供應商」獎項。同時也推出了 PG Game Verification 2.0 和 UI 3.0 更新，以提供更安全、智慧且個人化的遊戲體驗。\n\n以下是一些 PG Soft 在 2025 年發行的新遊戲：\n\n*   **《Fortune Snake》**：已於 2025 年發行，是一款 3 轉軸、3-4-3 列的老虎機，提供 10 條支付線，特色包括高達 5,000 倍的最大贏獎、再旋轉功能和乘數百搭符號，屬於 PG Soft 的「Fortune」系列。\n*   **《Jack the"
+  },
+  {
+    "path": "pragmatic-play-2025-hot-slots.md",
+    "abs_path": "knowledge\\shared\\wiki\\pragmatic-play-2025-hot-slots.md",
+    "title": "Pragmatic Play 2025 熱門老虎機",
+    "tags": [
+      "[]"
+    ],
+    "scope": "shared",
+    "agent": "_shared",
+    "body_preview": "Pragmatic Play 在 2025 年有多款熱門老虎機，除了經典遊戲持續受歡迎外，也有一些更新版本和新晉遊戲備受關注。\n\n**持續受歡迎的經典遊戲：**\n\n*   **《奧林匹斯之門 (Gates of Olympus)》**：2021 年推出，2025 年更新版本《奧林匹斯之門 1000》將最大支付提升至 15,000 倍。\n*   **《甜蜜大豐收 (Sweet Bonanza)》**：因其波動性和獎勵機制而持續熱門。\n*   **《大白鯊 (Big Bass Bonanza)》**：作為成功系列的開山之作，原版在 2025 年仍是頂級遊戲。\n*   **《狼金 (Wolf Gold)》**：中等波動性，具有免費旋轉和三種頭獎。\n*   **《狗屋 (The Dog House)》**：以黏性百搭符號和卡通風格受歡迎。\n*   **《糖果狂潮 (Sugar Rush)》**：乘數和視覺效果受好評，Sugar Rush 1000 版本也備受期待。\n*   **《野馬黃金 (Mustang Gold)》**：中等波動性，最大贏獎可達 12,000 倍。\n*   **《大犀牛 ("
+  },
+  {
+    "path": "project-management-guide.md",
+    "abs_path": "knowledge\\shared\\wiki\\project-management-guide.md",
+    "title": "專案管理方法論",
+    "tags": [
+      "pm",
+      "agile",
+      "tasks",
+      "workflow"
+    ],
+    "scope": "shared",
+    "agent": "_shared",
+    "body_preview": "# 專案管理方法論\n\n## 核心流程\n\n```\n需求 → 拆解 → 派工 → 追蹤 → 驗收\n```\n\n## 任務格式規範\n\n每個任務必須包含：\n\n| 欄位 | 說明 |\n|------|------|\n| 標題 | 明確動詞開頭 |\n| 描述 | 背景與目的 |\n| 驗收條件 | 可衡量的完成標準 |\n| 大小 | S（<2h）/ M（2-8h）/ L（>8h） |\n\n## 每日 Standup\n\n三段式回報：\n1. 昨日進度\n2. 今日阻礙\n3. 今日計劃"
+  },
+  {
+    "path": "python-async-guide.md",
+    "abs_path": "knowledge\\shared\\wiki\\python-async-guide.md",
+    "title": "Python Async 非同步指南",
+    "tags": [
+      "python",
+      "async",
+      "asyncio"
+    ],
+    "scope": "shared",
+    "agent": "_shared",
+    "body_preview": "# Python Async 非同步指南\n\n## 核心概念\n\nPython 的 `asyncio` 模組提供非同步 I/O 支援，適合處理大量 I/O 操作（網路請求、檔案讀寫）。\n\n## 關鍵原則\n\n- **await** 只能在 `async def` 中使用\n- **asyncio.gather()** 並行執行多個 coroutine\n- **Semaphore** 控制並行數量避免過載\n- 非同步不等於多執行緒 — 它是單執行緒的協程切換\n\n## 常見模式\n\n```python\nasync def fetch_multiple(urls: list[str]) -> list[str]:\n    sem = asyncio.Semaphore(3)  # 最多 3 個並行\n    async with httpx.AsyncClient() as client:\n        tasks = [_fetch(client, url, sem) for url in urls]\n        return await asyncio.gather(*tasks)\n```\n\n"
+  },
+  {
+    "path": "react-agent-architecture.md",
+    "abs_path": "knowledge\\shared\\wiki\\react-agent-architecture.md",
+    "title": "ai-bot ReAct Agent 技術架構",
+    "tags": [
+      "architecture",
+      "react-agent",
+      "tool-calling",
+      "gemini",
+      "agent-loop"
+    ],
+    "scope": "shared",
+    "agent": "_shared",
+    "body_preview": "# ai-bot ReAct Agent 技術架構\n\n> 基於 Hermes ReAct Agent 架構，對齊 ai-bot 現有系統的設計藍圖。\n\n## Agent Loop（ReAct 迴圈）\n\n```\nUser message\n     ↓\nBuild system prompt（SOUL + Skills + Memory + Tool schemas）\n     ↓\n┌──→ Call LLM（streaming）\n│         ↓\n│    Response 包含 tool_calls?\n│         ├─ YES → dispatch tool → 收集結果 → append messages → loop back\n│         └─ NO  → 純文字回覆 → 結束，存 session\n└─────────────────────────────────────────────────────────────────────\n```\n\n### 關鍵設計\n\n- 每輪重組 system prompt：SOUL + Skills + Memory + C"
+  },
+  {
+    "path": "report-standards.md",
+    "abs_path": "knowledge\\shared\\wiki\\report-standards.md",
+    "title": "報告格式標準",
+    "tags": [
+      "report",
+      "template",
+      "format",
+      "output"
+    ],
+    "scope": "shared",
+    "agent": "_shared",
+    "body_preview": "# 報告格式標準\n\n## 格式選擇\n\n| 用途 | 格式 |\n|------|------|\n| 內部溝通 | Markdown |\n| 外部交付 | HTML |\n\n## 報告結構\n\n```\n摘要 → 數據 → 圖表 → 建議\n```\n\n## 圖表工具\n\n- **互動式**：Chart.js\n- **靜態**：placehold.co（佔位）或 matplotlib 產圖\n\n## 品質要求\n\n- 每份報告必須有「一句話結論」\n- 模板統一放 `templates/` 目錄管理"
+  },
+  {
+    "path": "sdk-migration-notes.md",
+    "abs_path": "knowledge\\shared\\wiki\\sdk-migration-notes.md",
+    "title": "SDK 遷移備忘（google-genai + agy CLI）",
+    "tags": [
+      "migration",
+      "sdk",
+      "google-genai",
+      "agy",
+      "cli"
+    ],
+    "scope": "shared",
+    "agent": "_shared",
+    "body_preview": "# SDK 遷移備忘\n\n## 1. Python SDK：google-generativeai → google-genai\n\n| | 舊版 | 新版 |\n|---|---|---|\n| 套件名 | `google-generativeai` | `google-genai>=1.0.0` |\n| import | `import google.generativeai as genai` | `from google import genai` |\n| 設定 | `genai.configure(api_key=...)` | `client = genai.Client(api_key=...)` |\n| 狀態 | 維護模式 | **Active**（Google 推薦） |\n\n### 現況\n\n- `requirements.txt` 已用 `google-genai>=1.0.0` ✅\n- `src/llm/providers/gemini.py` 已遷移到新版 `from google import genai` ✅\n- `genai.Client` + `types.Fun"
+  },
+  {
+    "path": "slot-market-trends-2025.md",
+    "abs_path": "knowledge\\shared\\wiki\\slot-market-trends-2025.md",
+    "title": "2025 老虎機市場動態與趨勢",
+    "tags": [
+      "slot-game",
+      "market-trends",
+      "2025",
+      "igaming",
+      "ai"
+    ],
+    "scope": "shared",
+    "agent": "_shared",
+    "body_preview": "technavio-302371233.html\n  - https://www.gminsights.com/industry-analysis/slot-machine-market\n  - https://www.casino.org/us/state-of-igaming-industry/2025/\n  - https://www.mordorintelligence.com/industry-reports/slot-machine-market\nrelated: [ocean-king-analysis, super-ace-analysis, fishing-vs-slot-comparison]\ncreated: 2026-07-13\nupdated: 2026-07-13\n---\n\n# 2025 老虎機市場動態與趨勢\n\n## 市場規模\n\n- 全球老虎機市場 2024 年估值因口徑不同差異大：\n  - GM Insights（含實體+線上）：USD 168 億\n  - Technavio（線上為主）：USD 67.4 億\n  - Mordor Intelligence"
+  },
+  {
+    "path": "super-ace-analysis.md",
+    "abs_path": "knowledge\\shared\\wiki\\super-ace-analysis.md",
+    "title": "Super Ace 超級王牌老虎機競品分析",
+    "tags": [
+      "slot-game",
+      "super-ace",
+      "jili",
+      "competitive-analysis"
+    ],
+    "scope": "shared",
+    "agent": "_shared",
+    "body_preview": "# Super Ace 超級王牌老虎機競品分析\n\n## 遊戲概覽\n\nSuper Ace 是 JILI Games 開發的撲克牌主題老虎機，以高 RTP（97%）和創新的 Golden Card 機制聞名，在菲律賓和東南亞市場極受歡迎。\n\n## 基本規格\n\n| 項目 | 數值 |\n|------|------|\n| 開發商 | JILI Games |\n| 機台結構 | 5 軸 × 4 列 |\n| 賠付方式 | 1,024 Ways to Win |\n| RTP | 97%（業界頂級） |\n| 波動度 | 低中（Low-Medium） |\n| 主題 | 撲克牌（A/K/Q/J/10/9/8/7） |\n\n## 核心機制\n\n### 1. Cascading Reels（消除滾輪）\n- 中獎符號消除後，上方符號下落填補\n- 連續消除 = 連續中獎（Combo）\n- 每次 Combo 倍率遞增\n\n### 2. Golden Card（黃金卡牌）⭐ 核心特色\n- 特定條件下普通符號變成金色\n- 金色符號被消除時 → 轉變為 Wild（百搭）\n- Wild 留在原位，增加後續中獎機率\n- **策略要"
+  },
+  {
+    "path": "system-architecture.md",
+    "abs_path": "knowledge\\shared\\wiki\\system-architecture.md",
+    "title": "AI Bot 系統設計架構",
+    "tags": [
+      "architecture",
+      "fastapi",
+      "telegram",
+      "agent-process",
+      "wiki-engine"
+    ],
+    "scope": "shared",
+    "agent": "_shared",
+    "body_preview": "# AI Bot 系統設計架構\n\n## 一句話定位\n\n個人 AI Agent 專家開發平台 — 打造各種 Agent 專家 + 管理知識庫。\n\n## 系統架構圖\n\n```\n┌───────────────────────────────────────────────────────────┐\n│                    使用者介面                               │\n│  Chat | Dashboard | Wiki | Graph | Builder | API Docs     │\n├───────────────────────────────────────────────────────────┤\n│              FastAPI (port 8000)                            │\n│  /api/v1/chat | /api/v1/wiki/* | /api/v1/graph | /health  │\n├──────────────────────────────────────────"
+  },
+  {
+    "path": "team-roles.md",
+    "abs_path": "knowledge\\shared\\wiki\\team-roles.md",
+    "title": "團隊角色職責定義",
+    "tags": [
+      "team",
+      "roles",
+      "responsibility"
+    ],
+    "scope": "shared",
+    "agent": "_shared",
+    "body_preview": "# 團隊角色職責定義\n\n## 五個角色\n\n| Agent | 角色 | 一句話職責 | 不做什麼 |\n|-------|------|-----------|---------|\n| admin-agent | 管理者 | 服務監控、部署、費控、故障排除 | 不接業務需求、不寫業務程式碼 |\n| pm-agent | 專案經理 | 需求分析、派工、驗收、文件管理 | 不自己寫程式碼、不做測試 |\n| ai-dev-agent | AI 工程師 | LLM 整合、Prompt 設計、MCP 開發 | 不做前端 UI、不管部署 |\n| coder-agent | 全端開發者 | 程式碼實作、API 設計、DB 設計 | 不做需求分析、不決定架構方向 |\n| qa-agent | 測試工程師 | 測試、Review、品質門檻把關 | 不修 Bug（回報給 coder）、不做架構決策 |\n\n## 協作規則\n\n### 訊息流向\n\n```\n使用者 → pm-agent（入口）→ 分析需求 → 派工\n                              ↓\n              ┌───"
+  },
+  {
+    "path": "testing-standards.md",
+    "abs_path": "knowledge\\shared\\wiki\\testing-standards.md",
+    "title": "測試標準與品質指標",
+    "tags": [
+      "testing",
+      "quality",
+      "standards",
+      "qa"
+    ],
+    "scope": "shared",
+    "agent": "_shared",
+    "body_preview": "# 測試標準與品質指標\n\n## 覆蓋率目標\n\n- 單元測試覆蓋率：> 80%\n- E2E 測試：關鍵路徑 100% 覆蓋\n\n## 命名規則\n\n```\ntest_{功能}_{場景}_{預期結果}\n```\n\n## PR 規則\n\n- 每個 PR 必須有對應測試\n- 無測試的 PR 不得合併\n\n## 安全掃描\n\n- 頻率：每週一次\n- 工具：security_audit Skill"
+  },
+  {
+    "path": "wiki-paths-analysis.md",
+    "abs_path": "knowledge\\shared\\wiki\\wiki-paths-analysis.md",
+    "title": "Wiki 取用路徑分析 — kiro-cli vs WikiEngine",
+    "tags": [
+      "architecture",
+      "wiki-engine",
+      "kiro-cli",
+      "rag",
+      "query-path"
+    ],
+    "scope": "shared",
+    "agent": "_shared",
+    "body_preview": "# Wiki 取用路徑分析\n\nBot 對話時取得 Wiki 知識的兩條路徑及其差異。\n\n## 路徑 A：kiro-cli 模式（優先）\n\n**觸發條件**：`is_cli_available() == True`\n\n```\nagent_cli_chat(text, agent_id)\n→ AgentProcess.send(text)\n→ kiro-cli 載入 SOUL + Skills\n→ kiro-cli 自行判斷是否讀 wiki（read/glob 工具）\n→ 組合資訊 → stdout → handlers.py 收回覆\n```\n\n**特點**：獨立進程、高品質（完整 SOUL + 多輪 tool）、速度慢（30-120s）\n\n## 路徑 B：WikiEngine 模式（fallback）\n\n**觸發條件**：kiro-cli 沒裝或沒回覆\n\n```\nWikiEngine(agent_id)\n→ query(text, use_rag=True)\n→ _tokenize（中文 bigram）\n→ 搜尋私有 wiki + 全域 wiki\n→ 命中 → snippet 200 c"
+  },
+  {
+    "path": "cost-control-rules.md",
+    "abs_path": "agents\\admin-agent\\knowledge\\wiki\\cost-control-rules.md",
+    "title": "費用控制規則",
+    "tags": [
+      "admin",
+      "ops",
+      "cost",
+      "budget"
+    ],
+    "scope": "private",
+    "agent": "admin-agent",
+    "body_preview": "# 費用控制規則\n\n## 每日費用上限\n\n| 資源類別 | 每日上限 (USD) | 說明 |\n|---------|--------------|------|\n| LLM API（Claude） | $5.00 | 所有 Agent 共用額度 |\n| LLM API（備用模型） | $2.00 | fallback 用途 |\n| 雲端運算（EC2/Container） | $3.00 | 運行時數計費 |\n| 資料庫（MongoDB Atlas） | $1.00 | 儲存 + 讀寫 IOPS |\n| 總計 | **$11.00** | 硬上限，不可超過 |\n\n## 預警門檻\n\n| 階段 | 觸發條件 | 動作 |\n|------|---------|------|\n| 🟡 Level 1 | 達到每日預算 60% | 記錄日誌，發送通知到管理群組 |\n| 🟠 Level 2 | 達到每日預算 80% | 降低非核心 Agent 的請求頻率 |\n| 🔴 Level 3 | 達到每日預算 95% | 暫停所有非緊急 LLM 請求 |\n| 🚨 Hard Stop | 達到每日預算 100"
+  },
+  {
+    "path": "deployment-guide.md",
+    "abs_path": "agents\\admin-agent\\knowledge\\wiki\\deployment-guide.md",
+    "title": "部署流程指南",
+    "tags": [
+      "admin",
+      "ops",
+      "deploy",
+      "docker"
+    ],
+    "scope": "private",
+    "agent": "admin-agent",
+    "body_preview": "# 部署流程指南\n\n## Docker 部署\n\n### 前置需求\n\n- Docker Engine ≥ 24.0\n- Docker Compose ≥ 2.20\n- 可用記憶體 ≥ 2GB\n- 磁碟空間 ≥ 10GB（含映像檔）\n\n### 首次部署\n\n```bash\n# 1. 準備環境設定\ncp .env.example .env\n# 編輯 .env 設定 BOT_TOKEN、MONGODB_URI 等\n\n# 2. 建置映像檔\ndocker compose build --no-cache\n\n# 3. 啟動所有服務\n./docker-manager.sh start\n\n# 4. 確認服務健康\ncurl http://localhost:5000/api/health\n```\n\n### 服務架構\n\n| 服務 | Port | 用途 |\n|------|------|------|\n| nginx | 80/443 | 反向代理、SSL 終止 |\n| smart-bot-web | 5000 | 主應用（Flask） |\n| mongodb | 27017 | 資料庫 |\n| redis "
+  },
+  {
+    "path": "drift-report.md",
+    "abs_path": "agents\\admin-agent\\knowledge\\wiki\\drift-report.md",
+    "title": "Spec vs Code Drift Report — Round 2",
+    "tags": [
+      "drift",
+      "spec",
+      "quality",
+      "round2"
+    ],
+    "scope": "private",
+    "agent": "admin-agent",
+    "body_preview": "# Spec vs Code Drift Report — ai-team-agent（第二輪）\n\n> 分析時間：2026-07-29\n> 目標專案：`samples/ai-team-agent/`\n> 上次分析：2026-07-28（Round 1）\n> 分析維度：API 端點 / Schema / 依賴規則 / 測試覆蓋\n\n---\n\n## 總覽：新分數 vs 上次\n\n| 維度 | Round 1 | Round 2 | 變化 | 狀態 |\n|------|---------|---------|------|------|\n| API 端點 | 75 | **90** | ▲ +15 | ✅ 主要缺口已補 |\n| Schema | 72 | **88** | ▲ +16 | ✅ 關鍵模型已補 |\n| 依賴規則 | 40 | **80** | ▲ +40 | ⚠️ 2 違規消除，1 降級殘留 |\n| 測試覆蓋 | 63 | **84** | ▲ +21 | ✅ 3 個新測試全通過 |\n| **加權總分** | **62** | **85.5** | **▲ +23.5** | ✅ 顯"
+  },
+  {
+    "path": "monitoring-metrics.md",
+    "abs_path": "agents\\admin-agent\\knowledge\\wiki\\monitoring-metrics.md",
+    "title": "監控指標定義",
+    "tags": [
+      "admin",
+      "ops",
+      "monitoring",
+      "metrics"
+    ],
+    "scope": "private",
+    "agent": "admin-agent",
+    "body_preview": "# 監控指標定義\n\n## 系統資源指標\n\n### CPU 使用率\n\n| 門檻 | 狀態 | 動作 |\n|------|------|------|\n| < 60% | 🟢 正常 | 無需處理 |\n| 60-80% | 🟡 警告 | 記錄日誌，觀察趨勢 |\n| > 80% | 🔴 危險 | 發送告警，準備擴容 |\n| > 95% 持續 5min | 🚨 緊急 | 自動重啟非核心服務 |\n\n### 記憶體使用量\n\n| 門檻 | 狀態 | 動作 |\n|------|------|------|\n| < 70% | 🟢 正常 | 無需處理 |\n| 70-85% | 🟡 警告 | 檢查是否有 memory leak |\n| > 85% | 🔴 危險 | 觸發 GC / 重啟服務 |\n| > 95% | 🚨 緊急 | 強制重啟 + 通知管理員 |\n\n- 基準線：Web 服務 < 256MB，Bot 服務 < 128MB，MongoDB < 512MB\n- 監控頻率：每 30 秒採樣一次\n\n## API 效能指標\n\n### 回應時間（Response Time）\n\n| 端點類別 | P50 目標 |"
+  },
+  {
+    "path": "overview.md",
+    "abs_path": "agents\\admin-agent\\knowledge\\wiki\\overview.md",
+    "title": "Admin Agent 知識庫概覽",
+    "tags": [
+      "admin",
+      "ops",
+      "deploy"
+    ],
+    "scope": "private",
+    "agent": "admin-agent",
+    "body_preview": "# Admin Agent 知識庫\n\n服務管理與開發維護的知識沉澱。\n\n## 📚 知識頁面索引\n\n| # | 頁面 | 說明 |\n|---|------|------|\n| 1 | [[service-management-sop]] | 啟動/停止/重啟流程、健康檢查、日誌查看 |\n| 2 | [[deployment-guide]] | Docker 部署、環境變數設定、Rolling Restart |\n| 3 | [[monitoring-metrics]] | CPU/Memory/API 回應時間/錯誤率/Token 用量 |\n| 4 | [[cost-control-rules]] | 每日上限、預警門檻、超支處理流程 |\n| 5 | [[troubleshooting]] | Bot 斷線、Agent 超時、DB 鎖定、記憶體溢出 |\n\n## 🗂️ 知識分類\n\n### 日常維運\n- [[service-management-sop]] — 每日操作標準流程\n- [[monitoring-metrics]] — 監控指標與告警定義\n\n### 部署與架構\n- [[deplo"
+  },
+  {
+    "path": "persistent-mode.md",
+    "abs_path": "agents\\admin-agent\\knowledge\\wiki\\persistent-mode.md",
+    "title": "常駐模式（Persistent Mode）操作說明",
+    "tags": [],
+    "scope": "private",
+    "agent": "admin-agent",
+    "body_preview": "# 常駐模式（Persistent Mode）操作說明\n\n## 概述\n\n常駐模式讓 Agent 以長駐子進程運行，透過 stdin/stdout pipe 持續接收任務，\n免去每次 spawn 的 2-5 秒冷啟動延遲。\n\n## 關鍵技術\n\n- **`--legacy-ui`**：必須使用此 flag，否則 stdout 為空\n- **`stderr=STDOUT`**：合併到單一 stream 讀取\n- **Ready 偵測**：正則匹配 `\"All tools are now trusted\"` / `\"ctrl-c to start chatting now\"`\n- **結束標記**：`\"▸ Time:\"` 出現在每次回答末尾\n- **Graceful stop**：`/quit` 命令\n\n## 設定（team.yaml）\n\n```yaml\ndefaults:\n  persistent: true        # 全域啟用\n  \ninstances:\n  admin-agent:\n    persistent: true      # per-instance override"
+  },
+  {
+    "path": "service-management-sop.md",
+    "abs_path": "agents\\admin-agent\\knowledge\\wiki\\service-management-sop.md",
+    "title": "服務管理 SOP",
+    "tags": [
+      "admin",
+      "ops",
+      "sop",
+      "service"
+    ],
+    "scope": "private",
+    "agent": "admin-agent",
+    "body_preview": "# 服務管理 SOP\n\n## 啟動流程\n\n1. **預檢**: 確認環境變數已載入（`.env` 檔案存在且 BOT_TOKEN 有效）\n2. **依賴服務**: 確認 MongoDB / Redis 已啟動且可連線\n3. **啟動指令**:\n   ```bash\n   # 單一服務\n   python start.py                    # 主應用（含 Web + Bot）\n   # Docker 模式\n   ./docker-manager.sh start          # 啟動所有容器\n   ```\n4. **驗證**: 呼叫 `/api/health` 確認回應 200\n\n## 停止流程\n\n1. **優雅關機**: 送出 SIGTERM，等待當前請求完成（timeout 30s）\n2. **停止指令**:\n   ```bash\n   ./docker-manager.sh stop           # Docker 模式\n   python start_all_systems.py stop   # 直接模式\n   ```\n3. **確認**: 檢"
+  },
+  {
+    "path": "troubleshooting.md",
+    "abs_path": "agents\\admin-agent\\knowledge\\wiki\\troubleshooting.md",
+    "title": "常見故障排除",
+    "tags": [
+      "admin",
+      "ops",
+      "troubleshooting",
+      "debug"
+    ],
+    "scope": "private",
+    "agent": "admin-agent",
+    "body_preview": "# 常見故障排除\n\n## Bot 斷線\n\n### 症狀\n- Telegram Bot 無回應\n- `/api/system/service-status` 顯示 bot 為 offline\n- 日誌出現 `ConnectionError` 或 `Conflict: terminated by other getUpdates`\n\n### 診斷步驟\n1. 檢查 Bot 進程: `ps aux | grep bot`\n2. 檢查網路: `curl -s https://api.telegram.org/bot<TOKEN>/getMe`\n3. 檢查日誌: `tail -50 logs/bot.log`\n\n### 解決方案\n| 原因 | 解法 |\n|------|------|\n| 多個 Bot 實例衝突 | 停止所有實例，只啟動一個 |\n| Token 失效 | 重新生成 Token 並更新 `.env` |\n| 網路問題 | 檢查防火牆/DNS，確認可達 Telegram API |\n| Webhook 衝突 | 呼叫 `deleteWebhook` 後重啟 polling 模式 |\n\n"
+  },
+  {
+    "path": "agent-design-patterns.md",
+    "abs_path": "agents\\ai-dev-agent\\knowledge\\wiki\\agent-design-patterns.md",
+    "title": "Agent 設計模式",
+    "tags": [
+      "agent",
+      "soul",
+      "multi-agent",
+      "memory",
+      "feedback-loop"
+    ],
+    "scope": "private",
+    "agent": "ai-dev-agent",
+    "body_preview": "# Agent 設計模式\n\n## SOUL 設計原則\n\nSOUL 是 Agent 的人格定義框架，包含四個核心維度：\n\n| 維度 | 說明 | 範例 |\n|------|------|------|\n| **S**kill（技能） | Agent 擅長什麼 | \"精通 Python、熟悉 AWS 架構\" |\n| **O**utput（輸出） | 回應的格式和風格 | \"簡潔技術風、Markdown 格式\" |\n| **U**nderstanding（理解） | 領域知識範圍 | \"遊戲產業競品分析、財務報表\" |\n| **L**imits（邊界） | 不做什麼、何時拒絕 | \"不提供法律建議、超出範圍轉介\" |\n\n**設計流程**：\n1. 定義目標用戶和使用場景\n2. 撰寫 SOUL 四維度描述\n3. 編寫 3-5 個對話範例測試人格一致性\n4. 迭代調整直到通過 Eval 基準\n\n## 多 Agent 協作\n\n### 協作模式\n\n| 模式 | 架構 | 適用場景 |\n|------|------|----------|\n| **Orchestrator** | 中央排程 Agent "
+  },
+  {
+    "path": "mcp-development.md",
+    "abs_path": "agents\\ai-dev-agent\\knowledge\\wiki\\mcp-development.md",
+    "title": "MCP 開發指南",
+    "tags": [
+      "mcp",
+      "server",
+      "tool",
+      "transport",
+      "protocol"
+    ],
+    "scope": "private",
+    "agent": "ai-dev-agent",
+    "body_preview": "# MCP 開發指南\n\n## Model Context Protocol 概述\n\nMCP 是連接 AI 模型與外部工具/資料的標準化協議，定義了 Client-Server 架構：\n- **Host**：AI 應用（如 Kiro CLI、Claude Desktop）\n- **Client**：協議層，管理與 Server 的連線\n- **Server**：提供 Tools、Resources、Prompts 給 Client 使用\n\n## Server 結構\n\n```\nmy-mcp-server/\n├── package.json          # 依賴和啟動腳本\n├── src/\n│   ├── index.ts          # 入口：建立 Server 實例\n│   ├── tools/            # Tool 定義（一個檔案一個 Tool）\n│   │   ├── search.ts\n│   │   └── execute.ts\n│   ├── resources/        # Resource Provider\n│   └── prompts/ "
+  },
+  {
+    "path": "overview.md",
+    "abs_path": "agents\\ai-dev-agent\\knowledge\\wiki\\overview.md",
+    "title": "AI Dev Agent 知識庫概覽",
+    "tags": [
+      "ai",
+      "llm",
+      "mcp",
+      "prompt",
+      "rag",
+      "agent"
+    ],
+    "scope": "private",
+    "agent": "ai-dev-agent",
+    "body_preview": "# AI Dev Agent 知識庫\n\nAI/ML 工程的知識沉澱：\n\n## 📚 知識頁面\n\n| 頁面 | 主題 | 重點內容 |\n|------|------|----------|\n| [prompt-engineering.md](prompt-engineering.md) | Prompt 工程 | System Prompt 結構、Few-shot、CoT、Temperature |\n| [rag-architecture.md](rag-architecture.md) | RAG 架構 | Ingest 流程、Chunking、Embedding、Retrieval |\n| [mcp-development.md](mcp-development.md) | MCP 開發 | Server 結構、Tool 定義、Transport、測試 |\n| [agent-design-patterns.md](agent-design-patterns.md) | Agent 設計模式 | SOUL 原則、多 Agent 協作、記憶、Feedback Loop |\n\n## 🎯 知識"
+  },
+  {
+    "path": "prompt-engineering.md",
+    "abs_path": "agents\\ai-dev-agent\\knowledge\\wiki\\prompt-engineering.md",
+    "title": "Prompt 工程最佳實踐",
+    "tags": [
+      "prompt",
+      "llm",
+      "few-shot",
+      "cot",
+      "system-prompt"
+    ],
+    "scope": "private",
+    "agent": "ai-dev-agent",
+    "body_preview": "# Prompt 工程最佳實踐\n\n## System Prompt 結構\n\n一個有效的 System Prompt 應包含以下層次：\n\n1. **Identity（身份）** — 定義角色、專長、語氣\n2. **Capabilities（能力）** — 列出可使用的工具和技能\n3. **Rules（約束）** — 設定邊界、安全規範、輸出格式\n4. **Context（上下文）** — 提供任務背景和領域知識\n5. **Examples（範例）** — 具體的輸入/輸出範例\n\n結構化建議：使用 XML 標籤（`<identity>`, `<rules>`）分段，方便模型解析。\n\n## Few-shot Prompting\n\n- **何時使用**：輸出格式固定、分類任務、風格遷移\n- **最佳數量**：3-5 個範例覆蓋邊界情況\n- **排列順序**：將最相關的範例放在最後（recency bias）\n- **負面範例**：加入 1-2 個「不要這樣做」的反例提升準確率\n\n## Chain-of-Thought (CoT)\n\n| 策略 | 適用場景 | 範例觸發詞 |\n|------|-"
+  },
+  {
+    "path": "rag-architecture.md",
+    "abs_path": "agents\\ai-dev-agent\\knowledge\\wiki\\rag-architecture.md",
+    "title": "RAG 架構模式",
+    "tags": [
+      "rag",
+      "embedding",
+      "vector-db",
+      "chunking",
+      "retrieval"
+    ],
+    "scope": "private",
+    "agent": "ai-dev-agent",
+    "body_preview": "# RAG 架構模式\n\n## 整體流程\n\n```\nDocuments → Ingest → Chunk → Embed → Vector Store\n                                          ↓\nUser Query → Embed Query → Retrieve Top-K → Rerank → Generate Answer\n```\n\n## Ingest 流程\n\n1. **文件載入**：支援 PDF, Markdown, HTML, Code, CSV 等格式\n2. **前處理**：清理 HTML 標籤、去除重複、正規化文字\n3. **元數據提取**：標題、作者、日期、標籤、路徑\n4. **增量更新**：比對 mtime/hash 僅處理變更檔案\n5. **Pipeline 設計**：使用 DAG 編排，支援並行處理\n\n## Chunking 策略\n\n| 策略 | 適用場景 | 優缺點 |\n|------|----------|--------|\n| Fixed-size (512 tokens) | 通用場景 | 簡單但可能切斷語意 |"
+  },
+  {
+    "path": "api-design-conventions.md",
+    "abs_path": "agents\\coder-agent\\knowledge\\wiki\\api-design-conventions.md",
+    "title": "API 設計慣例",
+    "tags": [
+      "api",
+      "rest",
+      "design",
+      "conventions"
+    ],
+    "scope": "private",
+    "agent": "coder-agent",
+    "body_preview": "# API 設計慣例\n\n## RESTful 命名原則\n\n| 操作 | Method | Path | 說明 |\n|------|--------|------|------|\n| 列表 | GET | `/api/v1/users` | 複數名詞，無動詞 |\n| 取得 | GET | `/api/v1/users/{id}` | Path param 用資源 ID |\n| 建立 | POST | `/api/v1/users` | Body 帶完整資源 |\n| 更新 | PUT | `/api/v1/users/{id}` | 完整取代 |\n| 部分更新 | PATCH | `/api/v1/users/{id}` | 僅送變更欄位 |\n| 刪除 | DELETE | `/api/v1/users/{id}` | 回傳 204 No Content |\n\n**命名規則**：\n- 路徑一律小寫、複數名詞：`/orders`, `/order-items`（kebab-case）\n- 巢狀資源最多兩層：`/users/{id}/orders`，超過改用 query filter\n- 動作"
+  },
+  {
+    "path": "code-review-checklist.md",
+    "abs_path": "agents\\coder-agent\\knowledge\\wiki\\code-review-checklist.md",
+    "title": "程式碼 Review Checklist",
+    "tags": [
+      "code-review",
+      "security",
+      "performance",
+      "quality"
+    ],
+    "scope": "private",
+    "agent": "coder-agent",
+    "body_preview": "# 程式碼 Review Checklist\n\n## 🔒 安全性\n\n- [ ] **SQL Injection**：所有 DB 查詢使用參數化（ORM 或 parameterized query）\n- [ ] **Input Validation**：所有外部輸入經 Pydantic schema 驗證，拒絕未知欄位\n- [ ] **Authentication**：敏感端點有正確的認證 middleware\n- [ ] **Authorization**：資源存取有權限檢查（不只靠認證）\n- [ ] **Secrets**：無硬編碼密鑰/Token，全部走環境變數或 secret manager\n- [ ] **CORS**：允許的 origin 明確列舉，非 `*`（生產環境）\n- [ ] **Rate Limiting**：公開 API 有速率限制\n- [ ] **Log 安全**：不記錄密碼、Token、PII 等敏感資訊\n- [ ] **Dependency**：新增依賴已檢查 CVE，版本 pinned\n\n## ⚡ 效能\n\n- [ ] **N+1 查詢**：ORM 關聯載入"
+  },
+  {
+    "path": "database-design.md",
+    "abs_path": "agents\\coder-agent\\knowledge\\wiki\\database-design.md",
+    "title": "DB Schema 設計原則",
+    "tags": [
+      "database",
+      "schema",
+      "migration",
+      "optimization"
+    ],
+    "scope": "private",
+    "agent": "coder-agent",
+    "body_preview": "# DB Schema 設計原則\n\n## 正規化原則\n\n| 等級 | 規則 | 實務建議 |\n|------|------|---------|\n| 1NF | 每欄位原子值 | JSON 欄位例外：僅用於非查詢的 metadata |\n| 2NF | 消除部分依賴 | 複合 PK 場景務必檢查 |\n| 3NF | 消除遞移依賴 | **生產環境標準**，大多數表停在此 |\n| 反正規化 | 效能需求 | 明確標註原因，加註 `-- denormalized: reason` |\n\n**命名規範**：\n- 表名：複數、snake_case → `user_orders`\n- 欄位：snake_case → `created_at`, `order_status`\n- 外鍵：`{referenced_table_singular}_id` → `user_id`\n- 索引：`ix_{table}_{columns}` → `ix_orders_user_id_created_at`\n- 唯一約束：`uq_{table}_{columns}` → `uq_users_email`\n\n## "
+  },
+  {
+    "path": "overview.md",
+    "abs_path": "agents\\coder-agent\\knowledge\\wiki\\overview.md",
+    "title": "coder-agent 知識庫概覽",
+    "tags": [
+      "overview",
+      "coder"
+    ],
+    "scope": "private",
+    "agent": "coder-agent",
+    "body_preview": "# coder-agent 知識庫\n\n本知識庫包含 coder-agent 的核心開發規範與 best practices，涵蓋 Python/FastAPI 後端開發全流程。\n\n## 📚 知識頁面\n\n| 頁面 | 主題 | 狀態 |\n|------|------|------|\n| [[python-fastapi-standards]] | 專案結構、命名規則、Error Handling、Middleware | 🌳 mature |\n| [[api-design-conventions]] | RESTful 命名、版本控制、Pagination、Error Response | 🌳 mature |\n| [[database-design]] | 正規化、索引策略、Migration 流程、查詢優化 | 🌳 mature |\n| [[code-review-checklist]] | 安全性、效能、可讀性、測試覆蓋 | 🌳 mature |\n\n## 🔗 知識關聯圖\n\n```\npython-fastapi-standards ←→ api-design-conventions\n"
+  },
+  {
+    "path": "python-fastapi-standards.md",
+    "abs_path": "agents\\coder-agent\\knowledge\\wiki\\python-fastapi-standards.md",
+    "title": "Python/FastAPI 開發規範",
+    "tags": [
+      "python",
+      "fastapi",
+      "standards",
+      "architecture"
+    ],
+    "scope": "private",
+    "agent": "coder-agent",
+    "body_preview": "# Python/FastAPI 開發規範\n\n## 專案結構\n\n```\nproject/\n├── app/\n│   ├── __init__.py\n│   ├── main.py              # FastAPI app 實例 + lifespan\n│   ├── config.py            # pydantic-settings 配置\n│   ├── dependencies.py      # 共用 Depends\n│   ├── routers/             # 路由模組（一個 domain 一個檔案）\n│   │   ├── __init__.py\n│   │   ├── users.py\n│   │   └── items.py\n│   ├── models/              # SQLAlchemy / Pydantic models\n│   ├── schemas/             # Request/Response schemas\n│   ├── services/            # Business l"
+  },
+  {
+    "path": "data-analysis-methods.md",
+    "abs_path": "agents\\data-agent\\knowledge\\wiki\\data-analysis-methods.md",
+    "title": "數據分析方法論",
+    "tags": [
+      "data",
+      "analysis",
+      "kpi",
+      "metrics"
+    ],
+    "scope": "private",
+    "agent": "data-agent",
+    "body_preview": "# 數據分析方法論\n\n## 分析流程\n\n1. **定義問題** — 明確要回答什麼業務問題\n2. **資料收集** — 確認資料來源和品質\n3. **資料清洗** — 處理缺失值、異常值\n4. **分析建模** — 選擇適合的分析方法\n5. **產出洞察** — 將結果轉化為可行動建議\n\n## 常用分析方法\n\n| 方法 | 適用場景 | 產出 |\n|------|---------|------|\n| 趨勢分析 | KPI 追蹤 | 時間序列圖 + 趨勢解讀 |\n| 比較分析 | A/B 測試、競品對比 | 差異量化 + 統計顯著性 |\n| 漏斗分析 | 轉換率優化 | 各階段流失率 + 瓶頸定位 |\n| 群組分析 | 用戶分群 | 群組行為差異 + 策略建議 |\n| 歸因分析 | 行銷效果 | 各渠道貢獻度 |\n\n## 報告格式\n\n```\n## 摘要（一段話結論）\n## 關鍵發現（3-5 個 bullet）\n## 數據佐證（圖表 + 數字）\n## 建議行動（具體可執行）\n```"
+  },
+  {
+    "path": "game-data-analysis-workflow.md",
+    "abs_path": "agents\\data-agent\\knowledge\\wiki\\game-data-analysis-workflow.md",
+    "title": "遊戲數據分析工作流",
+    "tags": [
+      "data",
+      "workflow",
+      "analysis",
+      "game",
+      "insight"
+    ],
+    "scope": "private",
+    "agent": "data-agent",
+    "body_preview": "# 遊戲數據分析工作流\n\n## 標準分析流程\n\n```\n需求確認 → 資料取得 → 清洗整理 → 分析計算 → 可視化 → 結論產出\n```\n\n## 1. 需求確認\n\n- 確認分析目標：「為什麼要分析？」\n- 確認時間範圍：D1/D7/D30、週報、月報\n- 確認維度：全體用戶 / 特定渠道 / 特定版本\n\n## 2. 資料來源優先順序\n\n1. 後台 BI 系統（即時）\n2. 埋點原始資料（精確）\n3. 渠道報告（每日同步）\n4. 人工整理的 CSV（補充）\n\n## 3. 分析方法\n\n### Cohort 分析（留存）\n\n```python\n# 按首次登入日分組，追蹤後續留存\ncohort = df.groupby(['first_login_date', 'day_offset']).user_count\nretention_matrix = cohort.unstack() / cohort.unstack()[0]\n```\n\n### 漏斗分析（轉換）\n\n```\n新裝置安裝 → 完成新手引導 → 首次付費 → 第 7 天仍在玩\n```\n\n### 趨勢分析\n\n- 7 天移動平均（平滑"
+  },
+  {
+    "path": "game-kpi-metrics.md",
+    "abs_path": "agents\\data-agent\\knowledge\\wiki\\game-kpi-metrics.md",
+    "title": "遊戲 KPI 核心指標",
+    "tags": [
+      "kpi",
+      "game",
+      "metrics",
+      "dau",
+      "arpu",
+      "retention"
+    ],
+    "scope": "private",
+    "agent": "data-agent",
+    "body_preview": "# 遊戲 KPI 核心指標\n\n## 用戶規模\n\n| 指標 | 定義 | 計算 |\n|------|------|------|\n| DAU | 日活躍用戶 | 當天登入的唯一用戶數 |\n| MAU | 月活躍用戶 | 當月登入的唯一用戶數 |\n| DAU/MAU | 黏性比 | DAU ÷ MAU，健康值 > 20% |\n| 新增用戶 | 當日首次登入 | 新裝置 / 新帳號首次開啟 |\n\n## 留存率\n\n| 指標 | 定義 | 健康基準（手遊） |\n|------|------|---------------|\n| D1 留存 | 次日留存率 | > 40% |\n| D7 留存 | 第 7 天留存率 | > 20% |\n| D30 留存 | 第 30 天留存率 | > 10% |\n| Cohort 分析 | 同批用戶留存曲線 | 用於趨勢比較 |\n\n## 營收指標\n\n| 指標 | 定義 | 計算 |\n|------|------|------|\n| ARPU | 每用戶平均收益 | 總收益 ÷ DAU |\n| ARPPU | 每付費用戶平均收益 | 總收益 ÷ 付費用戶數 |\n| 付"
+  },
+  {
+    "path": "overview.md",
+    "abs_path": "agents\\data-agent\\knowledge\\wiki\\overview.md",
+    "title": "Data Agent 知識庫概覽",
+    "tags": [
+      "data",
+      "analytics",
+      "overview"
+    ],
+    "scope": "private",
+    "agent": "data-agent",
+    "body_preview": "# Data Agent 知識庫\n\n## 知識頁面\n\n| 頁面 | 說明 |\n|------|------|\n| [[data-analysis-methods]] | 數據分析方法論和流程 |"
+  },
+  {
+    "path": "acceptance-criteria-template.md",
+    "abs_path": "agents\\leader-agent\\knowledge\\wiki\\acceptance-criteria-template.md",
+    "title": "驗收標準模板",
+    "tags": [
+      "acceptance-criteria",
+      "quality",
+      "template",
+      "given-when-then"
+    ],
+    "scope": "private",
+    "agent": "leader-agent",
+    "body_preview": "# 驗收標準模板\n\n定義任務「完成」的客觀標準，確保每個交付物可驗證、可量化。\n\n---\n\n## Given-When-Then 格式\n\n每個驗收條件使用 BDD 三段式撰寫：\n\n```gherkin\nGiven [前置條件/初始狀態]\nWhen  [觸發動作/使用者操作]\nThen  [預期結果/可觀察的變化]\n```\n\n### 撰寫原則\n\n| 原則 | 說明 | 反例 |\n|------|------|------|\n| 具體 | 使用確切數值/狀態 | ❌「速度快」→ ✅「回應 < 200ms」 |\n| 可測試 | 能用自動化或手動驗證 | ❌「使用者滿意」→ ✅「無 error log」 |\n| 獨立 | 每條標準獨立判定 | ❌ 混合多個行為在一條 |\n| 完整 | 涵蓋正常 + 異常路徑 | ❌ 只寫 happy path |\n\n### 範例\n\n```gherkin\n# 正常路徑\nGiven 使用者提供有效的需求描述\nWhen  PM Agent 執行需求分析\nThen  產出包含 MoSCoW 分級的 Requirement Spec\nAnd   所有 Must 項都有驗"
+  },
+  {
+    "path": "overview.md",
+    "abs_path": "agents\\leader-agent\\knowledge\\wiki\\overview.md",
+    "title": "leader-agent 概覽",
+    "tags": [
+      "overview",
+      "pm",
+      "project-management"
+    ],
+    "scope": "private",
+    "agent": "leader-agent",
+    "body_preview": "# leader-agent\n\nPM Agent 是團隊的專案經理，負責需求分析、任務派工、進度追蹤和品質驗收。\n\n## 核心知識頁面\n\n| 頁面 | 用途 |\n|------|------|\n| [[requirements-analysis-sop]] | 需求分析四階段流程：蒐集→釐清→優先級→文件化 |\n| [[task-dispatch-rules]] | 派工四大原則：能力匹配、負載平衡、依賴排序、逾時處理 |\n| [[acceptance-criteria-template]] | 驗收標準撰寫指南：Given-When-Then + 完成定義 + 品質門檻 |\n| [[sdd-methodology]] | Spec-Driven Development：先規格書→驅動實作→驗證收斂 |\n| [[team-communication]] | 團隊溝通協議：訊息標籤、回報時機、升級路徑、[DONE] 標記 |\n\n## 工作流程\n\n```\n使用者需求 → 需求分析 SOP → Requirement Spec（SDD Phase 1）\n    → 派工（dispatch r"
+  },
+  {
+    "path": "requirements-analysis-sop.md",
+    "abs_path": "agents\\leader-agent\\knowledge\\wiki\\requirements-analysis-sop.md",
+    "title": "需求分析 SOP",
+    "tags": [
+      "sop",
+      "requirements",
+      "analysis",
+      "process"
+    ],
+    "scope": "private",
+    "agent": "leader-agent",
+    "body_preview": "# 需求分析 SOP\n\nPM Agent 處理需求的四階段標準流程：**蒐集 → 釐清 → 優先級 → 文件化**。\n\n---\n\n## Phase 1：蒐集（Collect）\n\n| 步驟 | 動作 | 產出 |\n|------|------|------|\n| 1.1 | 接收使用者原始需求描述 | raw requirement text |\n| 1.2 | 從對話上下文提取隱含需求 | implicit requirements list |\n| 1.3 | 檢查是否有相關歷史任務/知識 | context references |\n\n**原則**：不遺漏、不解讀，保留原始措辭。\n\n## Phase 2：釐清（Clarify）\n\n| 步驟 | 動作 | 判斷標準 |\n|------|------|---------|\n| 2.1 | 識別模糊詞彙（「快」「好」「簡單」） | 無法量化即為模糊 |\n| 2.2 | 對每個模糊點提出封閉式問題 | 最多 3 個問題一次 |\n| 2.3 | 確認邊界條件（不做什麼） | 明確 out-of-scope |\n| 2.4 | 確認技術約束（語"
+  },
+  {
+    "path": "sdd-methodology.md",
+    "abs_path": "agents\\leader-agent\\knowledge\\wiki\\sdd-methodology.md",
+    "title": "SDD 方法論",
+    "tags": [
+      "sdd",
+      "spec-driven",
+      "methodology",
+      "development-process"
+    ],
+    "scope": "private",
+    "agent": "leader-agent",
+    "body_preview": "# SDD 方法論（Spec-Driven Development）\n\n**核心理念**：先產規格書 → 驅動實作 → 驗證收斂。規格書是唯一事實來源（Single Source of Truth）。\n\n---\n\n## 三階段循環\n\n```\n┌─────────────┐     ┌─────────────┐     ┌─────────────┐\n│  1. SPEC    │────→│  2. IMPL    │────→│  3. VERIFY  │\n│  產出規格書  │     │  驅動實作    │     │  驗證收斂    │\n└─────────────┘     └─────────────┘     └─────────────┘\n       ↑                                       │\n       └───────────── 不收斂時回修 Spec ────────┘\n```\n\n---\n\n## Phase 1：SPEC（規格書產出）\n\nPM Agent 負責產出完整規格書，內容包含：\n\n| 區塊 | 內容 | "
+  },
+  {
+    "path": "task-dispatch-rules.md",
+    "abs_path": "agents\\leader-agent\\knowledge\\wiki\\task-dispatch-rules.md",
+    "title": "派工規則",
+    "tags": [
+      "dispatch",
+      "task-management",
+      "load-balancing",
+      "rules"
+    ],
+    "scope": "private",
+    "agent": "leader-agent",
+    "body_preview": "# 派工規則\n\nPM Agent 將任務分派給團隊成員的四大原則：**能力匹配 → 負載平衡 → 依賴排序 → 逾時處理**。\n\n---\n\n## 1. 能力匹配（Capability Matching）\n\n| 任務類型 | 首選 Agent | 備援 Agent |\n|---------|-----------|-----------|\n| 程式開發 | dev-agent | — |\n| 程式碼審查 | review-agent | dev-agent |\n| 測試驗證 | qa-agent | dev-agent |\n| 文件撰寫 | doc-agent | leader-agent |\n| 架構設計 | dev-agent | leader-agent |\n\n**匹配邏輯**：\n1. 根據任務 `tags` 比對 Agent 的 `skills` 清單\n2. 計算匹配度分數（完全匹配 1.0、部分匹配 0.5）\n3. 分數 ≥ 0.7 才可派工；否則升級為人工指派\n\n## 2. 負載平衡（Load Balancing）\n\n```\n負載分數 = 進行中任務數 × 權重\n權重 = {"
+  },
+  {
+    "path": "team-communication.md",
+    "abs_path": "agents\\leader-agent\\knowledge\\wiki\\team-communication.md",
+    "title": "團隊溝通規範",
+    "tags": [
+      "communication",
+      "team",
+      "protocol",
+      "messaging"
+    ],
+    "scope": "private",
+    "agent": "leader-agent",
+    "body_preview": "# 團隊溝通規範\n\n定義 Agent 團隊間的訊息格式、回報時機、升級路徑和完成標記。\n\n---\n\n## 訊息格式（Message Format）\n\n所有 Agent 間通訊使用統一前綴標籤：\n\n| 標籤 | 用途 | 範例 |\n|------|------|------|\n| `[DISPATCH]` | PM 派工 | `[DISPATCH] TASK-001 → dev-agent` |\n| `[ACK]` | Agent 確認收到 | `[ACK] TASK-001 已接收，預估 15 分鐘` |\n| `[PROGRESS]` | 進度回報 | `[PROGRESS] TASK-001: 3/5 AC 完成` |\n| `[BLOCKED]` | 阻塞通知 | `[BLOCKED] TASK-001: 等待 TASK-002 產出` |\n| `[DONE]` | 完成回報 | `[DONE] TASK-001: 全部 AC 通過` |\n| `[FAILED]` | 失敗回報 | `[FAILED] TASK-001: AC-3 無法滿足，原因...` |\n| `[REVIEW]`"
+  },
+  {
+    "path": "game-competitor-analysis.md",
+    "abs_path": "agents\\market-agent\\knowledge\\wiki\\game-competitor-analysis.md",
+    "title": "遊戲競品分析方法",
+    "tags": [
+      "competitor",
+      "market",
+      "game",
+      "analysis",
+      "fishing",
+      "slot"
+    ],
+    "scope": "private",
+    "agent": "market-agent",
+    "body_preview": "# 遊戲競品分析方法\n\n## 分析框架（SWOT + 4P）\n\n### SWOT 快速評估\n\n| 面向 | 問題 |\n|------|------|\n| Strength | 這款遊戲的核心賣點是什麼？ |\n| Weakness | 玩家最常抱怨什麼？ |\n| Opportunity | 市場缺口在哪裡？ |\n| Threat | 哪些競品最像？ |\n\n### 4P 分析\n\n| P | 分析維度 |\n|---|---------|\n| Product | 玩法機制、美術風格、功能特色 |\n| Price | 付費設計、首儲、月卡、抽卡機率 |\n| Place | 上架平台、渠道、地區 |\n| Promotion | 廣告素材、活動類型、KOL 合作 |\n\n## 捕魚機 / Slot 競品關鍵指標\n\n| 指標 | 資料來源 |\n|------|---------|\n| 版本更新頻率 | App Store / Google Play 版本記錄 |\n| 評分 / 評論數 | Store 頁面 |\n| 下載量排名 | App Annie / Sensor Tower |\n| 廣告投放量 | "
+  },
+  {
+    "path": "game-news-monitoring.md",
+    "abs_path": "agents\\market-agent\\knowledge\\wiki\\game-news-monitoring.md",
+    "title": "遊戲新聞監控與輿情分析",
+    "tags": [
+      "news",
+      "monitoring",
+      "sentiment",
+      "social",
+      "game"
+    ],
+    "scope": "private",
+    "agent": "market-agent",
+    "body_preview": "# 遊戲新聞監控與輿情分析\n\n## 監控目標\n\n| 類型 | 內容 | 頻率 |\n|------|------|------|\n| 產業新聞 | 融資、合併、新遊上市 | 每日 |\n| 競品動態 | 版本更新、活動上線、下架 | 每日 |\n| 玩家輿情 | 評論、論壇討論、社群反應 | 每日 |\n| 政策法規 | 版號、上架限制、未成年保護 | 每週 |\n\n## 資訊來源\n\n### 新聞媒體\n- 遊戲葡萄（gameores.com）\n- DataEye 研究院\n- 伽馬數據\n- App Annie Blog\n- Sensor Tower Blog\n\n### 社群平台\n- 巴哈姆特（台灣玩家）\n- PTT / Dcard（台灣）\n- 微博 / 抖音（中國市場）\n- Facebook Gaming 粉絲頁\n- Discord 官方伺服器\n\n### 應用商店\n- App Store 評論（前 5 頁）\n- Google Play 評論（最新 + 最差）\n\n## 新聞爬取 SOP\n\n```python\n# 1. 設定關鍵字\nkeywords = [\"捕魚遊戲\", \"老虎機\", \"fishing"
+  },
+  {
+    "path": "market-research-methods.md",
+    "abs_path": "agents\\market-agent\\knowledge\\wiki\\market-research-methods.md",
+    "title": "市場研究方法",
+    "tags": [
+      "market",
+      "research",
+      "competitor",
+      "trends"
+    ],
+    "scope": "private",
+    "agent": "market-agent",
+    "body_preview": "# 市場研究方法\n\n## 資訊來源\n\n| 來源 | 類型 | 更新頻率 |\n|------|------|---------|\n| 社群媒體 | 輿情、玩家回饋 | 即時 |\n| 產業新聞 | 競品動態、市場趨勢 | 每日 |\n| App Store | 排名、評分、下載量 | 每日 |\n| 財報 | 營收、DAU、ARPU | 季度 |\n| 展會/發表會 | 新品預告、技術方向 | 不定期 |\n\n## 競品分析框架\n\n1. **產品定位** — 目標玩家、遊戲類型、平台\n2. **核心玩法** — 機制、特色、差異化\n3. **商業模式** — 付費設計、RTP、獎勵循環\n4. **技術實現** — 引擎、畫面品質、效能\n5. **市場表現** — 排名、營收估算、玩家口碑\n\n## 產出格式\n\n- 競品分析報告（Markdown，含表格對比）\n- 每日科技日報（新聞摘要 + 觀點）\n- 趨勢月報（數據 + 圖表 + 預測）"
+  },
+  {
+    "path": "overview.md",
+    "abs_path": "agents\\market-agent\\knowledge\\wiki\\overview.md",
+    "title": "Market Agent 知識庫概覽",
+    "tags": [
+      "market",
+      "research",
+      "overview"
+    ],
+    "scope": "private",
+    "agent": "market-agent",
+    "body_preview": "# Market Agent 知識庫\n\n## 知識頁面\n\n| 頁面 | 說明 |\n|------|------|\n| [[market-research-methods]] | 市場研究方法和競品分析框架 |"
+  },
+  {
+    "path": "bug-classification.md",
+    "abs_path": "agents\\qa-agent\\knowledge\\wiki\\bug-classification.md",
+    "title": "Bug 分類標準",
+    "tags": [
+      "bug",
+      "severity",
+      "priority",
+      "regression",
+      "classification"
+    ],
+    "scope": "private",
+    "agent": "qa-agent",
+    "body_preview": "# Bug 分類標準\n\n## Severity 嚴重度定義（P0-P3）\n\n| 等級 | 名稱 | 定義 | 範例 |\n|------|------|------|------|\n| **P0** | Critical | 系統完全不可用，影響所有使用者，無 workaround | 服務崩潰、資料遺失、安全漏洞被利用 |\n| **P1** | High | 核心功能異常，影響大量使用者，workaround 困難 | 登入失敗、支付錯誤、主流程阻斷 |\n| **P2** | Medium | 非核心功能異常，影響部分使用者，有 workaround | 匯出格式錯誤、非關鍵頁面顯示異常 |\n| **P3** | Low | 輕微問題，不影響功能使用 | UI 文字錯誤、排版微調、非必要提示缺失 |\n\n## Priority 處理優先級\n\n| Priority | 對應情境 | 說明 |\n|----------|---------|------|\n| Immediate | P0 + 生產環境 | 立即處理，所有人停下手邊工作 |\n| High | P1 或 P0 非生產 | 當前 S"
+  },
+  {
+    "path": "cicd-quality-gates.md",
+    "abs_path": "agents\\qa-agent\\knowledge\\wiki\\cicd-quality-gates.md",
+    "title": "CI/CD 品質門檻",
+    "tags": [
+      "cicd",
+      "quality-gate",
+      "lint",
+      "coverage",
+      "security-scan",
+      "pipeline"
+    ],
+    "scope": "private",
+    "agent": "qa-agent",
+    "body_preview": "# CI/CD 品質門檻\n\n## Pipeline 階段與品質門檻\n\n```\n┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐\n│  Lint    │───→│  Build   │───→│  Test    │───→│ Security │───→│  Deploy  │\n│  Gate    │    │  Gate    │    │  Gate    │    │  Gate    │    │  Gate    │\n└──────────┘    └──────────┘    └──────────┘    └──────────┘    └──────────┘\n```\n\n每個 Gate 失敗 → Pipeline 中止 → 通知開發者修復\n\n## Gate 1: Lint Pass\n\n| 工具 | 檢查項目 | 失敗條件 |\n|------|---------|---------|\n| `ruff` | Python 程式碼風格 + 常見錯誤 | 任何 erro"
+  },
+  {
+    "path": "code-review-guide.md",
+    "abs_path": "agents\\qa-agent\\knowledge\\wiki\\code-review-guide.md",
+    "title": "Code Review 指南",
+    "tags": [
+      "code-review",
+      "quality",
+      "security",
+      "best-practices"
+    ],
+    "scope": "private",
+    "agent": "qa-agent",
+    "body_preview": "# Code Review 指南\n\n## Review 重點（優先順序）\n\n| 優先級 | 審查面向 | 說明 |\n|--------|---------|------|\n| P0 | 安全性 | 注入攻擊、認證繞過、敏感資訊洩漏 |\n| P1 | 正確性 | 邏輯錯誤、邊界條件、錯誤處理 |\n| P2 | 可維護性 | 命名清晰、職責單一、適當抽象 |\n| P3 | 效能 | 不必要的迴圈、N+1 查詢、記憶體洩漏 |\n| P4 | 風格 | 格式一致性（由 linter 自動處理為主） |\n\n## 常見問題模式\n\n### 🚨 必須修改（Blocker）\n\n- **硬編碼密鑰/Token**：任何出現在程式碼中的 secret\n- **SQL/NoSQL Injection**：未參數化的查詢\n- **未驗證的使用者輸入**：直接使用 request body 無 validation\n- **錯誤的錯誤處理**：bare `except:`、吞掉 exception\n- **競態條件**：共享狀態無鎖保護\n- **無限迴圈/遞迴**：缺少終止條件\n\n### ⚠️ 建議修改（Warn"
+  },
+  {
+    "path": "overview.md",
+    "abs_path": "agents\\qa-agent\\knowledge\\wiki\\overview.md",
+    "title": "qa-agent 概覽",
+    "tags": [
+      "overview",
+      "qa",
+      "testing",
+      "quality"
+    ],
+    "scope": "private",
+    "agent": "qa-agent",
+    "body_preview": "# QA Agent 知識庫概覽\n\nQA Agent 負責軟體品質保證的全流程管控，涵蓋測試策略、程式碼審查、CI/CD 品質門檻與 Bug 管理。\n\n## 📚 知識頁面\n\n| 頁面 | 說明 | 狀態 |\n|------|------|------|\n| [[testing-strategy]] | 測試金字塔分層、覆蓋率目標、Mock 策略 | mature |\n| [[code-review-guide]] | Review 重點、常見問題模式、安全審計 | mature |\n| [[cicd-quality-gates]] | Pipeline 各階段品質門檻定義 | mature |\n| [[bug-classification]] | Severity P0-P3、修復 SLA、回歸測試規則 | mature |\n\n## 🎯 核心職責\n\n1. **測試規劃**：根據 [[testing-strategy]] 確保各層測試覆蓋\n2. **程式碼審查**：依循 [[code-review-guide]] 執行安全與品質審計\n3. **品質守門**：維護 [[cicd-quali"
+  },
+  {
+    "path": "testing-strategy.md",
+    "abs_path": "agents\\qa-agent\\knowledge\\wiki\\testing-strategy.md",
+    "title": "測試策略",
+    "tags": [
+      "testing",
+      "unit-test",
+      "integration-test",
+      "e2e",
+      "coverage",
+      "mock"
+    ],
+    "scope": "private",
+    "agent": "qa-agent",
+    "body_preview": "# 測試策略\n\n## 測試金字塔分層\n\n| 層級 | 類型 | 佔比 | 執行速度 | 維護成本 |\n|------|------|------|---------|---------|\n| L1 | 單元測試 (Unit) | 70% | < 5ms/case | 低 |\n| L2 | 整合測試 (Integration) | 20% | < 500ms/case | 中 |\n| L3 | 端對端測試 (E2E) | 10% | < 30s/case | 高 |\n\n## 單元測試規範\n\n- **範圍**：單一函式/方法，隔離所有外部依賴\n- **命名規則**：`test_{功能}_{情境}_{預期結果}`\n- **原則**：每個 test case 只驗證一個行為\n- **必須覆蓋**：核心業務邏輯、邊界條件、錯誤處理路徑\n- **禁止**：存取真實 DB / 網路 / 檔案系統\n\n## 整合測試規範\n\n- **範圍**：模組間互動、API 端點、DB 操作\n- **環境**：使用 Docker Compose 啟動依賴服務（MongoDB、Redis）\n- **資料策略**：每個 "
+  },
+  {
+    "path": "game-daily-news-report.md",
+    "abs_path": "agents\\report-agent\\knowledge\\wiki\\game-daily-news-report.md",
+    "title": "遊戲競品日報產出流程",
+    "tags": [
+      "daily",
+      "competitor",
+      "report",
+      "game",
+      "fishing",
+      "slot"
+    ],
+    "scope": "private",
+    "agent": "report-agent",
+    "body_preview": "# 遊戲競品日報產出流程\n\n## 定位\n\n**遊戲競品日報** — 每日整理手遊（捕魚/Slot）市場動態與競品動態，供策劃、營運、PM 參考，聚焦「競品做了什麼、玩家怎麼反應、我們要注意什麼」。\n\n不是科技日報，不看 AI/科技產業新聞。\n\n## 流程\n\n```\nmarket-agent（爬競品動態 + 輿情）\n  ↓\ndata-agent（整理數據 + 篩選重要性）\n  ↓\nreport-agent（渲染競品日報 HTML）\n  ↓\nTG 推送使用者\n```\n\n## 排程觸發\n\n```yaml\n# scheduler.yaml 範例\n- id: daily-game-report\n  cron: \"30 8 * * *\"    # 每天 08:30\n  instance: report-agent\n  message: \"產出今日遊戲競品日報，包含：競品動態、玩家輿情、市場洞察，格式 HTML，推送 TG\"\n```\n\n## 日報內容結構\n\n```markdown\n# 🎮 遊戲競品日報 {YYYY-MM-DD}\n\n## 🔥 今日重點\n\n{1-3 條最重要的事，每條一句話}\n\n## 🎯"
+  },
+  {
+    "path": "game-report-templates.md",
+    "abs_path": "agents\\report-agent\\knowledge\\wiki\\game-report-templates.md",
+    "title": "遊戲報告模板規範",
+    "tags": [
+      "report",
+      "template",
+      "game",
+      "daily",
+      "weekly"
+    ],
+    "scope": "private",
+    "agent": "report-agent",
+    "body_preview": "# 遊戲報告模板規範\n\n## 報告類型\n\n| 類型 | 頻率 | 受眾 | 格式 |\n|------|------|------|------|\n| 每日日報 | 每日 08:30 | 管理層 | HTML / Markdown |\n| 每週週報 | 每週一 09:00 | 全團隊 | HTML |\n| 競品分析報告 | 按需 | PM / 策劃 | Markdown |\n| 專項數據報告 | 按需 | 數據分析 | Markdown + 圖表 |\n\n## 每日日報模板\n\n```markdown\n# 🎮 遊戲日報 {YYYY-MM-DD}\n\n## 📊 今日關鍵指標\n\n| 指標 | 今日 | 昨日 | 變化 |\n|------|------|------|------|\n| DAU | {N} | {N} | {+N%} |\n| 新增用戶 | {N} | {N} | {+N%} |\n| 收益 | ${N} | ${N} | {+N%} |\n| D1 留存 | {N}% | {N}% | {+N%} |\n\n## 📰 市場動態\n\n{market-agent 產出的新聞摘要}\n\n## 🔍 競品"
+  },
+  {
+    "path": "overview.md",
+    "abs_path": "agents\\report-agent\\knowledge\\wiki\\overview.md",
+    "title": "Report Agent 知識庫概覽",
+    "tags": [
+      "report",
+      "documentation",
+      "overview"
+    ],
+    "scope": "private",
+    "agent": "report-agent",
+    "body_preview": "# Report Agent 知識庫\n\n## 知識頁面\n\n| 頁面 | 說明 |\n|------|------|\n| [[report-standards]] | 報告產出規範和品質要求 |"
+  },
+  {
+    "path": "report-standards.md",
+    "abs_path": "agents\\report-agent\\knowledge\\wiki\\report-standards.md",
+    "title": "報告產出規範",
+    "tags": [
+      "report",
+      "markdown",
+      "html",
+      "format"
+    ],
+    "scope": "private",
+    "agent": "report-agent",
+    "body_preview": "# 報告產出規範\n\n## 報告類型\n\n| 類型 | 格式 | 頻率 | 範例 |\n|------|------|------|------|\n| 科技日報 | HTML | 每日 | 新聞摘要 + 觀點 |\n| 競品週報 | Markdown | 每週 | 競品動態 + 數據對比 |\n| 分析報告 | Markdown + 圖表 | 按需 | 深度分析 + 建議 |\n| 會議紀錄 | Markdown | 按需 | 決議 + Action Items |\n\n## Markdown 報告結構\n\n```markdown\n# 報告標題\n\n> 一句話摘要\n\n## 📊 關鍵數據\n- 數據 1：xxx\n- 數據 2：xxx\n\n## 📝 分析內容\n...\n\n## 💡 建議行動\n1. 行動 1\n2. 行動 2\n\n## 📚 參考來源\n- [[source1]]\n- [[source2]]\n\n---\n*產出時間：YYYY-MM-DD | 產出者：report-agent*\n```\n\n## 品質要求\n\n- 數據必須標註來源和日期\n- 圖表要有標題和軸標籤\n- 建議必須具體可執行（誰做、什麼時候、做什麼）\n-"
+  }
+]

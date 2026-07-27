@@ -24,6 +24,16 @@ inclusion: always
 - 私有：`agents/admin-agent/knowledge/wiki/`
 - 共用：`knowledge/shared/wiki/`
 
+### Wiki 檢索速查
+
+| 層級 | 路徑 | 說明 |
+|------|------|------|
+| 私有 | `agents/admin-agent/knowledge/wiki/` | 本 agent 專屬 |
+| 共用 | `knowledge/shared/wiki/` | 跨 agent 共享（優先查） |
+| 原始 | `knowledge/shared/raw/` | 唯讀原始資料 |
+
+#[[file:../../knowledge/shared/index.md]]
+
 ## 本 Agent 附註
 
 - 踩坑紀錄寫入 memory/daily/

@@ -21,6 +21,7 @@ from gateway.api.board import router as board_router
 from gateway.api.memory import router as memory_router
 from gateway.api.wiki import router as wiki_router
 from gateway.api.skills import router as skills_router
+from gateway.api.chat import router as chat_router
 
 bus = EventBus()
 
@@ -51,6 +52,7 @@ app.include_router(board_router, prefix="/api", tags=["board"])
 app.include_router(memory_router)
 app.include_router(wiki_router)
 app.include_router(skills_router)
+app.include_router(chat_router, prefix="/api/chat", tags=["chat"])
 
 @app.get("/api/health")
 def health():

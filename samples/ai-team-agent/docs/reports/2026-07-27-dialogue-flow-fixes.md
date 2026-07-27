@@ -181,3 +181,49 @@ Health loop 每 30s 巡檢。崩潰最多重試 3 次（指數退避），超過
 
 - A2A `[A2A]` header 格式需各 Agent SOUL.md 加入解析說明，才能觸發可靠的 callback
 - `last_heartbeat` 欄位目前回 None，待 heartbeat_loop 整合後補上真實值
+
+---
+
+## 追加修正（2026-07-27 14:00）— MCP Reply 鏈路修復
+
+### 問題診斷
+
+MCP `reply()` tool 呼叫 `POST /api/chat/reply` 時回傳 **404 Not Found**，所有 Agent 無法回覆使用者。進一步診斷發現 7 個問題。
+
+### 修正內容
+
+| # | 問題 | 嚴重度 | 修正 |
+|---|------|--------|------|
+| 1 | **Chat Router 未註冊** | P0 | `router.py` 加入 `chat_router` import + include（prefix="/api/chat"） |
+| 2 | **bootstrap.py sync/async 混用** | P0 | `_on_complete_with_db` / `_on_failed_with_db` / `_on_task_assigned` 改 `get_async_db()` + `await` + `conn.close()` |
+| 3 | **DB 連線洩漏** | P1 | 同 #2，統一加 try/finally/close |
+| 4 | **MCP stdio UTF-8 surrogate** | P1 | `mcp_stdio.py` 加入 `io.TextIOWrapper(encoding='utf-8', errors='replace')`（Windows only） |
+| 5 | **allowed_users 為空** | P2 | 待使用者填入 team.yaml |
+| 6 | **get_status() 私有屬性** | P3 | `_output_count` → `output_count` property |
+| 7 | **殘留 test task** | P3 | 待下次啟動清理 |
+
+### 修改檔案
+
+| 檔案 | 變更 |
+|------|------|
+| `src/gateway/api/router.py` | +2 行（import + include chat_router） |
+| `src/bootstrap.py` | 3 個 handler 改 async DB |
+| `src/gateway/mcp_stdio.py` | +6 行 Windows UTF-8 pipe guard |
+| `src/runtime/persistent_daemon.py` | 1 行 property 修正 |
+
+### 驗證結果
+
+```
+POST /api/chat/reply  → 200 (was 404)
+POST /api/chat/notify → 200 (was 404)
+POST /api/chat/send   → 200 (was 404)
+GET  /api/chat/traces → 200 (was 404)
+bootstrap.py          → compile OK
+mcp_stdio.py          → compile OK
+persistent_daemon.py  → compile OK
+```
+
+### 注意
+
+- UTF-8 surrogate 修正需**重啟平台**才生效（當前 session 仍用舊版 mcp_stdio 進程）
+- One Pager 已產出：`docs/one-pagers/mcp-reply-hotfix.md`
