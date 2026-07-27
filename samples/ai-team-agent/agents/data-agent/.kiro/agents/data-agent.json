@@ -1,13 +1,13 @@
 {
   "name": "data-agent",
   "description": "🧠 Leader — 需求分析、派工、驗收",
-  "prompt": "file://.kiro/steering/SOUL.md",
+  "prompt": "file://../steering/SOUL.md",
   "model": "auto",
   "tools": ["*"],
   "allowedTools": ["*"],
   "resources": [
-    "file://.kiro/steering/**/*.md",
-    "skill://.kiro/skills/**/SKILL.md",
+    "file://../steering/**/*.md",
+    "skill://../skills/**/SKILL.md",
     {
       "type": "knowledgeBase",
       "source": "file://./knowledge",

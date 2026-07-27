@@ -1,13 +1,13 @@
 {
   "name": "qa-agent",
   "description": "🧪 QA — 測試、品質保證、Code Review",
-  "prompt": "file://.kiro/steering/SOUL.md",
+  "prompt": "file://../steering/SOUL.md",
   "model": "auto",
   "tools": ["*"],
   "allowedTools": ["*"],
   "resources": [
-    "file://.kiro/steering/**/*.md",
-    "skill://.kiro/skills/**/SKILL.md",
+    "file://../steering/**/*.md",
+    "skill://../skills/**/SKILL.md",
     {
       "type": "knowledgeBase",
       "source": "file://./knowledge",
