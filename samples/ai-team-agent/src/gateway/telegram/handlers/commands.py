@@ -43,32 +43,49 @@ async def _post(context: ContextTypes.DEFAULT_TYPE, path: str, data: dict) -> di
 
 # ── /start ──
 
+APP_VERSION = "1.0.0"  # Platform version（kiro-cli 版本另外顯示）
+
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     uid = update.effective_user.id
     allowed = context.bot_data.get("allowed_users", [])
-    access_hint = (
-        f"\n\n⚠️ <b>你尚未在白名單中</b>\n"
-        f"你的 Chat ID：<code>{uid}</code>\n"
-        f"請在 team.yaml → access.allowed_users 加入此 ID"
-    ) if allowed and uid not in allowed else ""
+    is_authorized = not allowed or uid in allowed
+
+    # Tier 資訊
+    tier_status = context.bot_data.get("tier_status")
+    tier_str = f"Tier {tier_status.tier}" if tier_status else "Tier ?"
+    model_str = "auto"
+
+    # 常駐 / 動態 agent 分類（從 daemon config）
+    daemon = context.bot_data.get("persistent_daemon")
+    persistent_names, dynamic_names = [], []
+    if daemon:
+        for name, ic in daemon.config.instances.items():
+            (persistent_names if ic.persistent else dynamic_names).append(name)
+
+    persistent_str = ", ".join(persistent_names) if persistent_names else "—"
+    dynamic_count = len(dynamic_names)
+
+    auth_line = (
+        f"👤 Chat ID：<code>{uid}</code>  ✅ 已授權"
+        if is_authorized else
+        f"👤 Chat ID：<code>{uid}</code>  ⚠️ 未授權\n"
+        f"   請將此 ID 加入 .env ALLOWED_USERS"
+    )
+
     text = (
-        "🤖 <b>Ark Agent Platform</b>\n\n"
-        "一個由 AI Agent 組成的專案團隊，常駐運行。\n"
-        "你只需要用自然語言下達需求，團隊會自動分工完成。\n\n"
-        "<b>團隊成員</b>\n"
-        "⚙️ admin — 服務監控、成本控制\n"
-        "🧠 pm — 需求分析、派工、驗收\n"
-        "🤖 ai-dev — LLM / Agent / RAG\n"
-        "💻 coder — 全端開發\n"
-        "🧪 qa — 測試、品質保證\n"
-        "📰 market — 市場研究\n"
-        "📊 data — 數據分析\n"
-        "📋 report — 報告產出\n\n"
-        "<b>使用方式</b>\n"
-        "• 直接打字 → leader-agent 接收並分派\n"
-        "• /help → 查看所有指令\n\n"
-        f"你的 Chat ID：<code>{uid}</code>"
-        f"{access_hint}"
+        f"🤖 <b>Ark Agent Platform</b>  <code>v{APP_VERSION}</code>\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"📋 8-agent Team | {tier_str} | model: {model_str}\n"
+        f"{auth_line}\n\n"
+        f"<b>📌 系統摘要</b>\n"
+        f"• 常駐：{persistent_str}\n"
+        f"• 動態：{dynamic_count} workers（按需啟動）\n"
+        f"• 指令入口：leader-agent\n\n"
+        f"<b>🗣️ 使用方式</b>\n"
+        f"• 直接打字 → leader-agent 分析並派工\n"
+        f"• <code>@agent-name 訊息</code> → 指定特定 agent\n"
+        f"• /help → 完整指令說明\n"
+        f"• /status → 平台與 Agent 即時狀態"
     )
     await update.message.reply_text(text, parse_mode="HTML")
 
@@ -76,29 +93,131 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ── /help ──
 
 async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = (
-        "📖 <b>基本指令</b>（所有人）\n"
-        "/start — 歡迎 + Chat ID\n"
-        "/status — 團隊狀態\n"
-        "/help — 本說明\n\n"
-        "🔒 <b>進階功能</b>（需白名單）\n"
-        "直接打字 → leader-agent 接收\n"
-        "/agents — Agent 列表\n"
-        "/board — 任務看板\n"
-        "/costs — 費用追蹤\n"
-        "/assign — 派工\n"
-        "/restart — 重啟 agent\n"
-        "/stop — 停止 agent\n"
+    uid = update.effective_user.id
+    allowed = context.bot_data.get("allowed_users", [])
+    is_authorized = not allowed or uid in allowed
+
+    basic = (
+        "📖 <b>Ark Agent Platform 使用說明</b>\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        "🌐 <b>基本指令</b>（所有人）\n"
+        "/start  — 系統資訊、版本、Chat ID\n"
+        "/status — 平台狀態 + Agent 運行狀況\n"
+        "/mode   — 查看當前 Tier 等級\n"
+        "/help   — 本說明\n"
     )
-    await update.message.reply_text(text, parse_mode="HTML")
+
+    if not is_authorized:
+        await update.message.reply_text(
+            basic + f"\n🔒 進階功能需授權。你的 Chat ID：<code>{uid}</code>",
+            parse_mode="HTML",
+        )
+        return
+
+    advanced = (
+        "\n🔒 <b>對話（授權後）</b>\n"
+        "  直接打字           → leader-agent 接收分派\n"
+        "  <code>@agent-name 訊息</code>  → 指定特定 agent\n\n"
+        "📋 <b>任務管理</b>\n"
+        "  /assign &lt;任務描述&gt;  → 建立任務並選指派對象\n"
+        "  /board             → 看板（pending/doing/done）\n"
+        "  /queue             → 待處理佇列\n\n"
+        "🤖 <b>Agent 管理</b>\n"
+        "  /agents            → Agent 列表（可點擊查詳情）\n"
+        "  /logs &lt;agent_name&gt; → 最近執行記錄\n"
+        "  /restart &lt;agent|all&gt; → 重啟 agent\n"
+        "  /stop &lt;agent_name&gt;  → 停止 agent\n\n"
+        "💰 <b>監控</b>\n"
+        "  /costs             → 費用報告（今日/歷史）\n"
+        "  /recall &lt;關鍵字&gt;   → 查詢 leader-agent 記憶\n"
+    )
+    await update.message.reply_text(basic + advanced, parse_mode="HTML")
 
 
 # ── /status ──
 
 async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    agents = await _get(context, "/api/agents")
+    import time as _time
+
+    # ── 平台區塊 ──
     stats = await _get(context, "/api/admin/dashboard/stats")
-    text = fmt_status(agents, stats)
+    health = await _get(context, "/api/health")
+    scheduler_ok = stats.get("active_agents", 0) > 0
+
+    cost_today = stats.get("total_cost_today_usd", 0)
+    cost_limit = 15.0  # fallback
+    try:
+        budget = await _get(context, "/api/admin/costs/budget")
+        if isinstance(budget, dict):
+            cost_limit = budget.get("daily_limit_usd", cost_limit)
+    except Exception:
+        pass
+
+    api_status = "🟢 正常" if health.get("status") == "ok" else "🔴 異常"
+
+    platform_lines = [
+        "⚙️ <b>平台狀態</b>",
+        "━━━━━━━━━━━━━━━━━━━",
+        f"🟢 API      port 33333 | {api_status}",
+        f"🟢 TG Bot   已連線",
+        f"{'🟢' if scheduler_ok else '🔴'} Scheduler  {'運行中' if scheduler_ok else '停止'}",
+        f"💰 今日費用 ${cost_today:.3f} / ${cost_limit:.1f}",
+    ]
+
+    # ── Agent 區塊 ──
+    agents = await _get(context, "/api/agents")
+    runtime_data = await _get(context, "/api/agents/runtime/status")
+    runtime_map = {}
+    if isinstance(runtime_data, dict):
+        for inst in runtime_data.get("instances", []):
+            runtime_map[inst["name"]] = inst
+
+    role_icon = {"admin": "⚙️", "leader": "🧠", "worker": "💻"}
+    status_icon = {"idle": "🟢", "busy": "🔵", "running": "🟢", "crashed": "🔴", "stopped": "⏸️", "starting": "🟡"}
+
+    persistent_lines = []
+    dynamic_lines = []
+
+    for a in agents:
+        name = a["id"]
+        role = a.get("role", "worker")
+        mode = a.get("mode", "spawn")
+        r_icon = role_icon.get(role, "💻")
+        rt = runtime_map.get(name, {})
+        rt_status = rt.get("status", a.get("status", "idle"))
+        s_icon = status_icon.get(rt_status, "⚪")
+
+        if mode == "persistent":
+            uptime_s = rt.get("uptime_seconds", 0)
+            mem_mb = rt.get("memory_mb", 0)
+            if uptime_s > 0:
+                h, m = int(uptime_s // 3600), int((uptime_s % 3600) // 60)
+                uptime_str = f"{h}h{m:02d}m" if h > 0 else f"{m}m"
+            else:
+                uptime_str = "—"
+            mem_str = f"{mem_mb:.0f}MB" if mem_mb > 0 else "—"
+            persistent_lines.append(
+                f"  {r_icon} {name:<16} {s_icon} {rt_status:<8} {uptime_str:>6} | {mem_str}"
+            )
+        else:
+            s_icon_dyn = "⏸️" if rt_status == "stopped" else s_icon
+            st_str = "待機" if rt_status == "stopped" else rt_status
+            dynamic_lines.append(f"  {r_icon} {name:<16} {s_icon_dyn} {st_str}")
+
+    agent_lines = ["", "🤖 <b>Agent 狀態</b>", "━━━━━━━━━━━━━━━━━━━"]
+    if persistent_lines:
+        agent_lines.append(f"<b>常駐（{len(persistent_lines)}）</b>")
+        agent_lines.extend(persistent_lines)
+    if dynamic_lines:
+        agent_lines.append(f"<b>動態（{len(dynamic_lines)}）</b>")
+        agent_lines.extend(dynamic_lines)
+
+    # ── 任務摘要 ──
+    completed = stats.get("completed_today", 0)
+    running = stats.get("running_tasks", 0)
+    task_line = f"\n📊 今日　完成 {completed} | 進行中 {running}"
+
+    text = "\n".join(platform_lines + agent_lines) + task_line
     await update.message.reply_text(text, parse_mode="HTML")
 
 
