@@ -200,15 +200,23 @@ async def chat_send(body: SendPayload, request: Request):
     """Agent 間訊息傳遞 — 透過 daemon.send_message 實際送達。
 
     支援 A2A callback：reply_to 欄位指定完成後通知的 agent。
+    回覆指示以獨立 JSON header 注入，不污染訊息本文。
     """
     daemon = getattr(request.app.state, "persistent_daemon", None)
     if not daemon:
         return {"status": "no_daemon", "target": body.target}
 
-    # 注入 reply_to metadata（讓目標 agent 知道要回報給誰）
-    message = body.message
-    if body.reply_to:
-        message = f"[reply_to:{body.reply_to}] {message}"
+    # A2A metadata 以 JSON header 行注入首行，Agent SOUL.md 可解析
+    # 格式：[A2A] from=xxx reply_to=yyy
+    if body.reply_to or body.from_agent:
+        header_parts = []
+        if body.from_agent:
+            header_parts.append(f"from={body.from_agent}")
+        if body.reply_to:
+            header_parts.append(f"reply_to={body.reply_to}")
+        message = f"[A2A] {' '.join(header_parts)}\n{body.message}"
+    else:
+        message = body.message
 
     ok = await daemon.send_message(body.target, message)
     if ok:

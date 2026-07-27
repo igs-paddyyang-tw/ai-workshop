@@ -45,6 +45,12 @@ async def _post(context: ContextTypes.DEFAULT_TYPE, path: str, data: dict) -> di
 
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     uid = update.effective_user.id
+    allowed = context.bot_data.get("allowed_users", [])
+    access_hint = (
+        f"\n\n⚠️ <b>你尚未在白名單中</b>\n"
+        f"你的 Chat ID：<code>{uid}</code>\n"
+        f"請在 team.yaml → access.allowed_users 加入此 ID"
+    ) if allowed and uid not in allowed else ""
     text = (
         "🤖 <b>Ark Agent Platform</b>\n\n"
         "一個由 AI Agent 組成的專案團隊，常駐運行。\n"
@@ -62,6 +68,7 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "• 直接打字 → pm-agent 接收並分派\n"
         "• /help → 查看所有指令\n\n"
         f"你的 Chat ID：<code>{uid}</code>"
+        f"{access_hint}"
     )
     await update.message.reply_text(text, parse_mode="HTML")
 

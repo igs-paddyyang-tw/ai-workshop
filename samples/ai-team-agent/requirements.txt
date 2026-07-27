@@ -7,6 +7,7 @@ fastapi==0.115.0
 uvicorn[standard]==0.30.0
 pydantic==2.9.0
 google-genai>=1.0.0
+psutil>=5.9.0
 
 # 選配：Wiki 搜尋優化（沒裝也能跑，graceful fallback）
 bm25s>=0.3.0

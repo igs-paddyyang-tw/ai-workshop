@@ -169,6 +169,13 @@ class PersistentDaemon:
         # 動態 agent：STOPPED → 自動啟動
         if state.status == InstanceStatus.STOPPED:
             log.info("🚀 Lazy spawn: %s (on-demand)", name)
+            # 通知使用者正在啟動（via chat channel）
+            try:
+                from gateway.api.chat import get_channel
+                ch = get_channel()
+                await ch.notify(f"⏳ 正在啟動 {name}，請稍候...")
+            except Exception:
+                pass
             try:
                 await self.start_instance(name)
             except Exception as e:
@@ -416,17 +423,32 @@ class PersistentDaemon:
             self._overflow.close()
 
     def get_status(self) -> list[dict]:
-        """取得所有 instance 狀態。"""
-        return [
-            {
+        """取得所有 instance 狀態（含 uptime / memory_mb / tasks_total）。"""
+        import psutil
+        result = []
+        for name, state in self.instances.items():
+            pid = state.process.pid if state.process else None
+            uptime_seconds = 0.0
+            memory_mb = 0.0
+            if pid and state.process and state.process.is_alive():
+                try:
+                    proc = psutil.Process(pid)
+                    uptime_seconds = round(time.time() - proc.create_time(), 1)
+                    memory_mb = round(proc.memory_info().rss / 1024 / 1024, 1)
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                    pass
+            result.append({
                 "name": name,
                 "status": state.status.value,
-                "pid": state.process.pid if state.process else None,
+                "pid": pid,
                 "crash_count": state.crash_count,
                 "last_activity": state.last_activity,
-            }
-            for name, state in self.instances.items()
-        ]
+                "uptime_seconds": uptime_seconds,
+                "memory_mb": memory_mb,
+                "tasks_total": state.process._output_count if state.process else 0,
+                "last_heartbeat": None,
+            })
+        return result
 
     # ── Internal helpers ────────────────────────────────────────
 

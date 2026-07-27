@@ -418,6 +418,10 @@ async def main() -> None:
         allowed_users = team_config.access.get("allowed_users", [])
         tg_app.bot_data["allowed_users"] = allowed_users
         chat_id = allowed_users[0] if allowed_users else 0
+        if not allowed_users:
+            log.warning("⚠️  team.yaml access.allowed_users 為空！任何人都能傳訊給 Bot，請填入你的 Telegram user_id")
+        else:
+            log.info("allowed_users: %s", allowed_users)
 
         AGENT_TITLES = {
             "admin-agent": "👑 管理員",
