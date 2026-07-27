@@ -27,7 +27,6 @@ async def lifespan(app: FastAPI):
 
     # Wiki Engine
     wiki_engine = WikiEngine()
-    wiki_engine.build_index()
     app.state.wiki_engine = wiki_engine
     app.state.registry = registry
 
@@ -36,7 +35,7 @@ async def lifespan(app: FastAPI):
     token = os.getenv("TELEGRAM_BOT_TOKEN")
     if token:
         from src.bot.main import create_app
-        bot_app = create_app(registry=registry)
+        bot_app = create_app()
         await bot_app.initialize()
         await bot_app.start()
         await bot_app.updater.start_polling(drop_pending_updates=False)

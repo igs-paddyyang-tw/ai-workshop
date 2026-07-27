@@ -15,6 +15,8 @@ from telegram.ext import (
 from src.bot.handlers import (
     callback_switch_agent,
     cmd_agents,
+    cmd_assign,
+    cmd_board,
     cmd_chat,
     cmd_help,
     cmd_history,
@@ -62,6 +64,8 @@ def create_app():
     app.add_handler(CommandHandler("recall", cmd_recall))
     app.add_handler(CommandHandler("skills", cmd_skills))
     app.add_handler(CommandHandler("consolidate", cmd_consolidate))
+    app.add_handler(CommandHandler("assign", cmd_assign))
+    app.add_handler(CommandHandler("board", cmd_board))
 
     # Inline Button 回調
     app.add_handler(CallbackQueryHandler(callback_switch_agent, pattern="^switch_agent:"))

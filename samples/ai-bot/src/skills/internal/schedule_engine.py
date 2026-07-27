@@ -10,7 +10,7 @@ import yaml
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 
-from src.workflow.engine import WorkflowEngine
+from src.skills.internal.workflow_engine import WorkflowEngine
 
 logger = logging.getLogger(__name__)
 

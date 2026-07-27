@@ -30,7 +30,7 @@ start_bot.bat
   Tier 3: ✅ Agent CLI 常駐
 ══════════════════════════════════════════════════
 
-  📦 Skills: IDE 6 | Internal 4
+  📦 Skills: IDE 6 | Internal 15
   📚 Wiki:   shared 12 | raw 5 | agents 28
   🔍 Lint:   ✅ 0 issues
   🧠 SOUL:   ✅ 已載入
@@ -146,14 +146,17 @@ team.yaml 含 transport: http → 跨機模式（遠端派工）
 
 | 指令 | 功能 |
 |------|------|
-| `/start` | 啟動 + 清空 |
-| `/agents` | Inline Button 選 Agent |
+| `/start` | 啟動 + 系統資訊（Chat ID / LLM / CLI） |
+| `/status` | 系統狀態（LLM / CLI backend / 路由模式） |
+| `/agents` | Inline Button 選 Agent（常駐面板，✅ 標示當前） |
 | `/chat <問題>` | 強制 Gemini API（帶 6 層完整 context，2-3s） |
 | `/recall <query>` | 查詢 Agent 歷史經驗（FTS5） |
 | `/skills` | 列出已生效 Skills |
 | `/skills pending` | 待審 Skill 提案 |
 | `/consolidate` | 手動蒸餾 daily → memory.md |
-| `/mode` | 執行模式 |
+| `/mode` | 執行模式（agy / Gemini） |
+| `/assign <描述>` | 派工給團隊 Agent |
+| `/board` | 任務看板 |
 | `/help` | 指令清單 |
 
 ### 對話模式

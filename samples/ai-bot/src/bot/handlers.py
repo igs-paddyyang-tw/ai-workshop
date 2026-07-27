@@ -75,16 +75,18 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(
         "📖 *基本指令*（3 個，所有人可用）\n"
-        "/start — 歡迎 \\+ 系統資訊\n"
+        "/start — 歡迎 + 系統資訊\n"
         "/status — 平台狀態\n"
         "/help — 本說明\n\n"
-        "🔒 *進階指令*（3 個，需白名單）\n"
-        "/agents — Agent 列表 \\+ 切換\n"
+        "🔒 *進階指令*（需白名單）\n"
+        "/agents — Agent 列表 + 切換\n"
+        "/mode — 當前執行模式\n"
         "/recall `關鍵詞` — 搜尋記憶\n"
-        "/skills — 技能清單\n\n"
+        "/skills — 技能清單\n"
+        "/chat `問題` — 強制 Gemini 回答\n\n"
         "💬 *自然語言*（需白名單）\n"
         "直接打字 → Ark Agent 理解意圖 → 自動回答或派工",
-        parse_mode="MarkdownV2",
+        parse_mode="Markdown",
     )
 
 
@@ -102,81 +104,96 @@ async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
         f"• LLM：{gemini_ok} {model}\n"
         f"• Agent CLI：{'✅ ' + backend if cli_ok else '❌ 未安裝'}\n"
         f"• 路由：三路徑（command / @mention / 自然語言）\n"
-        f"• 派工：dispatch\\_to\\_agent（7 Agents）",
-        parse_mode="MarkdownV2",
+        f"• 派工：dispatch_to_agent（7 Agents）",
+        parse_mode="Markdown",
     )
 
 
-async def cmd_agents(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """顯示 9 個對話模式按鈕。"""
-    user_id = update.effective_user.id
-    session = session_manager.get_or_create(user_id)
-
+def _build_agents_keyboard(session) -> InlineKeyboardMarkup:
+    """產生 Agent 切換鍵盤（當前 agent 顯示 ✅）。"""
     def btn(agent_id, emoji, label):
-        is_active = (agent_id == "default" and session.is_default_mode) or (session.agent_name == agent_id)
-        prefix = "✓ " if is_active else ""
-        return InlineKeyboardButton(f"{prefix}{emoji} {label}", callback_data=f"switch_agent:{agent_id}")
+        is_active = (agent_id == "default" and session.is_default_mode) or (
+            not session.is_default_mode and session.agent_name == agent_id
+        )
+        mark = "✅ " if is_active else "　"  # 全形空格對齊
+        return InlineKeyboardButton(f"{mark}{emoji} {label}", callback_data=f"switch_agent:{agent_id}")
 
-    keyboard = [
+    return InlineKeyboardMarkup([
         [btn("default", "🚀", "Ark Agent")],
         [btn("admin", "👑", "Admin"), btn("pm", "📋", "PM"), btn("ai-dev", "🧠", "AI Dev")],
         [btn("coder", "💻", "Coder"), btn("qa", "🧪", "QA"), btn("data", "📊", "Data")],
         [btn("market", "🗺️", "Market"), btn("report", "📝", "Report")],
-    ]
+    ])
 
-    mode_str = "🚀 Ark Agent" if session.is_default_mode else f"{AVAILABLE_AGENTS[session.agent_name]['emoji']} {session.agent_name}"
+
+def _build_agents_text(session) -> str:
+    """產生 Agent 面板文字（含當前模式 + 說明）。"""
+    if session.is_default_mode:
+        current = "🚀 *Ark Agent*（Gemini ReAct）"
+        desc = "自動派工給專業 Agent，零門檻"
+    else:
+        agent_id = session.agent_name
+        info = AVAILABLE_AGENTS.get(agent_id, {})
+        emoji = info.get("emoji", "🤖")
+        name = info.get("name", agent_id)
+        agent_desc = info.get("desc", "")
+        current = f"{emoji} *{name}*（agy CLI）"
+        desc = agent_desc
+
+    return (
+        f"🎯 當前模式：{current}\n"
+        f"📝 {desc}\n\n"
+        "─────────────────\n"
+        "✅ = 當前模式　點擊切換"
+    )
+
+
+async def cmd_agents(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """顯示 Agent 切換面板（保持常駐）。"""
+    user_id = update.effective_user.id
+    session = session_manager.get_or_create(user_id)
+
     await update.message.reply_text(
-        f"當前：{mode_str}\n\n"
-        "🚀 Ark Agent = Gemini（零門檻）\n"
-        "其他 = Agent 分身（需 CLI）",
-        reply_markup=InlineKeyboardMarkup(keyboard),
+        _build_agents_text(session),
+        parse_mode="Markdown",
+        reply_markup=_build_agents_keyboard(session),
     )
 
 
 async def callback_switch_agent(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Inline Button 回調 — 切換對話模式。"""
+    """Inline Button 回調 — 切換 Agent，面板原地更新不消失。"""
     query = update.callback_query
     await query.answer()
 
     agent_id = query.data.split(":")[1]
     user_id = query.from_user.id
 
-    if agent_id == "default":
-        session_manager.switch_agent(user_id, "default")
-        await query.edit_message_text(
-            "✅ 已切換到 🚀 **Ark Agent**（Gemini）\n\n"
-            "直接輸入文字即可對話。",
-            parse_mode="Markdown",
+    if agent_id not in AVAILABLE_AGENTS and agent_id != "default":
+        await query.answer("❌ 無效的 Agent", show_alert=True)
+        return
+
+    # CLI 可用性檢查（非 default agent 才需要）
+    if agent_id != "default" and not is_cli_available():
+        await query.answer(
+            "⚠️ 需要 Agent CLI（agy / kiro-cli / claude）",
+            show_alert=True,
         )
         return
 
-    if agent_id not in AVAILABLE_AGENTS:
-        await query.edit_message_text("❌ 無效的 Agent")
-        return
-
-    # 檢查 Agent CLI
-    if not is_cli_available():
-        await query.edit_message_text(
-            f"⚠️ **{agent_id}-agent** 需要 Agent CLI\n\n"
-            "安裝任一即可：\n"
-            "• agy: `irm https://antigravity.google/cli/install.ps1 | iex`\n"
-            "• kiro-cli: `npm i -g kiro-cli && kiro-cli login`\n"
-            "• claude: `npm i -g @anthropic-ai/claude-cli`\n\n"
-            "目前請使用 🚀 Ark Agent 模式。",
-            parse_mode="Markdown",
-        )
-        return
-
+    # 切換
     session_manager.switch_agent(user_id, agent_id)
-    info = AVAILABLE_AGENTS[agent_id]
-    from src.agent.cli import get_available_backend
-    backend = get_available_backend()
-    await query.edit_message_text(
-        f"✅ 已切換到 {info['emoji']} **{info['name']}**（{backend}）\n\n"
-        f"{info['desc']}\n\n"
-        f"現在開始對話吧！",
-        parse_mode="Markdown",
-    )
+    session = session_manager.get_or_create(user_id)
+
+    # 原地更新面板（文字 + 鍵盤同步刷新）
+    try:
+        await query.edit_message_text(
+            _build_agents_text(session),
+            parse_mode="Markdown",
+            reply_markup=_build_agents_keyboard(session),
+        )
+    except Exception:
+        # 內容沒變時 Telegram 會拋錯，忽略即可
+        pass
 
 
 async def cmd_mode(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
