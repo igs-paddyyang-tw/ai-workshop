@@ -486,22 +486,12 @@ class PersistentDaemon:
                 continue
 
             if KiroBackend.is_ready(output):
-                # 等待 MCP server 完成連線（kiro-cli 先顯示 banner 再連 MCP）
-                # 最多等 30 秒，確認 MCP tools 已載入（出現 tool 載入訊息）
-                for _ in range(6):
-                    await asyncio.sleep(5)
-                    output = state.process.capture(lines=100)
-                    clean = KiroBackend._strip(output)
-                    # MCP 成功：看到 tool 數量或 MCP connected 訊息
-                    if re.search(r"MCP.*connect|tool.*loaded|tools.*available|\d+ tool", clean, re.I):
-                        log.info("Instance %s MCP connected", state.config.name)
-                        return True
-                    # MCP 失敗：require-mcp-startup 下會出現錯誤訊息
-                    if re.search(r"MCP.*fail|transport.*closed|server.*fail|No MCP", clean, re.I):
-                        log.error("Instance %s MCP connection failed", state.config.name)
-                        return False
-                # 5*6=30秒後仍無 MCP 確認訊息 → 視為成功（相容舊版 kiro-cli）
-                log.warning("Instance %s MCP status unknown after 30s, proceeding", state.config.name)
+                # MCP 確認：主動探測 backend API 確認 agent 可達
+                mcp_ok = await self._probe_mcp_ready(state)
+                if mcp_ok:
+                    log.info("Instance %s MCP confirmed via probe", state.config.name)
+                else:
+                    log.info("Instance %s MCP probe inconclusive, proceeding (process alive)", state.config.name)
                 return True
 
             err = KiroBackend.detect_error(output)
@@ -512,6 +502,29 @@ class PersistentDaemon:
             await asyncio.sleep(2)
 
         log.error("Instance %s startup timeout (%.0fs)", state.config.name, timeout)
+        return False
+
+    async def _probe_mcp_ready(self, state: InstanceState, timeout: float = 15.0) -> bool:
+        """主動探測 MCP bridge 是否就緒（透過 backend API 確認 agent 可達）。
+
+        kiro-cli --require-mcp-startup 確保 MCP 連上才顯示 banner，
+        但 legacy-ui 模式不輸出確認訊息。改用 HTTP 探測確認 backend 活著。
+        """
+        import httpx
+        url = f"http://127.0.0.1:{self.config.health_port}/api/health"
+        deadline = time.time() + timeout
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            while time.time() < deadline:
+                # 如果進程已死，不用繼續探測
+                if not state.process or not state.process.is_alive():
+                    return False
+                try:
+                    r = await client.get(url)
+                    if r.status_code < 400:
+                        return True
+                except (httpx.ConnectError, httpx.TimeoutException, OSError):
+                    pass
+                await asyncio.sleep(2)
         return False
 
     def _should_skip_resume(self, name: str, working_dir: Path) -> bool:
