@@ -117,14 +117,37 @@ async def update_task_status(conn: aiosqlite.Connection, task_id: str,
 
 
 async def get_board(conn: aiosqlite.Connection) -> dict[str, list[dict]]:
-    """取得看板（按狀態分組）。"""
-    rows = await fetch_all(conn, "SELECT * FROM tasks ORDER BY priority DESC, created_at")
+    """取得看板（按狀態分組）。
+
+    合併兩個來源：
+    - tasks 表：Board API / TaskLifecycle 管理的任務
+    - issues 表：MCP create_task / delegate_task 寫入的任務（status 映射到 tasks 狀態）
+    """
     board: dict[str, list[dict]] = {
         "backlog": [], "queued": [], "claimed": [],
         "executing": [], "blocked": [], "completed": [], "failed": [],
     }
+
+    # 1. tasks 表
+    rows = await fetch_all(conn, "SELECT * FROM tasks ORDER BY priority DESC, created_at")
     for r in rows:
         s = r.get("status", "backlog")
         if s in board:
             board[s].append(r)
+
+    # 2. issues 表（status 映射）
+    # issues: pending → queued, assigned → claimed, completed → completed, failed → failed
+    STATUS_MAP = {
+        "pending": "queued",
+        "assigned": "claimed",
+        "in_progress": "executing",
+        "blocked": "blocked",
+        "completed": "completed",
+        "failed": "failed",
+    }
+    issue_rows = await fetch_all(conn, "SELECT * FROM issues ORDER BY priority DESC, created_at")
+    for r in issue_rows:
+        s = STATUS_MAP.get(r.get("status", "pending"), "queued")
+        board[s].append({**r, "_source": "issues"})
+
     return board

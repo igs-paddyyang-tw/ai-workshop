@@ -206,13 +206,17 @@ class McpBridge:
     async def _tool_delegate_task(self, client: httpx.AsyncClient, args: dict) -> Any:
         instance = args.get("instance", "")
         task = args.get("task", "")
-        # 建立 issue
-        r = await client.post(f"{self.base_url}/api/issues", json={
+
+        # 建立任務到 tasks 表（/board 可見）
+        r = await client.post(f"{self.base_url}/api/tasks", json={
             "title": task[:80],
             "description": task,
             "assignee": instance,
+            "source": f"delegate:{self.instance}",
         })
-        # 送訊息給目標 agent（讓它知道要做什麼）
+        task_id = r.json().get("id", "?") if r.status_code < 400 else "?"
+
+        # 送訊息給目標 agent
         await client.post(f"{self.base_url}/api/chat/send", json={
             "target": instance,
             "message": f"[任務from {self.instance}] {task}",
@@ -220,11 +224,11 @@ class McpBridge:
         })
         # 進度通知（使用者看到）
         await client.post(f"{self.base_url}/api/chat/notify", json={
-            "text": f"🔀 轉派 {instance}：{task[:30]}",
+            "text": f"🔀 轉派 {instance}：{task[:30]}（#{task_id}）",
             "from_agent": self.instance,
             "to_agent": instance,
         })
-        return r.json() if r.status_code < 400 else {"error": r.text}
+        return r.json() if r.status_code < 400 else {"error": r.text[:200]}
 
     async def _tool_query_team_status(self, client: httpx.AsyncClient, args: dict) -> Any:
         r = await client.get(f"{self.base_url}/api/agents")
@@ -246,29 +250,96 @@ class McpBridge:
         return {"status": "broadcasted", "count": len(agents)}
 
     async def _tool_create_task(self, client: httpx.AsyncClient, args: dict) -> Any:
-        r = await client.post(f"{self.base_url}/api/issues", json={
-            "title": args.get("title", ""),
-            "description": args.get("description", ""),
-            "priority": args.get("priority", 3),
-            "assignee": args.get("assignee"),
+        # 寫 tasks 表（/api/tasks），同時寫 issues 表維持向後相容
+        title = args.get("title", "")
+        description = args.get("description", "")
+        priority = args.get("priority", 3)
+        assignee = args.get("assignee")
+
+        # 主要：寫 tasks 表（/board 讀這裡）
+        r = await client.post(f"{self.base_url}/api/tasks", json={
+            "title": title,
+            "description": description,
+            "priority": priority,
+            "assignee": assignee,
+            "source": f"mcp:{self.instance}",
         })
-        return r.json() if r.status_code < 400 else {"error": r.text}
+        if r.status_code < 400:
+            result = r.json()
+            task_id = result.get("id", "")
+            # 進度通知
+            if assignee:
+                await client.post(f"{self.base_url}/api/chat/notify", json={
+                    "text": f"📋 建立任務 #{task_id}：{title[:40]}",
+                    "from_agent": self.instance,
+                    "to_agent": assignee,
+                })
+            return result
+        return {"error": r.text[:200]}
 
     async def _tool_update_task(self, client: httpx.AsyncClient, args: dict) -> Any:
         task_id = args.get("task_id", "")
-        r = await client.patch(f"{self.base_url}/api/issues/{task_id}/complete", json={
-            "status": args.get("status", "completed"),
-            "output": args.get("output", ""),
+        status = args.get("status", "completed")
+        output = args.get("output", "")
+
+        # 嘗試 tasks 表（新路徑）
+        r = await client.patch(f"{self.base_url}/api/tasks/{task_id}/complete", json={
+            "status": status,
+            "output": output,
+            "actor": self.instance,
         })
-        return r.json() if r.status_code < 400 else {"error": r.text}
+        if r.status_code < 400:
+            return r.json()
+
+        # fallback：issues 表（舊路徑，id 格式不同）
+        r2 = await client.patch(f"{self.base_url}/api/issues/{task_id}/complete", json={
+            "status": status,
+            "output": output,
+        })
+        return r2.json() if r2.status_code < 400 else {"error": r2.text[:200]}
 
     async def _tool_list_tasks(self, client: httpx.AsyncClient, args: dict) -> Any:
         status = args.get("status", "")
-        url = f"{self.base_url}/api/issues"
+
+        # 讀 /api/board，合併 tasks + issues，回傳扁平清單
+        r = await client.get(f"{self.base_url}/api/board")
+        if r.status_code >= 400:
+            return {"error": r.text[:200]}
+
+        board = r.json()
+
+        # status 參數映射到 board 欄位
+        STATUS_MAP = {
+            "pending": ["queued", "backlog"],
+            "assigned": ["claimed", "executing"],
+            "completed": ["completed"],
+            "failed": ["failed"],
+            "blocked": ["blocked"],
+        }
+
         if status:
-            url += f"?status={status}"
-        r = await client.get(url)
-        return r.json() if r.status_code < 400 else {"error": r.text}
+            keys = STATUS_MAP.get(status, [status])
+            tasks = []
+            for k in keys:
+                tasks.extend(board.get(k, []))
+        else:
+            # 回傳所有非 completed 的任務（active view）
+            tasks = []
+            for k in ["queued", "backlog", "claimed", "executing", "blocked"]:
+                tasks.extend(board.get(k, []))
+
+        # 標準化回傳格式（與舊 issues API 相容）
+        result = []
+        for t in tasks:
+            result.append({
+                "id": t.get("id", ""),
+                "title": t.get("title", ""),
+                "status": t.get("status", ""),
+                "assignee": t.get("assignee"),
+                "priority": t.get("priority", 0),
+                "created_at": t.get("created_at", ""),
+            })
+        return result
 
     async def _tool_wiki_query(self, client: httpx.AsyncClient, args: dict) -> Any:
         q = args.get("query", "")

@@ -24,6 +24,12 @@ class TransitionBody(BaseModel):
     message: str = ""
 
 
+class CompleteTaskBody(BaseModel):
+    status: str = "completed"  # completed | failed
+    output: str = ""
+    actor: str = "system"
+
+
 @router.get("/board")
 async def api_board():
     """看板 — 按狀態分組。"""
@@ -67,6 +73,16 @@ async def api_retry(task_id: str, body: TransitionBody):
     if not ok:
         raise HTTPException(400, "無法 retry（狀態不是 failed 或任務不存在）")
     return {"task_id": task_id, "status": "queued"}
+
+
+@router.patch("/tasks/{task_id}/complete")
+async def api_complete_task(task_id: str, body: CompleteTaskBody):
+    """標記任務完成或失敗（MCP update_task 呼叫此 endpoint）。"""
+    target = "completed" if body.status not in ("failed",) else "failed"
+    ok = await _lifecycle.transition(task_id, target, body.actor, body.output or "task done")
+    if not ok:
+        raise HTTPException(404, f"任務 {task_id} 不存在或無法轉換狀態")
+    return {"task_id": task_id, "status": target, "output": body.output}
 
 
 # ── Runtime API（Phase 2）──
