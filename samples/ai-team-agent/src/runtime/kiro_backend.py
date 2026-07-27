@@ -77,7 +77,7 @@ class KiroBackend:
 
     def build_command(self, cfg: KiroBackendConfig) -> str:
         """產生啟動命令字串。"""
-        cmd = f"{self.binary_path} chat --trust-all-tools --legacy-ui"
+        cmd = f"{self.binary_path} chat --trust-all-tools --legacy-ui --require-mcp-startup"
         if not cfg.skip_resume:
             cmd += " --resume"
         if cfg.model:
