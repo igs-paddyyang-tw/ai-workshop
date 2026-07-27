@@ -1,20 +1,22 @@
 # Memory
 
-## 專案狀態（2026-07-27）
+## 專案狀態（2026-07-27 晚）
 
 - 四層架構完成：gateway / coordinator / runtime / business
-- 8 agent 常駐，**MCP reply 路徑驗證通過 ✅**（19:33:39 首次成功回覆）
+- 8 agent 常駐，**pm-agent → leader-agent 更名完成 ✅**
 - MCP stdio bridge：`src/gateway/mcp_stdio.py`（JSON-RPC over stdin/stdout）
 - 對話路由：統一 MCP `reply()` tool（常駐模式）/ 同步 stdout（spawn 模式）
 - knowledge/shared/ 已建立（wiki 6 篇 + raw 2 篇）
-- docs/ 結構已建立（specs/designs/plans/one-pagers/reports）
-- **Drift Score 97/100 ✅**（smoke_test 17 passed，API 100%，依賴 0 violations）
+- docs/ 結構已建立（specs/designs/plans/one-pagers/reports/tests）
+- **Drift Score 97/100 ✅**（smoke_test 36 passed，API 100%，依賴 0 violations）
 - `chat_trace.py` 新增對話軌跡追蹤（SQLite，7 天清理）
 - TG 任務通知修復：`#?` → 真實 issue_id + title + agent_id + output 摘要
+- kiro-cli defaultModel 改為 `auto`（`claude-opus-4.6` 已下架）
+- agent.json `file://` 路徑修正：`.kiro/` → `../`（kiro-cli 從 json 所在目錄解析）
 
 ## 技術決策
 
-- LLM：kiro-cli（複雜任務）+ Gemini Chat（簡單秒回）
+- LLM：kiro-cli `auto` model（`claude-opus-4.6` 已下架，勿用）
 - DB：SQLite dev / PostgreSQL prod
 - Process：**雙模式 — persistent（預設）+ spawn（fallback）**
 - 常駐模式：`--legacy-ui --trust-all-tools --require-mcp-startup` + stdin pipe
@@ -82,6 +84,9 @@ User(TG) → handle_message → await agent.send(msg)
 | PowerShell Set-Content 加 BOM | Windows 預設行為 | 用 Python 寫檔 |
 | TG 通知顯示 #? | scheduler emit 缺 issue_id；issues emit 缺 title | 三處補欄位（scheduler/issues/notifications）|
 | PATCH /persistent 用裸 dict body | FastAPI 不接受無 Content-Type dict | 改 PersistentToggleRequest Pydantic model |
+| agent.json file:// 路徑錯誤 | kiro-cli 從 json 所在目錄（.kiro/agents/）解析，非 cwd | `file://.kiro/` → `file://../` |
+| claude-opus-4.6 不可用 | 模型已下架，kiro-cli 收到錯誤靜默退出，不呼叫 reply | cli.json `chat.defaultModel: "auto"` |
+| cli.json BOM（再次觸發） | PowerShell Set-Content 寫入時加 UTF-8 BOM | Python `write_bytes()` 寫入（無 BOM）|
 
 ## 參考實作
 

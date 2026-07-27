@@ -108,10 +108,12 @@ knowledge/shared/wiki/  ← 全域共用
 
 | 指標 | 狀態 |
 |------|------|
-| smoke_test | ✅ 17 passed |
+| smoke_test | ✅ 36 passed |
 | Spec Drift Score | ✅ ~97/100 |
 | API 端點覆蓋 | ✅ 100% |
 | 依賴規則違規 | ✅ 0 |
 | TG 任務通知 | ✅ 修復（issue_id / title / agent_id / output 完整顯示） |
 | 對話軌跡追蹤 | ✅ chat_trace.py（SQLite，7 天清理） |
-| DB Migration 005 | ✅ 修正 pending+assignee 狀態不一致 |
+| DB Migration 005+006 | ✅ pending+assignee / pm→leader 更名 |
+| kiro-cli model | ✅ auto（claude-opus-4.6 已下架）|
+| agent.json 路徑 | ✅ file://../（kiro-cli 2.14.2 路徑解析修正）|

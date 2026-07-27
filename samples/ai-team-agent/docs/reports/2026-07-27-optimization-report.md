@@ -275,3 +275,76 @@ project-management-guide / report-standards / testing-standards +
 | `4e54882` | docs: update MEMORY.md + README — 2026-07-27 progress |
 | `5f2a64d` | fix(notifications): task-notification-optimization |
 | `069b942` | docs(ai-team-agent): closeout report + README rewrite |
+
+---
+
+## 十、pm-agent → leader-agent 更名（下午）
+
+### 異動範圍
+- `agents/pm-agent/` → `agents/leader-agent/`（git mv）
+- `team.yaml` / `team-dev.yaml` / `team-ops.yaml`
+- 8 個 agent TEAM.md、8 個 mcp.json allowed-targets
+- 6 個 Python src 檔案、scheduler.yaml、README.md、smoke_test.py
+- DB migration `006_rename_pm_to_leader.sql`
+
+**smoke_test 結果：36 passed / 4 skipped ✅**
+
+---
+
+## 十一、對話測試 Debug（下午）—— kiro-cli 三層疊加問題
+
+T01 測試（「你好，介紹一下團隊成員」）失敗，排查耗時約 2 小時，共發現 3 個疊加問題：
+
+### 問題 1：`agent.json` `file://` 路徑解析錯誤（agent 無 SOUL.md）
+
+**現象**：訊息送出，kiro-cli 有輸出，但 reply 永遠不回來。  
+**根因**：kiro-cli 把 `file://` 路徑從 **json 檔所在目錄**（`.kiro/agents/`）計算，不是 cwd。
+
+```
+# 舊路徑（錯誤）
+file://.kiro/steering/SOUL.md
+→ 解析成：.kiro/agents/.kiro/steering/SOUL.md  ← File not found
+
+# 新路徑（正確）
+file://../steering/SOUL.md
+→ 解析成：.kiro/steering/SOUL.md  ← OK
+```
+
+**影響**：所有 8 個 agent 的 SOUL.md 載入失敗，agent 沒有 system prompt，不知道要呼叫 `reply` tool。  
+**修正**：`agents/*/\.kiro/agents/*.json` 全部從 `.kiro/` 改為 `../`。
+
+---
+
+### 問題 2：`claude-opus-4.6` 模型下架
+
+**現象**：kiro-cli 靜默失敗，不回覆。  
+**根因**：`~/.kiro/settings/cli.json` 的 `chat.defaultModel` 設為 `claude-opus-4.6`（已下架）。  
+**可用模型**：`auto`（預設）/ `claude-sonnet-4.6` / `claude-opus-4.5` / `claude-haiku-4.5` 等。  
+**修正**：`cli.json` 改為 `"chat.defaultModel": "auto"`。
+
+---
+
+### 問題 3：`Set-Content` 寫入 UTF-8 BOM（kiro-cli json parse 失敗）
+
+**現象**：服務啟動 2 秒後 `admin-agent failed to start`，`leader-agent failed to start`。  
+**根因**：PowerShell `Set-Content -Encoding UTF8` 預設加 BOM，kiro-cli JSON parser 報 "expected value at line 1 column 1"。  
+**這是 MEMORY.md 已有記錄的老問題，但修正 cli.json 時再次觸發。**  
+**修正**：用 Python `write_bytes()` 寫入，無 BOM。
+
+```python
+p.write_bytes(json.dumps(data, indent=2).encode('utf-8'))
+```
+
+### 修正後狀態
+```
+13:19:42 Instance admin-agent is ready ✅
+13:19:55 Instance leader-agent is ready ✅
+13:19:57 常駐 agents 就緒 (8/8) ✅
+```
+
+### 新增踩坑到 MEMORY.md
+| 問題 | 原因 | 修正 |
+|------|------|------|
+| agent.json file:// 路徑錯誤 | kiro-cli 從 json 所在目錄（.kiro/agents/）解析，非 cwd | `file://.kiro/` → `file://../` |
+| claude-opus-4.6 不可用 | 模型已下架，kiro-cli 靜默失敗 | cli.json defaultModel 改 auto |
+| cli.json BOM（再次） | PowerShell Set-Content 加 BOM | Python write_bytes() 寫入 |
