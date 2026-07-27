@@ -415,7 +415,12 @@ async def main() -> None:
         await tg_app.updater.start_polling(drop_pending_updates=True)
 
         # 設定 reply callback
-        allowed_users = team_config.access.get("allowed_users", [])
+        # 優先從 .env ALLOWED_USERS 讀取（逗號分隔 int list），其次 team.yaml
+        env_users_raw = os.environ.get("ALLOWED_USERS", "")
+        if env_users_raw:
+            allowed_users = [int(u.strip()) for u in env_users_raw.split(",") if u.strip().isdigit()]
+        else:
+            allowed_users = team_config.access.get("allowed_users", [])
         tg_app.bot_data["allowed_users"] = allowed_users
         chat_id = allowed_users[0] if allowed_users else 0
         if not allowed_users:
