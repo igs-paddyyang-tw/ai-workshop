@@ -97,9 +97,16 @@ class Scheduler:
         if not self.event_bus:
             return
         from coordinator.events.types import Event, EventType
+        job_name = job.get("name", "")
         await self.event_bus.emit(Event(
             type=EventType.TASK_COMPLETED,
-            data={"agent_id": target, "job_name": job.get("name", ""), "source": "scheduler"},
+            data={
+                "agent_id": target,
+                "issue_id": job.get("issue_id", job_name),
+                "title": job_name,
+                "output": f"排程任務 {job_name} 執行完成",
+                "source": "scheduler",
+            },
             source="scheduler",
         ))
 

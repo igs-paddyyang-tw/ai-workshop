@@ -30,14 +30,25 @@ class NotificationService:
 
     async def on_task_completed(self, event: Event) -> None:
         data = event.data
+        issue_id = data.get("issue_id", "")
         output = data.get("output", "")
-        summary = output[:200] + "..." if len(output) > 200 else output
-        text = (
-            f"✅ <b>任務完成</b>\n\n"
-            f"📋 #{data.get('issue_id', '?')}\n"
-            f"📝 {summary}"
-        )
-        await self._broadcast(text, self.LEVEL_INFO)
+        agent_id = data.get("agent_id", "")
+
+        lines = ["✅ <b>任務完成</b>", ""]
+        if issue_id:
+            title = data.get("title", "")
+            lines.append(f"📋 #{issue_id}" + (f" — {title}" if title else ""))
+        else:
+            lines.append("📋 #（未知任務）")
+        if agent_id:
+            lines.append(f"🤖 {agent_id}")
+        if output:
+            summary = output[:200] + "..." if len(output) > 200 else output
+            lines.append(f"📝 {summary}")
+        else:
+            lines.append("📝 （無摘要）")
+
+        await self._broadcast("\n".join(lines), self.LEVEL_INFO)
 
     async def on_task_failed(self, event: Event) -> None:
         data = event.data

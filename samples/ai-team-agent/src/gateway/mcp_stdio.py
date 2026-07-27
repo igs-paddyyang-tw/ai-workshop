@@ -95,7 +95,7 @@ TOOLS: list[dict[str, Any]] = [
             "properties": {
                 "task_id": {"type": "string", "description": "任務 ID"},
                 "status": {"type": "string", "description": "狀態：completed | failed"},
-                "output": {"type": "string", "description": "產出摘要", "default": ""},
+                "output": {"type": "string", "description": "產出摘要（必填，簡述完成了什麼，禁止空值）", "default": ""},
             },
             "required": ["task_id", "status"],
         },

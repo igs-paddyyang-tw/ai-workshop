@@ -84,8 +84,18 @@ async def complete_issue(issue_id: str, body: IssueStatusUpdate, request: Reques
         await conn.commit()
         bus = request.app.state.bus
         event_type = EventType.TASK_COMPLETED if status == "completed" else EventType.TASK_FAILED
-        await bus.emit(Event(type=event_type, data={"issue_id": issue_id, "output": body.output}, source="api"))
-        return await fetch_one(conn, "SELECT * FROM issues WHERE id=?", (issue_id,))
+        issue = await fetch_one(conn, "SELECT * FROM issues WHERE id=?", (issue_id,))
+        await bus.emit(Event(
+            type=event_type,
+            data={
+                "issue_id": issue_id,
+                "title": issue["title"] if issue else "",
+                "agent_id": issue["assignee"] if issue else "",
+                "output": body.output,
+            },
+            source="api",
+        ))
+        return issue
     finally:
         await conn.close()
 
