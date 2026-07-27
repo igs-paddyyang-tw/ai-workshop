@@ -43,7 +43,28 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif data.startswith("stop_confirm:"):
         agent_name = data.split(":", 1)[1]
-        await query.edit_message_text(f"⏹️ 已發送中斷指令給 {agent_name}")
+        # 實際呼叫 API 停止常駐 agent（persistent=false）
+        async with httpx.AsyncClient(timeout=10) as c:
+            r = await c.patch(
+                f"{_api(context)}/api/agents/{agent_name}/persistent",
+                json={"persistent": False},
+            )
+        if r.status_code == 200:
+            result = r.json()
+            status = result.get("status", "unknown")
+            await query.edit_message_text(
+                f"⏹️ <b>{agent_name}</b> 已停止（status: {status}）",
+                parse_mode="HTML",
+            )
+        elif r.status_code == 400:
+            # 非常駐模式：emit AGENT_STOPPED via bus（通知機制）
+            await query.edit_message_text(
+                f"⏹️ {agent_name}：非常駐模式，已發送停止指令",
+            )
+        else:
+            await query.edit_message_text(
+                f"⚠️ 停止失敗：{r.status_code}",
+            )
 
     elif data.startswith("agent_detail:"):
         agent_id = data.split(":", 1)[1]
@@ -62,10 +83,21 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.edit_message_text(text, parse_mode="HTML")
 
     elif data == "refresh_board":
+        # 改用 /api/board（回傳 kanban 分組格式）而非 /api/issues（flat list）
         async with httpx.AsyncClient(timeout=10) as c:
-            r = await c.get(f"{_api(context)}/api/issues")
+            r = await c.get(f"{_api(context)}/api/board")
+        board = r.json() if r.status_code == 200 else {}
+        # board 是 {pending:[...], assigned:[...], completed:[...]} 格式
+        # 轉成 fmt_board 接受的 flat list
         from gateway.telegram.formatters import fmt_board
-        await query.edit_message_text(fmt_board(r.json()), parse_mode="HTML")
+        flat = []
+        for status_key, items in board.items():
+            if isinstance(items, list):
+                for item in items:
+                    if isinstance(item, dict) and "status" not in item:
+                        item = {**item, "status": status_key}
+                    flat.append(item)
+        await query.edit_message_text(fmt_board(flat), parse_mode="HTML")
 
     elif data == "new_issue":
         await query.edit_message_text("請用 /assign 描述 來建立新任務")

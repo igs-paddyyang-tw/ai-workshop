@@ -146,7 +146,11 @@ async def cmd_board(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 @require_whitelist
 async def cmd_costs(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # /api/admin/costs 回傳 {total_usd, total_records, by_agent, by_model}
     data = await _get(context, "/api/admin/costs")
+    # 若回傳的是 error dict（端點不存在時 FastAPI 回 {"detail":"..."}），fallback 到空資料
+    if "detail" in data or "error" in data:
+        data = {"total_usd": 0, "total_records": 0, "by_agent": {}, "by_model": {}}
     text = fmt_costs(data)
     await update.message.reply_text(text, parse_mode="HTML")
 
@@ -274,20 +278,13 @@ async def cmd_logs(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # ── /restart ──
 
+@require_whitelist
 async def cmd_restart(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """重啟 agent 或平台。限 allowed_users。"""
-    # 權限檢查
-    allowed = context.bot_data.get("allowed_users", [])
-    if allowed and update.effective_user.id not in allowed:
-        await update.message.reply_text("⛔ 無權限執行此操作")
-        return
-
+    """重啟 agent 或平台（常駐模式走 API rotate，spawn 模式走本地物件）。"""
     arg = update.message.text.replace("/restart", "").strip()
     if not arg:
         await update.message.reply_text("用法：/restart <agent_name|all|platform>")
         return
-
-    agents = context.bot_data.get("agents", {})
 
     if arg == "platform":
         await update.message.reply_text("🔄 平台重啟中...")
@@ -295,14 +292,30 @@ async def cmd_restart(update: Update, context: ContextTypes.DEFAULT_TYPE):
         Path("restart.flag").touch()
         import sys
         sys.exit(0)
-    elif arg == "all":
-        for name, agent in agents.items():
-            await agent.kill()
-            await agent.start()
-        await update.message.reply_text(f"✅ 已重啟全部 {len(agents)} 個 Agent")
-    elif arg in agents:
-        await agents[arg].kill()
-        await agents[arg].start()
-        await update.message.reply_text(f"✅ 已重啟 {arg}")
-    else:
+
+    if arg == "all":
+        # 取得所有 agent id 再逐一 rotate
+        agents_list = await _get(context, "/api/agents")
+        if isinstance(agents_list, list):
+            failed = []
+            for a in agents_list:
+                r = await _post(context, f"/api/agents/{a['id']}/rotate", {})
+                if not r.get("rotated"):
+                    failed.append(a["id"])
+            msg = f"✅ 已重啟全部 {len(agents_list)} 個 Agent"
+            if failed:
+                msg += f"\n⚠️ 失敗：{', '.join(failed)}"
+        else:
+            msg = "❌ 無法取得 Agent 列表"
+        await update.message.reply_text(msg)
+        return
+
+    # 單一 agent：優先走 POST /api/agents/{id}/rotate
+    r = await _post(context, f"/api/agents/{arg}/rotate", {})
+    if "detail" in r:
+        # API 回 404：agent 不存在
         await update.message.reply_text(f"❌ 找不到 Agent: {arg}")
+    elif r.get("rotated") is False:
+        await update.message.reply_text(f"⚠️ {arg} rotate 失敗（可能非常駐模式）")
+    else:
+        await update.message.reply_text(f"✅ 已重啟 {arg}")

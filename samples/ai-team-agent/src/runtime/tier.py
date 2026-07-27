@@ -45,16 +45,23 @@ def detect_tier() -> TierStatus:
 
 
 def print_tier_banner(status: TierStatus) -> None:
-    """印出 Tier 狀態 banner。"""
-    check = "✅"
-    empty = "⬚ "
+    """印出 Tier 狀態 banner（ASCII 安全，避免 cp950 crash）。"""
+    import sys
+    out = sys.stdout
 
-    print("═" * 50)
-    print("  🤖 Ark Agent Team Platform")
-    print("═" * 50)
-    print(f"  Tier 0: {check} Prompts + Skills + Wiki + MCP（永遠可用）")
-    print(f"  Tier 1: {check if status.tg_ok else empty} Telegram Bot")
-    print(f"  Tier 2: {check if status.cli_ok else empty} kiro-cli Agent")
-    print(f"  Tier 3: {check if status.team_ok else empty} Team A2A 派工")
-    print("═" * 50)
-    print(f"\n  📊 當前 Tier: {status.tier}")
+    def _p(text: str) -> None:
+        out.write(text.encode("ascii", errors="replace").decode("ascii") + "\n")
+        out.flush()
+
+    check = "[OK]"
+    empty = "[  ]"
+
+    _p("=" * 50)
+    _p("  Ark Agent Team Platform")
+    _p("=" * 50)
+    _p(f"  Tier 0: {check} Prompts + Skills + Wiki + MCP")
+    _p(f"  Tier 1: {check if status.tg_ok else empty} Telegram Bot")
+    _p(f"  Tier 2: {check if status.cli_ok else empty} kiro-cli Agent")
+    _p(f"  Tier 3: {check if status.team_ok else empty} Team A2A")
+    _p("=" * 50)
+    _p(f"\n  Current Tier: {status.tier}")

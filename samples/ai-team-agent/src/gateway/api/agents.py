@@ -1,6 +1,7 @@
 """Agent 管理 API。"""
 from __future__ import annotations
 
+import asyncio
 import uuid
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
@@ -222,7 +223,11 @@ async def rotate_session(agent_id: str, request: Request):
         from fastapi import HTTPException
         raise HTTPException(400, "Session rotate not available (no daemon)")
 
-    ok = await daemon.restart_instance(agent_id)
+    try:
+        ok = await asyncio.wait_for(daemon.restart_instance(agent_id), timeout=15.0)
+    except asyncio.TimeoutError:
+        ok = False
+
     return {
         "agent_id": agent_id,
         "rotated": ok,
