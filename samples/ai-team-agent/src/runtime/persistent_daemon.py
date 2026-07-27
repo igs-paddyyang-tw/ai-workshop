@@ -167,8 +167,9 @@ class PersistentDaemon:
             log.warning("Cannot send to %s: not defined", name)
             return False
 
-        # 動態 agent：STOPPED → 自動啟動
+        # 動態 agent：STOPPED → 自動啟動（立即設 STARTING 防重複觸發）
         if state.status == InstanceStatus.STOPPED:
+            state.status = InstanceStatus.STARTING  # 防止並行 send_message 重複進入
             log.info("🚀 Lazy spawn: %s (on-demand)", name)
             # 通知使用者正在啟動（via chat channel）
             try:
@@ -180,7 +181,18 @@ class PersistentDaemon:
             try:
                 await self.start_instance(name)
             except Exception as e:
+                state.status = InstanceStatus.STOPPED  # 失敗回復
                 log.error("Lazy spawn failed for %s: %s", name, e)
+                return False
+
+        # STARTING 狀態：等待就緒後再投遞（第二個 send_message 會走這裡）
+        if state.status == InstanceStatus.STARTING:
+            for _ in range(120):  # 最多等 60 秒
+                if state.status == InstanceStatus.RUNNING:
+                    break
+                await asyncio.sleep(0.5)
+            else:
+                log.warning("Timeout waiting for %s to become RUNNING", name)
                 return False
 
         if state.status != InstanceStatus.RUNNING or not state.process:
