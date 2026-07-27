@@ -38,12 +38,13 @@ src/
 ### Agent 角色與指揮鏈
 
 ```
-使用者 → admin-agent（預設入口）→ leader-agent（分析+派工）→ workers（執行）→ leader-agent（驗收）→ reply
+使用者 → ai-team-agent（預設入口）→ leader-agent（分析+派工）→ workers（執行）→ leader-agent（驗收）→ reply
 ```
 
 | Agent | 角色 | 職責 | 模式 |
 |-------|------|------|------|
-| admin-agent | admin | 預設入口、服務監控、成本控制 | 常駐 |
+| ai-team-agent | orchestrator | 預設入口、任務路由、知識查詢、技能調度 | 常駐 |
+| admin-agent | admin | 服務監控、重啟、成本控制 | 常駐 |
 | leader-agent | leader | 需求分析、任務拆解、派工驗收 | 常駐 |
 | coder-agent | worker | 全端開發、API 實作 | 動態 |
 | qa-agent | worker | 測試策略、Code Review | 動態 |
@@ -117,3 +118,4 @@ knowledge/shared/wiki/  ← 全域共用
 | DB Migration 005+006 | ✅ pending+assignee / pm→leader 更名 |
 | kiro-cli model | ✅ auto（claude-opus-4.6 已下架）|
 | agent.json 路徑 | ✅ file://../（kiro-cli 2.14.2 路徑解析修正）|
+| .kiro 主入口 | ✅ ai-team-agent.json（通用 orchestrator）|

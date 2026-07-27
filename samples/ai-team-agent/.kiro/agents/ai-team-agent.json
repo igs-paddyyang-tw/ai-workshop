@@ -1,0 +1,5 @@
+{
+  "name": "ai-team-agent",
+  "description": "🧠 AI Team Agent — 通用對話入口、任務路由、知識查詢、技能調度",
+  "role": "orchestrator"
+}

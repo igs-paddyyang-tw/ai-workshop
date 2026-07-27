@@ -1,11 +1,17 @@
+---
+inclusion: always
+---
 # Memory
 
-## 專案狀態（2026-07-27 晚）
+## 專案狀態（2026-07-27 14:32 更新）
 
 - 四層架構完成：gateway / coordinator / runtime / business
 - 8 agent 常駐，**pm-agent → leader-agent 更名完成 ✅**
 - MCP stdio bridge：`src/gateway/mcp_stdio.py`（JSON-RPC over stdin/stdout）
 - 對話路由：統一 MCP `reply()` tool（常駐模式）/ 同步 stdout（spawn 模式）
+- **Chat Router 已註冊 ✅**（修復 /api/chat/* 404 問題）
+- **bootstrap.py async 修正 ✅**（sync/async 混用 + DB leak 修復）
+- **mcp_stdio.py UTF-8 surrogate guard ✅**（Windows io.TextIOWrapper）
 - knowledge/shared/ 已建立（wiki 6 篇 + raw 2 篇）
 - docs/ 結構已建立（specs/designs/plans/one-pagers/reports/tests）
 - **Drift Score 97/100 ✅**（smoke_test 36 passed，API 100%，依賴 0 violations）
@@ -13,6 +19,7 @@
 - TG 任務通知修復：`#?` → 真實 issue_id + title + agent_id + output 摘要
 - kiro-cli defaultModel 改為 `auto`（`claude-opus-4.6` 已下架）
 - agent.json `file://` 路徑修正：`.kiro/` → `../`（kiro-cli 從 json 所在目錄解析）
+- **.kiro 主入口重構 ✅**：`admin-agent.json` → `ai-team-agent.json`（通用 orchestrator，解除與子 agent 身分重疊）
 
 ## 技術決策
 
@@ -87,6 +94,9 @@ User(TG) → handle_message → await agent.send(msg)
 | agent.json file:// 路徑錯誤 | kiro-cli 從 json 所在目錄（.kiro/agents/）解析，非 cwd | `file://.kiro/` → `file://../` |
 | claude-opus-4.6 不可用 | 模型已下架，kiro-cli 收到錯誤靜默退出，不呼叫 reply | cli.json `chat.defaultModel: "auto"` |
 | cli.json BOM（再次觸發） | PowerShell Set-Content 寫入時加 UTF-8 BOM | Python `write_bytes()` 寫入（無 BOM）|
+| Chat Router 未註冊（404） | chat.py 有 router 但 router.py 沒 include | 加 import + include_router |
+| bootstrap sync/async 混用 | get_db() sync conn 配 async fetch_one | 統一 get_async_db + await |
+| MCP reply surrogate error | Windows stdin/stdout 混入 cp950 surrogate | io.TextIOWrapper(errors='replace') |
 
 ## 參考實作
 
