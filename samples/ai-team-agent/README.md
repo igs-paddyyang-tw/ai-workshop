@@ -38,12 +38,13 @@ src/
 ### Agent 角色與指揮鏈
 
 ```
-使用者 → ai-team-agent（預設入口）→ leader-agent（分析+派工）→ workers（執行）→ leader-agent（驗收）→ reply
+使用者(IDE) → ai-team-agent（IDE 入口）→ leader-agent（分析+派工）→ workers（執行）→ leader-agent（驗收）→ reply
+使用者(TG)  → leader-agent（TG 入口）→ workers（執行）→ leader-agent（驗收）→ reply
 ```
 
 | Agent | 角色 | 職責 | 模式 |
 |-------|------|------|------|
-| ai-team-agent | orchestrator | 預設入口、任務路由、知識查詢、技能調度 | 常駐 |
+| ai-team-agent | orchestrator | IDE 對話入口、任務路由、知識查詢、技能調度 | 常駐 |
 | admin-agent | admin | 服務監控、重啟、成本控制 | 常駐 |
 | leader-agent | leader | 需求分析、任務拆解、派工驗收 | 常駐 |
 | coder-agent | worker | 全端開發、API 實作 | 動態 |
