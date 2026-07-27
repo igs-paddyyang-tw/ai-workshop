@@ -20,14 +20,16 @@
 - cwd：`agents/{name}/`（kiro-cli 從 cwd 載入 .kiro/settings/mcp.json）
 - Timeout：300s + 活動偵測寬限 120s
 
-## 今日修改摘要（2026-07-27）✅ 驗證通過
+## 今日修改摘要（2026-07-27）✅ 全部驗證通過
 
-- 修復 leader-agent 不回應：config.py、persistent_daemon wrapped 訊息單行化、SOUL.md reply 優先規則
+- 修復 leader-agent 不回應：config.py、persistent_daemon wrapped 訊息、SOUL.md reply 優先規則
 - 指揮鏈統一：leader 入口，admin 背景角色，全 8 agent TEAM.md 對齊
 - MEMORY.md 全 8 agent 重寫，移除 pm-agent / 5人舊快照
 - Skills 補齊：ark-wiki-engine / code-spec-validator / doc-coauthoring 全 agent；leader-agent 補 5 個核心 skills
-- 駕馭工程優化（4 Phases）：BRAIN Wiki速查表+知識庫注入、SOUL 來源標記+格式規範、TEAM 可派工欄位
+- 駕馭工程優化（4 Phases）：BRAIN Wiki速查表 + 知識庫注入、SOUL 來源標記、TEAM 可派工欄位
 - 建立根目錄 memory/ 架構（memory.md / recent.md / daily/）
+- 任務系統統一：MCP tools 改寫 tasks 表，get_board 合併 tasks+issues，fmt_board 支援新舊 status
+- /api/issues 加 Deprecation header（Phase 4 完成）
 - 驗證：leader-agent 回覆延遲 7-8 秒，3 個測試案例全過 ✅
 
 ## 使用者偏好
