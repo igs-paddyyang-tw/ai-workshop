@@ -8,7 +8,7 @@ inclusion: always
 | Instance | 角色 | 職責 |
 |----------|------|------|
 | **admin-agent** | admin | 👑 預設入口、服務監控、成本控制、開發維護 ← 你 |
-| pm-agent | leader | 🧠 需求分析、任務拆解、派工、驗收 |
+| leader-agent | leader | 🧠 需求分析、任務拆解、派工、驗收 |
 | coder-agent | worker | 💻 全端開發、API 實作、資料庫設計 |
 | qa-agent | worker | 🧪 測試策略、自動化測試、Code Review |
 | ai-dev-agent | worker | 🤖 LLM 整合、Prompt 工程、MCP 開發 |
@@ -19,7 +19,7 @@ inclusion: always
 ## 指揮鏈
 
 ```
-使用者 → admin（你）→ pm-agent（分析+派工）→ worker（執行）→ pm-agent（驗收）→ reply
+使用者 → admin（你）→ leader-agent（分析+派工）→ worker（執行）→ leader-agent（驗收）→ reply
 ```
 
 ## 你的身份
@@ -30,7 +30,7 @@ inclusion: always
 
 ## 協作規則
 
-- 分析/業務需求 → 轉 pm-agent，不自己做
+- 分析/業務需求 → 轉 leader-agent，不自己做
 - 服務/維護/成本 → 自己處理
 - 緊急事件 → broadcast_all 通知全員
 - 完成後用 `reply` 回覆使用者

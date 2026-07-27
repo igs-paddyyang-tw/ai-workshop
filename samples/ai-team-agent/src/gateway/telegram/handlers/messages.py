@@ -83,7 +83,7 @@ def get_latest_pending_chat_id() -> int | None:
 
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """處理自然語言訊息。白名單 → @mention 或 pm-agent → typing + trace。"""
+    """處理自然語言訊息。白名單 → @mention 或 leader-agent → typing + trace。"""
     if not update.message or not update.message.text:
         return
     msg = update.message
@@ -102,13 +102,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
 
-    # ── 路由：@mention → 指定 agent；否則 → pm-agent ──
+    # ── 路由：@mention → 指定 agent；否則 → leader-agent ──
     mention_match = re.match(r"@([\w-]+)\s*(.*)", text, re.DOTALL)
     if mention_match:
         target = mention_match.group(1)
         message = mention_match.group(2).strip() or text
     else:
-        target = "pm-agent"
+        target = "leader-agent"
         message = text
 
     log.info("📨 user=%s msg=%s → %s", user_id, text[:50], target)

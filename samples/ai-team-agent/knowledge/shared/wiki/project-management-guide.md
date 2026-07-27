@@ -2,7 +2,7 @@
 title: "專案管理方法論"
 type: concept
 tags: [pm, agile, tasks, workflow]
-sources: [agents/pm-agent/knowledge/raw/project-management.md]
+sources: [agents/leader-agent/knowledge/raw/project-management.md]
 related: [team-roles, communication-protocol]
 created: 2026-07-02
 updated: 2026-07-14

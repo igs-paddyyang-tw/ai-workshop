@@ -134,7 +134,7 @@ TOOLS: list[dict[str, Any]] = [
     },
     {
         "name": "log_to_leader",
-        "description": "私下回報 leader（pm-agent）",
+        "description": "私下回報 leader（leader-agent）",
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -277,11 +277,11 @@ class McpBridge:
     async def _tool_log_to_leader(self, client: httpx.AsyncClient, args: dict) -> Any:
         text = args.get("text", "")
         await client.post(f"{self.base_url}/api/agents/spawn", json={
-            "name": "pm-agent",
+            "name": "leader-agent",
             "action": "log",
             "text": f"[log from {self.instance}] {text}",
         })
-        return {"status": "logged", "to": "pm-agent"}
+        return {"status": "logged", "to": "leader-agent"}
 
 
 # ── JSON-RPC stdio 處理 ──────────────────────────────────────────

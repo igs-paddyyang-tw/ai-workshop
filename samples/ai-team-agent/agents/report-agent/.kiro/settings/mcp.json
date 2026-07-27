@@ -11,7 +11,7 @@
         "--role",
         "worker",
         "--allowed-targets",
-        "pm-agent,report-agent,data-agent,market-agent",
+        "leader-agent,report-agent,data-agent,market-agent",
         "--home",
         "../.."
       ]

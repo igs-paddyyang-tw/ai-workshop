@@ -38,13 +38,13 @@ src/
 ### Agent 角色與指揮鏈
 
 ```
-使用者 → admin-agent（預設入口）→ pm-agent（分析+派工）→ workers（執行）→ pm-agent（驗收）→ reply
+使用者 → admin-agent（預設入口）→ leader-agent（分析+派工）→ workers（執行）→ leader-agent（驗收）→ reply
 ```
 
 | Agent | 角色 | 職責 | 模式 |
 |-------|------|------|------|
 | admin-agent | admin | 預設入口、服務監控、成本控制 | 常駐 |
-| pm-agent | leader | 需求分析、任務拆解、派工驗收 | 常駐 |
+| leader-agent | leader | 需求分析、任務拆解、派工驗收 | 常駐 |
 | coder-agent | worker | 全端開發、API 實作 | 動態 |
 | qa-agent | worker | 測試策略、Code Review | 動態 |
 | ai-dev-agent | worker | LLM 整合、Prompt 工程、MCP 開發 | 動態 |

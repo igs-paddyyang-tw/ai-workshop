@@ -37,8 +37,8 @@ instances:
     role: admin
     skip_resume: true
 
-  pm-agent:
-    working_directory: agents/pm-agent
+  leader-agent:
+    working_directory: agents/leader-agent
     description: "🧠 Leader — 需求分析、任務拆解、派工驗收"
     role: leader
     skip_resume: true

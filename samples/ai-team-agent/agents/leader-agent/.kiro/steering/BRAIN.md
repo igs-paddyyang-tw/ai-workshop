@@ -1,7 +1,7 @@
 ---
 inclusion: always
 ---
-# BRAIN — pm-agent 記憶與資源使用準則
+# BRAIN — leader-agent 記憶與資源使用準則
 
 > 繼承根 BRAIN 所有規則，以下為本角色補充。
 
@@ -21,7 +21,7 @@ inclusion: always
 
 ## 知識庫路徑
 
-- 私有：`agents/pm-agent/knowledge/wiki/`
+- 私有：`agents/leader-agent/knowledge/wiki/`
 - 共用：`knowledge/shared/wiki/`
 
 ## 本 Agent 附註

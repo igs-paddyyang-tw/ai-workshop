@@ -11,7 +11,7 @@
         "--role",
         "admin",
         "--allowed-targets",
-        "admin-agent,pm-agent,ai-dev-agent,coder-agent,qa-agent,market-agent,data-agent,report-agent",
+        "admin-agent,leader-agent,ai-dev-agent,coder-agent,qa-agent,market-agent,data-agent,report-agent",
         "--home",
         "../.."
       ]

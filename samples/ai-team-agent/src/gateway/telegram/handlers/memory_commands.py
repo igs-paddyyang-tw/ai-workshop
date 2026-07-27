@@ -22,8 +22,8 @@ async def cmd_recall(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     from coordinator.memory.recall import recall
 
-    # 預設查 pm-agent 或第一個 agent
-    agent_name = context.bot_data.get("current_agent", "pm-agent")
+    # 預設查 leader-agent 或第一個 agent
+    agent_name = context.bot_data.get("current_agent", "leader-agent")
     results = await recall(agent_name, query, k=5)
 
     if not results:
@@ -56,7 +56,7 @@ async def cmd_consolidate(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     from coordinator.memory.consolidate import consolidate
 
-    agent_name = context.bot_data.get("current_agent", "pm-agent")
+    agent_name = context.bot_data.get("current_agent", "leader-agent")
     result = await consolidate(agent_name)
     preview = result[:300] if result else "（無內容可蒸餾）"
 
