@@ -104,7 +104,7 @@ knowledge/shared/wiki/  ← 全域共用
 | Skills | `GET /api/v1/skills` / `POST /api/v1/skills/invoke` |
 | Health | `GET /api/health` |
 
-## 品質指標（2026-07-29）
+## 品質指標（2026-07-27）
 
 | 指標 | 狀態 |
 |------|------|
@@ -112,3 +112,6 @@ knowledge/shared/wiki/  ← 全域共用
 | Spec Drift Score | ✅ ~97/100 |
 | API 端點覆蓋 | ✅ 100% |
 | 依賴規則違規 | ✅ 0 |
+| TG 任務通知 | ✅ 修復（issue_id / title / agent_id / output 完整顯示） |
+| 對話軌跡追蹤 | ✅ chat_trace.py（SQLite，7 天清理） |
+| DB Migration 005 | ✅ 修正 pending+assignee 狀態不一致 |
