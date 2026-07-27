@@ -7,7 +7,7 @@ import yaml
 
 
 class SharedMemory:
-    def __init__(self, base: Path = Path("knowledge/shared")):
+    def __init__(self, base: Path = Path("data")):
         self.base = base
         for d in ("tasks", "artifacts", "decisions", "agent_profiles"):
             (self.base / d).mkdir(parents=True, exist_ok=True)

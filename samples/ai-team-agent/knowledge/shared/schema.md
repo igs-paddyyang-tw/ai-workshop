@@ -52,6 +52,9 @@ knowledge/shared/
 └── log.md        → 操作日誌（append-only，不可刪改）
 ```
 
+> **注意**：`tasks/`、`artifacts/`、`decisions/`、`agent_profiles/` 為 runtime 資料，
+> 統一存放於 `data/`，不在 knowledge/ 下。
+
 ## 操作規則
 
 - raw/ 只讀（人類丟入，AI 不改）
