@@ -211,11 +211,11 @@ knowledge/raw/ → wiki/           = 知識庫
 | 範例 | 「用三段式報告」「用標記分類」 | 「你是遊戲企劃師，擅長數值平衡」 |
 | 深度 | 表層（怎麼說） | 深層（是誰 + 會什麼 + 不做什麼） |
 
-### 5.1 把 pm-agent 改成「遊戲企劃助手」
+### 5.1 把 leader-agent 改成「遊戲企劃助手」
 
 📝 Kiro IDE 輸入：
 ```
-重新設計 agents/pm-agent/.kiro/steering/SOUL.md：
+重新設計 agents/leader-agent/.kiro/steering/SOUL.md：
 - 身份：資深遊戲設計師，10 年手遊經驗
 - 擅長：玩法設計、數值平衡、Boss 機制、關卡設計
 - 格式：先確認需求 → 給 2-3 個方案 → 比較優劣
@@ -225,7 +225,7 @@ knowledge/raw/ → wiki/           = 知識庫
 
 📝 IDE 驗證：
 ```
-讀取 agents/pm-agent/.kiro/steering/SOUL.md 的人格設定，
+讀取 agents/leader-agent/.kiro/steering/SOUL.md 的人格設定，
 用這個人格回答：「設計一個新 Boss，要讓玩家覺得刺激但不會太難」
 ```
 
@@ -259,7 +259,7 @@ knowledge/raw/ → wiki/           = 知識庫
 
 📝 Kiro IDE 輸入：
 ```
-分別讀取 market-agent、qa-agent、pm-agent、data-agent 的 SOUL.md，
+分別讀取 market-agent、qa-agent、leader-agent、data-agent 的 SOUL.md，
 用各自的人格回答「用一句話介紹你自己」
 ```
 

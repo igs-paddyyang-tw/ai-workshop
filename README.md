@@ -42,20 +42,22 @@
 
 **遊戲開發平台是下游** — 消費上游蒸餾好的能力資產，讓 Agent 團隊按照設定好的迴圈自動運作。遇到能力不足時，回上游的專家系統重新調整，再讓下游參考學習。
 
-### 為什麼架構相同
+### 為什麼概念相通、架構遞進
 
-兩個產品的程式碼架構一模一樣（coordinator / runtime / gateway），差異只在：
-- **放了什麼 Agent**（不同領域的 SOUL + Skill）
-- **有沒有 team.yaml**（個體 vs 團隊）
-- **有沒有 scheduler.yaml**（手動 vs 自動）
-- **knowledge/ 裝了什麼**（不同領域的知識）
+兩個產品共用相同的 **能力模組**（Memory / Wiki / Skills / .kiro steering），但 **程式碼架構不同**：
 
-就像兩台同型號的機器，一台用來鍛造刀具，一台用來切割材料。機器相同，用途不同。
+| | ai-bot | ai-team-agent |
+|---|---|---|
+| **src 架構** | 扁平模組（bot/ agent/ llm/ wiki/ memory/） | 四層架構（gateway/ coordinator/ runtime/ business/） |
+| **驅動方式** | Gemini ReAct Agent Loop（LLM 自行判斷） | PersistentDaemon + MCP（配置驅動） |
+| **派工** | LLM Function Calling → dispatch tool | leader-agent → A2A → workers |
 
-這確保：
-1. 學員學一套架構，兩邊都會用
-2. 專家系統蒸餾的 Agent 能力（agents/ 資料夾）可以直接搬到遊戲開發平台用
-3. 遇到問題隨時回專家系統調整，不需要適配
+這是刻意的遞進設計：
+1. **Course A 學會能力模組**（SOUL / Skills / Wiki / Memory），這些模組兩邊共用
+2. **Course B 學會團隊架構**（四層分離 + 多進程 + 排程），在能力模組之上架設「生產線」
+3. **Agent 能力可搬運** — 在 ai-bot 鍛造好的 Agent（agents/ 資料夾）可以直接搬到 ai-team-agent 使用
+
+就像學了引擎原理（Course A）再學組裝產線（Course B）。能力資產互通，架構各有特長。
 
 ### Loop Engineering — 標配五件套
 
@@ -123,12 +125,16 @@ ark-grill-me → ark-superpowers → ark-spec-executor → ark-code-spec-validat
 
 | 課程 | 思維 | 核心心法 | 對應產品 |
 |------|------|---------|---------|
-| A（01-03） | 🏗️ 駕馭工程 | 你是方向盤，AI 是引擎。你決定去哪。 | 專家系統平台 |
-| B（04-05） | 🔄 迴圈工程 | 設計迴圈不是步驟。讓系統自己跑、自己學。 | 遊戲開發平台 |
+| A（01-03） | 🏗️ LLM-Driven（AI 判斷） | AI 決定怎麼做，你控制它能做什麼 | 專家系統平台 |
+| B（04-05） | 🔄 Config-Driven（你設計迴圈） | 你定義流程和排程，系統按配置自轉 | 遊戲開發平台 |
 
-課程 A 教你「鍛造刀具」— 把 Agent 調到好用。
-課程 B 教你「架設生產線」— 讓好用的 Agent 自動跑。
-從 A 到 B，Agent 的能力被蒸餾、搬運、複用。
+Course A 教你「鍛造專家」— 用 SOUL / Skills / Wiki 定義 AI 的能力邊界，讓 Gemini ReAct 自行判斷如何完成任務。
+Course B 教你「架設產線」— 用 team.yaml + scheduler.yaml 定義誰做什麼、何時做，系統按配置自動運作。
+
+從 A 到 B 的升級路徑：
+```
+ai-bot（LLM 判斷派工）→ 把 agents/ 搬過去 → ai-team-agent（配置定義迴圈）
+```
 
 ## 快速開始
 

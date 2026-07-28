@@ -30,14 +30,14 @@
 - 描述: 每日科技日報
 - 時間: 每天早上 09:00（Asia/Taipei）
 - 任務: market 蒐集今日科技新聞，report 產出日報
-- 指派: pm-agent
+- 指派: leader-agent
 
 第二個：
 - id: weekly-competitor-report
 - 描述: 每週一競品分析
 - 時間: 每週一 10:00
 - 任務: market 蒐集捕魚機和老虎機最新動態，designer 分析 UI 趨勢，report 產出週報
-- 指派: pm-agent
+- 指派: leader-agent
 ```
 
 📝 確認格式：
@@ -51,13 +51,13 @@ schedules:
   - id: daily-tech-news
     cron: "0 9 * * *"
     timezone: Asia/Taipei
-    target: pm-agent
+    target: leader-agent
     prompt: "規劃今日科技日報：market 蒐集新聞、report 產出 HTML 日報"
 
   - id: weekly-competitor-report
     cron: "0 10 * * 1"
     timezone: Asia/Taipei
-    target: pm-agent
+    target: leader-agent
     prompt: "規劃週競品分析：market 蒐集捕魚機和老虎機動態、designer 分析 UI、report 產出週報"
 ```
 
@@ -124,7 +124,7 @@ python start.py
 ```
 
 📱 Telegram 觀察：
-1. pm-agent 接到排程任務
+1. leader-agent 接到排程任務
 2. 自動拆解 → market 蒐集 → designer 分析 → report 產出
 3. `/board` 看到任務來源為 `scheduled`（非手動 /assign）
 

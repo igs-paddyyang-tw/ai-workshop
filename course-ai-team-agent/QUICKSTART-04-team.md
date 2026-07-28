@@ -162,7 +162,7 @@ SOUL.md 有內容、MEMORY.md 有策略、knowledge/raw/ 有種子文件
 
 ✅ 預期結果：
 - `/agents` 列出 6 個（含 designer-agent）
-- `/assign` → pm-agent（leader）接收，拆成 3 個子任務
+- `/assign` → leader-agent（leader）接收，拆成 3 個子任務
 - `/board` 顯示 3 個任務：market(fetch) → data(analyze) → report(render)
 
 ### 4.2 自然語言派工（同一任務）
@@ -173,7 +173,7 @@ SOUL.md 有內容、MEMORY.md 有策略、knowledge/raw/ 有種子文件
 ```
 
 ✅ 預期結果：
-- 跟 4.1 一樣 — pm-agent 接收、拆任務、分工
+- 跟 4.1 一樣 — leader-agent 接收、拆任務、分工
 - `/board` 同樣看到 3 個任務
 
 💡 **對比重點：**
@@ -199,7 +199,7 @@ SOUL.md 有內容、MEMORY.md 有策略、knowledge/raw/ 有種子文件
 ```
 
 📱 觀察 `/board`：
-1. pm-agent 拆為 3 個子任務
+1. leader-agent 拆為 3 個子任務
 2. market → 蒐集競品資料（先跑）
 3. designer → 分析遊戲 UI 和玩法（可與 market 並行或等 market）
 4. report → 彙整產出分析報告（等前兩個完成）

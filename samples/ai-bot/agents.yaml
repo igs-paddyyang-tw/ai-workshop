@@ -29,11 +29,11 @@ admin:
   desc: "系統管理、監控、費控、SOP"
   dispatchable: true
 
-pm:
+leader:
   dir: "agents/leader-agent"
-  name: "PM Agent"
+  name: "Leader Agent"
   emoji: "📋"
-  desc: "專案經理、需求分析、任務派工"
+  desc: "需求分析、任務拆解、派工驗收"
   dispatchable: false  # 派工由 Ark Agent 統一處理
 
 ai-dev:

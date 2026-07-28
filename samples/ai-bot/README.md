@@ -1,6 +1,6 @@
 # ai-bot — 🏗️ AI Agent 專家系統平台
 
-> 8 Agent + 四層搜尋 Wiki + A2A 跨機派工 + Web UI 6 頁 + Telegram 互動。帶走就能用。
+> 8 Agent + Gemini ReAct 自動派工 + 四層搜尋 Wiki + Web UI 6 頁 + Telegram 互動。帶走就能用。
 
 ## 快速啟動
 
@@ -85,7 +85,7 @@ Layer 0: Metadata 精確 + 子字串兜底（永不掛零）
 | Agent | 角色 | Wiki 知識 |
 |-------|------|-----------|
 | 👑 Admin | 服務管理、部署、費控 | 5 頁（SOP、部署、監控、費控、故障排除） |
-| 🧠 PM | 需求分析、派工、驗收 | 5 頁（需求、派工、驗收、SDD、溝通） |
+| 🧠 Leader | 需求分析、派工、驗收 | 5 頁（需求、派工、驗收、SDD、溝通） |
 | 🤖 AI Dev | LLM/Prompt/MCP/Agent 設計 | 4 頁（Prompt、RAG、MCP、Agent 模式） |
 | 💻 Coder | 全端開發、API、DB | 4 頁（Python 規範、API、DB、Review） |
 | 🧪 QA | 測試、Review、品質 | 4 頁（測試策略、Review、CI/CD、Bug） |
@@ -151,12 +151,13 @@ ai-bot/
 ├── src/
 │   ├── agent/                      ← process + cli + planner + session
 │   ├── bot/                        ← TG handlers（L1-L4 路由）
-│   ├── coordinator/a2a/            ← A2A 派工（router + transport + server）
+│   ├── llm/                        ← Gemini ReAct Agent Loop + Function Calling
 │   ├── memory/                     ← 🆕 記憶子系統（daily_log + recall + recommend + ...）
 │   ├── wiki/                       ← WikiEngine + indexer + search/（四層）
 │   ├── skills/internal/            ← 實際 Python Skills
-│   ├── server/                     ← FastAPI + Memory API + A2A endpoints
-│   └── llm/                        ← Gemini Chat
+│   ├── server/                     ← FastAPI + Memory API
+│   ├── tools/                      ← MCP Tool handlers + dispatch
+│   └── llm/providers/              ← 多 Provider（Gemini / Anthropic / OpenAI）
 ├── docs/                           ← 工程文件（spec + design + plan）
 ├── logs/
 └── tests/
