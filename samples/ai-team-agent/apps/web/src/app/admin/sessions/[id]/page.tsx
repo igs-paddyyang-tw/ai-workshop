@@ -1,13 +1,24 @@
 "use client";
 import { useParams } from "next/navigation";
 import useSWR from "swr";
-import { fetcher } from "@/lib/api";
+import { fetcher, api } from "@/lib/api";
 import { ConversationView } from "@/components/sessions/ConversationView";
 
 export default function SessionDetailPage() {
   const params = useParams();
   const id = params?.id as string;
   const { data: session } = useSWR(id ? `/api/admin/sessions/${id}` : null, fetcher);
+  const { data: turns } = useSWR(id ? `/api/admin/sessions/${id}/turns` : null, fetcher);
+
+  async function handleAbort() {
+    if (!confirm("確定要中止此 Session？")) return;
+    await api.post(`/api/admin/sessions/${id}/abort`, {});
+  }
+
+  async function handleRestart() {
+    if (!confirm("確定要重啟此 Session？")) return;
+    await api.post(`/api/admin/sessions/${id}/restart`, {});
+  }
 
   if (!session) {
     return <div className="text-slate-500">載入中...</div>;
@@ -25,6 +36,16 @@ export default function SessionDetailPage() {
           <StatusBadge status={session.status} />
           <TokenMeter tokens={session.total_tokens} />
           <span className="text-orange-400 text-sm">${session.cost_usd?.toFixed(4)}</span>
+          {session.status === "running" && (
+            <button onClick={handleAbort} className="px-3 py-1 text-xs bg-red-900 hover:bg-red-800 text-red-300 rounded border border-red-700">
+              中止
+            </button>
+          )}
+          {session.status === "failed" && (
+            <button onClick={handleRestart} className="px-3 py-1 text-xs bg-cyan-900 hover:bg-cyan-800 text-cyan-300 rounded border border-cyan-700">
+              重啟
+            </button>
+          )}
         </div>
       </div>
 
@@ -39,7 +60,7 @@ export default function SessionDetailPage() {
       {/* Conversation (if turns available) */}
       <div className="bg-slate-900 border border-slate-800 rounded-lg p-4">
         <h3 className="text-sm font-medium text-slate-400 mb-3">對話回放</h3>
-        <ConversationView turns={session.turns || []} />
+        <ConversationView turns={turns || []} />
       </div>
     </div>
   );

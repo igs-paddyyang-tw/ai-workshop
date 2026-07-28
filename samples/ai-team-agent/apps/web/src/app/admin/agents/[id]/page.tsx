@@ -7,12 +7,12 @@ import Link from "next/link";
 export default function AgentDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { data: agent } = useSWR(`/api/agents/${id}`, fetcher);
-  const { data: sessions } = useSWR(`/api/agents/sessions?agent_id=${id}&limit=20`, fetcher);
-  const { data: costs } = useSWR(`/api/costs/today`, fetcher);
+  const { data: sessions } = useSWR(`/api/admin/sessions?agent_id=${id}&limit=20`, fetcher);
+  const { data: costs } = useSWR(`/api/admin/costs`, fetcher);
 
   if (!agent) return <div className="text-slate-400 p-8">載入中...</div>;
 
-  const agentCost = costs?.by_agent?.find((a: any) => a.agent === id);
+  const agentCost = costs?.by_agent?.[id] || 0;
 
   return (
     <div className="space-y-6">
@@ -40,16 +40,16 @@ export default function AgentDetailPage() {
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-slate-900 border border-slate-800 rounded-lg p-4">
-          <div className="text-sm text-slate-400">今日費用</div>
-          <div className="text-2xl font-bold text-cyan-400">${agentCost?.cost_usd?.toFixed(4) || "0.0000"}</div>
+          <div className="text-sm text-slate-400">費用（近 7 天）</div>
+          <div className="text-2xl font-bold text-cyan-400">${typeof agentCost === "number" ? agentCost.toFixed(4) : "0.0000"}</div>
         </div>
         <div className="bg-slate-900 border border-slate-800 rounded-lg p-4">
-          <div className="text-sm text-slate-400">今日 Tokens</div>
-          <div className="text-2xl font-bold">{agentCost?.tokens || 0}</div>
+          <div className="text-sm text-slate-400">Sessions</div>
+          <div className="text-2xl font-bold">{sessions?.length || 0}</div>
         </div>
         <div className="bg-slate-900 border border-slate-800 rounded-lg p-4">
-          <div className="text-sm text-slate-400">今日呼叫次數</div>
-          <div className="text-2xl font-bold">{agentCost?.calls || 0}</div>
+          <div className="text-sm text-slate-400">Status</div>
+          <div className="text-2xl font-bold">{agent.status}</div>
         </div>
       </div>
 

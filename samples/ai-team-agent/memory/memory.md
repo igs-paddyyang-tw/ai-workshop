@@ -2,7 +2,7 @@
 
 > 只放「下個月還會有用的事實」。上限 2000 tokens。
 
-## 專案狀態（2026-07-27）
+## 專案狀態（2026-07-28）
 
 - 專案：ai-team-agent — 8 agent 常駐團隊平台
 - 架構：gateway / coordinator / runtime / business（四層）
@@ -11,6 +11,7 @@
 - 常駐：admin-agent + leader-agent；其餘 6 個動態啟動
 - 回覆路徑：Agent MCP reply() → POST /api/chat/reply → Telegram
 - port：33333
+- Admin Dashboard：`apps/web/`（Next.js 15 + React 18，已修復可用）
 
 ## 技術決策
 
@@ -19,17 +20,19 @@
 - 常駐模式：`--legacy-ui --trust-all-tools --require-mcp-startup` + stdin pipe
 - cwd：`agents/{name}/`（kiro-cli 從 cwd 載入 .kiro/settings/mcp.json）
 - Timeout：300s + 活動偵測寬限 120s
+- Admin 前端：方案 A（修復現有 Next.js），保留 board.html 並存
 
-## 今日修改摘要（2026-07-27）✅ 全部完成
+## 今日修改摘要（2026-07-28）
 
-- 修復 leader-agent 不回應：config.py、persistent_daemon wrapped 訊息、SOUL.md reply 優先規則
-- 指揮鏈統一：leader 入口，admin 背景角色，全 8 agent TEAM.md 對齊
-- MEMORY.md 全 8 agent 重寫，Skills 補齊（共用 + leader 核心）
-- 駕馭工程優化（4 Phases）：BRAIN/SOUL/TEAM 全面強化
-- 建立根目錄 memory/ 架構
-- 任務系統統一：MCP tools 改寫 tasks 表，看板正確，/api/issues Deprecated
-- SharedMemory base 改為 data/：runtime 資料不再污染 knowledge/
-- knowledge/ 整理：三層合一，knowledge/shared/ 為唯一來源（raw 20 + wiki 26 個檔案）
+- 根目錄清理：pyproject.toml name 修正、.gitignore 補齊、Docker 路徑修正、刪除空殼 tasks/
+- Admin Dashboard 重構（4 Phase 全完成）：
+  - 修正硬編碼 + API 路徑對齊後端
+  - 新增 Kanban Board 頁面（/admin/board）
+  - Queue 加批次操作（指派/取消）
+  - Session 加 abort/restart 按鈕 + turns 分離 fetch
+  - README 重寫、移除 AGENTS.md/CLAUDE.md
+  - next build 通過（13 routes）
+- 產出 One Pager：docs/one-pagers/admin-web-dashboard.md
 
 ## 使用者偏好
 

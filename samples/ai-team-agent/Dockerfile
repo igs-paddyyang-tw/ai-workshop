@@ -11,7 +11,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # App code
 COPY src/ src/
-COPY start_platform.py .
+COPY start.py .
 COPY team.yaml .
 COPY scheduler.yaml .
 
@@ -20,4 +20,4 @@ RUN mkdir -p data logs agents
 
 EXPOSE 33333
 
-CMD ["python", "start_platform.py"]
+CMD ["python", "start.py"]

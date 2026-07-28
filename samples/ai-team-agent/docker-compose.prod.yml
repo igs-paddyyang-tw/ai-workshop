@@ -1,3 +1,4 @@
+# TODO: 待驗證後再用於生產（2026-07-28 更新路徑，尚未實測）
 version: "3.9"
 
 services:
@@ -23,7 +24,7 @@ services:
       context: .
       dockerfile: Dockerfile
     restart: unless-stopped
-    command: python -m uvicorn backend.api.router:app --host 0.0.0.0 --port 33333
+    command: python -m uvicorn src.gateway.api.router:app --host 0.0.0.0 --port 33333
     environment:
       - DATABASE_URL=postgresql://ark:${POSTGRES_PASSWORD:-ark_secret}@postgres:5432/ark_platform
       - PLATFORM_API_KEYS=${PLATFORM_API_KEYS:-}
@@ -43,7 +44,7 @@ services:
       context: .
       dockerfile: Dockerfile
     restart: unless-stopped
-    command: python start_platform.py
+    command: python start.py
     environment:
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       - API_PORT=33333
@@ -56,22 +57,6 @@ services:
       - ./team.yaml:/app/team.yaml
       - ./scheduler.yaml:/app/scheduler.yaml
       - ./data:/app/data
-      - ./logs:/app/logs
-
-  agent-daemon:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    restart: unless-stopped
-    command: python -c "import asyncio; from ark_team_core.daemon import CoreDaemon; d=CoreDaemon(); asyncio.run(d.run())"
-    environment:
-      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
-    depends_on:
-      - backend
-    working_dir: /app
-    volumes:
-      - ./agents:/app/agents
-      - ./team.yaml:/app/team.yaml
       - ./logs:/app/logs
 
 volumes:

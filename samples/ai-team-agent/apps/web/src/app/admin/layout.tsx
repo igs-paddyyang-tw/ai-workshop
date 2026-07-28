@@ -7,9 +7,10 @@ const NAV = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/agents", label: "Agents", icon: Bot },
   { href: "/admin/sessions", label: "Sessions", icon: MessageSquare },
+  { href: "/admin/queue", label: "Queue", icon: ListTodo },
+  { href: "/admin/board", label: "Board", icon: LayoutDashboard },
   { href: "/admin/costs", label: "Costs", icon: DollarSign },
   { href: "/admin/audit", label: "Audit", icon: ScrollText },
-  { href: "/admin/queue", label: "Queue", icon: ListTodo },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 
@@ -40,7 +41,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           ))}
         </nav>
         <div className="p-3 border-t border-slate-800 text-xs text-slate-500">
-          v1.0 • 5 Agents
+          v1.0 • 8 Agents
         </div>
       </aside>
 

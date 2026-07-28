@@ -1,36 +1,65 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Ark Agent Platform — Admin Dashboard
 
-## Getting Started
+> Next.js 管理後台，連接 FastAPI backend（port 33333）即時監控 8 agents 團隊。
 
-First, run the development server:
+## 功能
+
+| 頁面 | 功能 |
+|------|------|
+| Dashboard | KPI 卡片、7日趨勢圖、Agent Grid、Activity Feed（WebSocket） |
+| Agents | Agent 列表 + 點入詳情（費用、sessions） |
+| Sessions | 對話列表 + 詳情回放 + 中止/重啟 |
+| Queue | 任務佇列 + 優先級調整 + 批次操作（指派/取消） |
+| Board | Kanban 看板（Pending → In Progress → Completed → Failed） |
+| Costs | 成本圖表（By Agent / By Model）+ CSV 匯出 |
+| Audit | 稽核日誌 + Actor/Action 篩選 |
+| Settings | Budget 上限設定 |
+
+## 快速開始
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cd apps/web
+cp .env.local.example .env.local   # 設定後端 URL
+npm install
+npm run dev                         # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+**前提**：後端 `python start.py` 已在 port 33333 運行。
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 技術棧
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Next.js 15 (App Router)
+- React 18
+- Tailwind CSS 3
+- shadcn/ui
+- Recharts（圖表）
+- SWR（資料快取 + 即時更新）
+- WebSocket（Activity Feed 即時事件）
 
-## Learn More
+## 環境變數
 
-To learn more about Next.js, take a look at the following resources:
+| 變數 | 預設值 | 說明 |
+|------|--------|------|
+| `NEXT_PUBLIC_API_URL` | `http://127.0.0.1:33333` | 後端 API URL |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 與 board.html 的關係
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| | Admin Dashboard (Next.js) | board.html (靜態) |
+|--|---|---|
+| 定位 | 完整管理後台 | 輕量看板（零依賴） |
+| 適用 | 日常管理、深入分析 | 快速一覽、投影展示 |
+| 需要 | Node.js + npm | 瀏覽器直開 |
 
-## Deploy on Vercel
+兩者並存，各有用途。
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## API 依賴
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+所有資料來自 FastAPI backend：
+- `GET /api/agents` — Agent 列表
+- `GET /api/admin/dashboard/*` — KPI + 趨勢
+- `GET /api/admin/sessions` — 對話紀錄
+- `GET /api/admin/queue` — 任務佇列
+- `GET /api/admin/costs` — 成本統計
+- `GET /api/admin/audit` — 稽核日誌
+- `GET /api/board` — Kanban 看板
+- `WS /api/ws/events` — 即時事件推送

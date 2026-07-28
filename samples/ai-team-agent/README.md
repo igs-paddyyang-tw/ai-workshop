@@ -123,6 +123,26 @@ API_PORT=33333
 ALLOWED_USERS=your-telegram-user-id   # 取得方式：對 Bot 傳 /start
 ```
 
+## Admin Dashboard
+
+```bash
+cd apps/web
+cp .env.local.example .env.local
+npm install
+npm run dev    # → http://localhost:3000
+```
+
+| 頁面 | 功能 |
+|------|------|
+| Dashboard | KPI + 7日趨勢 + Agent Grid + Activity Feed (WebSocket) |
+| Agents | 列表 + 詳情（費用、sessions） |
+| Sessions | 對話列表 + 回放 + 中止/重啟 |
+| Queue | 任務佇列 + 優先級 + 批次操作 |
+| Board | Kanban 看板 |
+| Costs | 成本圖表 + CSV 匯出 |
+| Audit | 稽核日誌 + 篩選 |
+| Settings | Budget 設定 |
+
 ## API
 
 | 分類 | 端點 |
@@ -136,7 +156,7 @@ ALLOWED_USERS=your-telegram-user-id   # 取得方式：對 Bot 傳 /start
 | Health | `GET /api/health` |
 | Issues *(deprecated)* | `GET /api/issues` / `POST /api/issues` / `PATCH /api/issues/{id}/complete` |
 
-## 品質指標（2026-07-27）
+## 品質指標（2026-07-28）
 
 | 指標 | 狀態 |
 |------|------|
@@ -155,3 +175,5 @@ ALLOWED_USERS=your-telegram-user-id   # 取得方式：對 Bot 傳 /start
 | /api/issues | ✅ 標記 Deprecated，fallback 仍可用 |
 | knowledge/ 整理 | ✅ 三層合一，knowledge/shared/ 為唯一來源 |
 | SharedMemory 路徑 | ✅ runtime 資料（tasks/artifacts）改寫到 data/ |
+| 根目錄清理 | ✅ pyproject.toml + .gitignore + Docker 路徑修正 |
+| Admin Dashboard | ✅ Next.js 13 routes build 通過，API 對齊 |
