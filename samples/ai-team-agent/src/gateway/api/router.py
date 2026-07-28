@@ -59,6 +59,13 @@ def health():
     return {"status": "ok"}
 
 
+@app.get("/")
+async def root():
+    """首頁 — 導向 Board 或顯示平台資訊。"""
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/board")
+
+
 # WebSocket — 直接掛載（避免 include_router prefix 對 WS 不穩定的問題）
 @app.websocket("/api/ws/events")
 async def ws_events_direct(websocket: WebSocket):
@@ -70,5 +77,5 @@ async def ws_events_direct(websocket: WebSocket):
 async def serve_board():
     from fastapi.responses import FileResponse
     from pathlib import Path
-    board_path = Path(__file__).resolve().parents[2] / "apps" / "web" / "board.html"
+    board_path = Path(__file__).resolve().parents[3] / "apps" / "web" / "board.html"
     return FileResponse(board_path, media_type="text/html")
