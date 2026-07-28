@@ -1,7 +1,7 @@
 from __future__ import annotations
 import asyncio
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 
 import sys
@@ -57,6 +57,13 @@ app.include_router(chat_router, prefix="/api/chat", tags=["chat"])
 @app.get("/api/health")
 def health():
     return {"status": "ok"}
+
+
+# WebSocket — 直接掛載（避免 include_router prefix 對 WS 不穩定的問題）
+@app.websocket("/api/ws/events")
+async def ws_events_direct(websocket: WebSocket):
+    from gateway.api.ws import ws_events
+    await ws_events(websocket)
 
 
 @app.get("/board")

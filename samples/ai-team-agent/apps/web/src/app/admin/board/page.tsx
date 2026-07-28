@@ -3,10 +3,11 @@ import useSWR, { mutate } from "swr";
 import { fetcher, api } from "@/lib/api";
 
 const statusColumns = [
-  { key: "pending", label: "Pending", color: "border-blue-500" },
-  { key: "assigned", label: "In Progress", color: "border-yellow-500" },
+  { key: "queued", label: "Queued", color: "border-blue-500" },
+  { key: "claimed", label: "Claimed", color: "border-yellow-500" },
+  { key: "executing", label: "Executing", color: "border-cyan-500" },
+  { key: "blocked", label: "Blocked", color: "border-red-500" },
   { key: "completed", label: "Completed", color: "border-green-500" },
-  { key: "failed", label: "Failed", color: "border-red-500" },
 ];
 
 const priorityStyle: Record<number, { icon: string; border: string }> = {
@@ -42,7 +43,7 @@ export default function BoardPage() {
       <h2 className="text-2xl font-bold">Task Board</h2>
       <p className="text-sm text-slate-400">Kanban 看板 — 即時更新（5s）</p>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         {statusColumns.map((col) => {
           const tasks: Task[] = Array.isArray(columns[col.key]) ? columns[col.key] : [];
           return (
