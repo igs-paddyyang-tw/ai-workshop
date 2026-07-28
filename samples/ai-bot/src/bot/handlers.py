@@ -14,23 +14,10 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
 
 from src.agent.session import session_manager
+from src.agent.memory import save_memory
 from src.agent.cli import AVAILABLE_AGENTS, is_cli_available, agent_cli_chat
 
 log = __import__("logging").getLogger("bot.handlers")
-
-# ── 白名單：只有 ADMIN_CHAT_IDS 的人能使用 Bot ──
-_ALLOWED_USERS: set[int] = set()
-_admin_env = os.getenv("ADMIN_CHAT_IDS", "")
-if _admin_env:
-    _ALLOWED_USERS = {int(x.strip()) for x in _admin_env.split(",") if x.strip().isdigit()}
-
-
-def _is_authorized(user_id: int) -> bool:
-    """檢查使用者是否在白名單中。白名單為空 = 不限制（開發模式）。"""
-    if not _ALLOWED_USERS:
-        return True  # 未設定白名單 = 所有人可用
-    return user_id in _ALLOWED_USERS
-
 
 # ── 載入 SOUL（fallback 模式用）──
 _SOUL_DIR = Path("agents/admin-agent/.kiro/steering")
@@ -51,161 +38,90 @@ def _load_soul(agent_id: str) -> str:
 
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user_id = update.effective_user.id
-    is_allowed = _is_authorized(user_id)
-    status = "✅ 已授權" if is_allowed else "🔒 未授權"
-
-    # 系統資訊
-    from src.agent.cli import is_cli_available, get_available_backend
-    model = os.getenv("LLM_MODEL", "gemini-3.5-flash")
-    cli_ok = is_cli_available()
-    backend = get_available_backend() if cli_ok else "—"
-
+    session = session_manager.get_or_create(user_id)
+    session.clear_history()  # 重新開始，清空舊對話
+    agent = AVAILABLE_AGENTS[session.current_agent]
+    mode = "🧠 Agent CLI" if is_cli_available() else "⚡ Gemini API"
     await update.message.reply_text(
-        f"👋 *AI Agent 專家開發平台*\n\n"
-        f"• Chat ID：`{user_id}`\n"
-        f"• 狀態：{status}\n"
-        f"• LLM：{model}\n"
-        f"• CLI：{backend}\n"
-        f"• Agent：8 個專家\n\n"
-        f"直接打字即可對話，輸入 /help 查看完整說明。",
-        parse_mode="Markdown",
+        f"🤖 AI Agent 已就緒！\n\n"
+        f"• 模式：{mode}\n"
+        f"• Agent：{agent['emoji']} {agent['name']}\n\n"
+        "📌 /agents → 選擇 Agent\n"
+        "💬 直接打字 → 對話\n"
+        "📋 /help → 指令清單"
     )
 
 
 async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(
-        "📖 *基本指令*（3 個，所有人可用）\n"
-        "/start — 歡迎 + 系統資訊\n"
-        "/status — 平台狀態\n"
-        "/help — 本說明\n\n"
-        "🔒 *進階指令*（需白名單）\n"
-        "/agents — Agent 列表 + 切換\n"
-        "/mode — 當前執行模式\n"
-        "/recall `關鍵詞` — 搜尋記憶\n"
-        "/skills — 技能清單\n"
-        "/chat `問題` — 強制 Gemini 回答\n\n"
-        "💬 *自然語言*（需白名單）\n"
-        "直接打字 → Ark Agent 理解意圖 → 自動回答或派工",
-        parse_mode="Markdown",
-    )
-
-
-async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """公開指令：顯示 Bot 狀態概覽。"""
-    from src.agent.cli import is_cli_available, get_available_backend
-
-    cli_ok = is_cli_available()
-    backend = get_available_backend() if cli_ok else "無"
-    gemini_ok = "✅" if os.getenv("GEMINI_API_KEY") else "❌"
-    model = os.getenv("LLM_MODEL", "gemini-3.5-flash")
-
-    await update.message.reply_text(
-        f"📊 *系統狀態*\n\n"
-        f"• LLM：{gemini_ok} {model}\n"
-        f"• Agent CLI：{'✅ ' + backend if cli_ok else '❌ 未安裝'}\n"
-        f"• 路由：三路徑（command / @mention / 自然語言）\n"
-        f"• 派工：dispatch_to_agent（7 Agents）",
-        parse_mode="Markdown",
-    )
-
-
-def _build_agents_keyboard(session) -> InlineKeyboardMarkup:
-    """產生 Agent 切換鍵盤（當前 agent 顯示 ✅）。"""
-    def btn(agent_id, emoji, label):
-        is_active = (agent_id == "default" and session.is_default_mode) or (
-            not session.is_default_mode and session.agent_name == agent_id
-        )
-        mark = "✅ " if is_active else "　"  # 全形空格對齊
-        return InlineKeyboardButton(f"{mark}{emoji} {label}", callback_data=f"switch_agent:{agent_id}")
-
-    return InlineKeyboardMarkup([
-        [btn("default", "🚀", "Ark Agent")],
-        [btn("admin", "👑", "Admin"), btn("pm", "📋", "PM"), btn("ai-dev", "🧠", "AI Dev")],
-        [btn("coder", "💻", "Coder"), btn("qa", "🧪", "QA"), btn("data", "📊", "Data")],
-        [btn("market", "🗺️", "Market"), btn("report", "📝", "Report")],
-    ])
-
-
-def _build_agents_text(session) -> str:
-    """產生 Agent 面板文字（含當前模式 + 說明）。"""
-    if session.is_default_mode:
-        current = "🚀 *Ark Agent*（Gemini ReAct）"
-        desc = "自動派工給專業 Agent，零門檻"
-    else:
-        agent_id = session.agent_name
-        info = AVAILABLE_AGENTS.get(agent_id, {})
-        emoji = info.get("emoji", "🤖")
-        name = info.get("name", agent_id)
-        agent_desc = info.get("desc", "")
-        current = f"{emoji} *{name}*（agy CLI）"
-        desc = agent_desc
-
-    return (
-        f"🎯 當前模式：{current}\n"
-        f"📝 {desc}\n\n"
-        "─────────────────\n"
-        "✅ = 當前模式　點擊切換"
+        "📋 指令清單：\n\n"
+        "/start — 歡迎訊息\n"
+        "/agents — 🔘 選擇 Agent（按鈕）\n"
+        "/mode — 查看執行模式\n"
+        "/history — 查看對話歷史\n"
+        "/help — 本清單\n\n"
+        "💬 直接輸入文字即可對話"
     )
 
 
 async def cmd_agents(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """顯示 Agent 切換面板（保持常駐）。"""
+    """顯示 Inline Keyboard 選擇 Agent。"""
     user_id = update.effective_user.id
     session = session_manager.get_or_create(user_id)
+    current = session.current_agent
 
+    def btn(agent_id):
+        info = AVAILABLE_AGENTS[agent_id]
+        prefix = "→ " if current == agent_id else ""
+        return InlineKeyboardButton(
+            f"{prefix}{info['emoji']} {agent_id.capitalize()}",
+            callback_data=f"switch_agent:{agent_id}",
+        )
+
+    keyboard = [
+        [btn("admin"), btn("pm")],
+        [btn("ai-dev"), btn("coder")],
+        [btn("qa"), btn("data")],
+        [btn("market"), btn("report")],
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    agent = AVAILABLE_AGENTS[current]
     await update.message.reply_text(
-        _build_agents_text(session),
-        parse_mode="Markdown",
-        reply_markup=_build_agents_keyboard(session),
+        f"當前：{agent['emoji']} {agent['name']}\n\n選擇要對話的 Agent：",
+        reply_markup=reply_markup,
     )
 
 
 async def callback_switch_agent(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Inline Button 回調 — 切換 Agent，面板原地更新不消失。"""
+    """Inline Button 回調 — 切換 Agent。"""
     query = update.callback_query
     await query.answer()
 
-    agent_id = query.data.split(":")[1]
+    agent_id = query.data.split(":")[1]  # "switch_agent:news" → "news"
     user_id = query.from_user.id
 
-    if agent_id not in AVAILABLE_AGENTS and agent_id != "default":
-        await query.answer("❌ 無效的 Agent", show_alert=True)
+    if agent_id not in AVAILABLE_AGENTS:
+        await query.edit_message_text("❌ 無效的 Agent")
         return
 
-    # CLI 可用性檢查（非 default agent 才需要）
-    if agent_id != "default" and not is_cli_available():
-        await query.answer(
-            "⚠️ 需要 Agent CLI（agy / kiro-cli / claude）",
-            show_alert=True,
-        )
-        return
-
-    # 切換
-    session_manager.switch_agent(user_id, agent_id)
-    session = session_manager.get_or_create(user_id)
-
-    # 原地更新面板（文字 + 鍵盤同步刷新）
-    try:
-        await query.edit_message_text(
-            _build_agents_text(session),
-            parse_mode="Markdown",
-            reply_markup=_build_agents_keyboard(session),
-        )
-    except Exception:
-        # 內容沒變時 Telegram 會拋錯，忽略即可
-        pass
+    session = session_manager.switch_agent(user_id, agent_id)
+    info = AVAILABLE_AGENTS[agent_id]
+    await query.edit_message_text(
+        f"✅ 已切換到 {info['emoji']} **{info['name']}**\n\n"
+        f"{info['desc']}\n\n"
+        f"現在開始對話吧！",
+        parse_mode="Markdown",
+    )
 
 
 async def cmd_mode(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """顯示當前執行模式。"""
     if is_cli_available():
-        from src.agent.cli import get_available_backend
-        backend = get_available_backend()
         await update.message.reply_text(
             "🧠 **Agent CLI 模式**\n\n"
-            f"• Backend: {backend} ✅\n"
+            "• kiro-cli 已安裝 ✅\n"
             "• .kiro/ 配置全部生效\n"
-            f"• 對話由 {backend} 驅動",
+            "• 對話由 kiro-cli 驅動",
             parse_mode="Markdown",
         )
     else:
@@ -214,7 +130,7 @@ async def cmd_mode(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             f"⚡ **Gemini API 模式**\n\n"
             f"• Gemini Key: {has_key}\n"
             f"• SOUL.md 作為 system prompt\n\n"
-            "升級：安裝 Agent CLI（agy / kiro-cli / claude）",
+            "升級：`npm i -g kiro-cli && kiro-cli login`",
             parse_mode="Markdown",
         )
 
@@ -234,465 +150,163 @@ async def cmd_history(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     await update.message.reply_text("\n".join(lines))
 
 
-# ── /chat — 強制 Gemini API（帶完整 context）──────────────
+# ── 自然語言路由 ─────────────────────────────────────────
 
 
-async def cmd_chat(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """/chat <問題> — 強制使用 Gemini API 回答（帶完整記憶+知識+技能 context）。"""
-    text = " ".join(context.args) if context.args else ""
-    if not text:
-        await update.message.reply_text(
-            "用法：`/chat 你的問題`\n\n"
-            "此指令強制使用 Gemini API（2-3 秒回覆），"
-            "帶入完整 context：SOUL + 記憶 + 知識庫 + 技能清單 + 對話歷史。",
-            parse_mode="Markdown",
-        )
-        return
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """主對話處理：Planner 六層路由 + Wiki RAG + memory。
 
-    gemini_key = os.getenv("GEMINI_API_KEY", "")
-    if not gemini_key:
-        await update.message.reply_text("❌ GEMINI_API_KEY 未設定")
-        return
-
+    路由層級：
+      L1: /reset → 清空 session
+      L2: /skill_id args → 直接執行 Skill
+      L3: keyword → Planner 路由（Skill 或 Wiki）
+      L4: 預設 → Wiki RAG → Gemini fallback → 兜底
+    """
+    text = update.message.text.strip()
     user_id = update.effective_user.id
     session = session_manager.get_or_create(user_id)
     current_agent = session.current_agent
     agent_info = AVAILABLE_AGENTS[current_agent]
 
+    # 記錄 user 這輪
     session.add_turn("user", text)
-    await _set_reaction(update.message, "🔥")
+    log.info("📨 user=%s agent=%s msg=%s", user_id, current_agent, text[:100])
 
-    # ── 組裝完整 system prompt ──
-    system_prompt = await _build_rich_system_prompt(current_agent, text, session)
+    # ── Reaction: 👀 收到 ──
+    await _set_reaction(update.message, "👀")
 
-    # ── 呼叫 Gemini（帶 Tool Calling）──
-    try:
-        from src.llm.agent_loop import agent_loop
-        result = await agent_loop(text, system_prompt=system_prompt)
-        reply = result.text or ""
-    except Exception as e:
-        log.error("Gemini chat error: %s", e)
-        reply = f"⚠️ Gemini 錯誤：{e}"
-
-    if reply:
-        if len(reply) > 3000:
-            reply = reply[-3000:]
-        session.add_turn("agent", reply)
+    # ── L1: /reset → 清空 session ──
+    if text.lower() in ("/reset", "重置"):
+        session.clear_history()
         await _set_reaction(update.message, "👍")
-        header = f"⚡ [{current_agent}-agent] (Gemini)\n"
-        full_text = header + reply
-        for i in range(0, len(full_text), 4000):
-            await update.message.reply_text(full_text[i:i+4000])
-    else:
-        await _set_reaction(update.message, "💔")
-        await update.message.reply_text("⚠️ Gemini 無回應，請稍後再試。")
-
-
-async def _build_rich_system_prompt(agent_id: str, query: str, session) -> str:
-    """組裝完整 Gemini system prompt（6 層 context）。
-
-    注入順序：
-    1. SOUL.md — Agent 人格
-    2. memory.md — 持久事實（蒸餾記憶）
-    3. recent.md — 今+昨 daily log
-    4. FTS5 recall — 相關歷史記憶 top-3
-    5. Wiki context — 知識庫相關段落
-    6. Skills list — 可用技能清單
-    7. Session history — 對話歷史
-    """
-    parts: list[str] = []
-
-    # 1. SOUL
-    soul = _load_soul(agent_id)
-    if soul:
-        parts.append(soul)
-
-    # 2. memory.md（蒸餾持久事實）
-    memory_path = Path(f"agents/{agent_id}-agent/memory/memory.md")
-    if memory_path.exists():
-        content = memory_path.read_text(encoding="utf-8")
-        if content.strip() and len(content) > 20:
-            parts.append(f"\n## 持久記憶\n{content[:1500]}")
-
-    # 3. recent.md（最近經驗）
-    recent_path = Path(f"agents/{agent_id}-agent/memory/recent.md")
-    if recent_path.exists():
-        content = recent_path.read_text(encoding="utf-8")
-        if content.strip() and "（尚無記錄）" not in content:
-            parts.append(f"\n## 最近經驗\n{content[:1500]}")
-
-    # 4. FTS5 recall（相關歷史）
-    try:
-        from src.memory.recall import recall
-        results = recall(f"{agent_id}-agent", query, k=3)
-        if results:
-            recall_lines = ["\n## 相關歷史記憶"]
-            for r in results:
-                recall_lines.append(f"- [{r.date}] {r.title}: {r.body[:100]}")
-            parts.append("\n".join(recall_lines))
-    except Exception:
-        # FTS5 不可用時 fallback
-        memory_context = _search_memory(agent_id, query)
-        if memory_context:
-            parts.append(f"\n## 相關歷史記憶\n{memory_context}")
-
-    # 5. Wiki context（知識庫相關段落，不走 RAG 合成）
-    try:
-        from src.wiki.engine import WikiEngine
-        engine = WikiEngine(agent_id=agent_id)
-        wiki_result = await engine.query(query, use_rag=False)
-        if wiki_result.get("results"):
-            wiki_lines = ["\n## 知識庫參考（搜尋範圍：私有 wiki → knowledge/shared/wiki/）"]
-            for r in wiki_result["results"][:3]:
-                wiki_lines.append(f"### {r['title']}\n{r['snippet'][:200]}")
-            parts.append("\n".join(wiki_lines))
-        else:
-            parts.append(
-                "\n## 知識檢索規則\n"
-                "- 回答事實性問題前先查 wiki（私有 → 共用 knowledge/shared/wiki/）\n"
-                "- 查無結果才走外部搜尋，並明確告知使用者"
-            )
-    except Exception:
-        pass
-
-    # 6. Skills list（可用技能）
-    try:
-        from src.skills.registry import SkillRegistry
-        registry = SkillRegistry()
-        registry.auto_discover("src.skills.internal")
-        skills = registry.list_skills()
-        if skills:
-            skill_lines = ["\n## 可用技能（使用者可用 /skill_id 觸發）"]
-            for s in skills[:10]:
-                skill_lines.append(f"- /{s['skill_id']} — {s['description'][:40]}")
-            parts.append("\n".join(skill_lines))
-    except Exception:
-        pass
-
-    # 7. Session history
-    context_str = session.get_context()
-    if context_str:
-        parts.append(f"\n{context_str}")
-
-    return "\n\n".join(parts)
-
-
-async def _build_default_system_prompt(query: str, session) -> str:
-    """組裝 Default 模式的 Gemini system prompt（8 層 context + Tool 規則）。
-
-    讀取根目錄的 steering + memory + wiki，不走任何 Agent 私有目錄。
-    """
-    parts: list[str] = []
-
-    # 1. SOUL.md（根目錄）
-    soul_path = Path(".kiro/steering/SOUL.md")
-    if soul_path.exists():
-        parts.append(soul_path.read_text(encoding="utf-8"))
-
-    # 2. BRAIN.md（根目錄）
-    brain_path = Path(".kiro/steering/BRAIN.md")
-    if brain_path.exists():
-        content = brain_path.read_text(encoding="utf-8")
-        # 移除 frontmatter
-        if content.startswith("---"):
-            _, _, content = content.split("---", 2)
-        parts.append(content.strip())
-
-    # 3. TEAM.md（根目錄）
-    team_path = Path(".kiro/steering/TEAM.md")
-    if team_path.exists():
-        parts.append(team_path.read_text(encoding="utf-8"))
-
-    # 4. Tool 使用規則
-    parts.append("""## 工具使用規則
-
-你有三個工具可用：read_file、write_file、list_files。
-
-### 何時使用 write_file：
-- 使用者明確要求：「寫成報告」「存進知識庫」「匯出」「產出文件」「幫我整理成文章」
-- 寫入前告訴使用者你要寫什麼、寫到哪裡
-- 寫入後回覆確認路徑和大小
-
-### 何時不使用 write_file：
-- 一般對話（只是聊天、問答）→ 不寫
-- 使用者沒要求保存 → 不寫
-- 對話記錄 → 系統自動處理，你不需寫
-
-### 寫入路徑選擇：
-- 報告/分析 → output/reports/{date}_{slug}.md
-- 知識庫文章（使用者說「存進知識庫」）→ knowledge/shared/raw/{slug}.md（系統會自動匯入索引）
-- 匯出資料 → output/exports/{date}_{slug}.csv
-- 草稿 → output/drafts/{slug}.md
-
-### Memory vs Wiki 分工：
-- Memory（系統自動）= 你經歷過的事（對話記錄、決策）
-- Wiki（使用者要求才寫）= 可重複引用的知識（事實、規格、分析）
-- Output（使用者要求才寫）= 交付的產出物（報告、匯出檔）
-""")
-
-    # 5. memory/memory.md（根目錄持久事實）
-    memory_path = Path("memory/memory.md")
-    if memory_path.exists():
-        content = memory_path.read_text(encoding="utf-8")
-        if content.strip() and "（尚無記錄）" not in content:
-            parts.append(f"\n## 持久記憶\n{content[:1500]}")
-
-    # 6. memory/recent.md（根目錄最近經驗）
-    recent_path = Path("memory/recent.md")
-    if recent_path.exists():
-        content = recent_path.read_text(encoding="utf-8")
-        if content.strip() and "（尚無記錄）" not in content:
-            parts.append(f"\n## 最近經驗\n{content[:1500]}")
-
-    # 6b. 今日 daily log 尾部 5 筆（讓 Gemini 知道今天做過什麼）
-    from datetime import datetime as _dt
-    today_log = Path("memory/daily") / f"{_dt.now().strftime('%Y-%m-%d')}.md"
-    if today_log.exists():
-        log_content = today_log.read_text(encoding="utf-8")
-        log_entries = [e.strip() for e in log_content.split("\n## ") if e.strip()]
-        # 取最後 5 筆（跳過 header 行）
-        recent_entries = log_entries[-5:] if len(log_entries) > 5 else log_entries
-        if recent_entries:
-            daily_text = "\n## ".join(recent_entries)
-            # 去掉可能的 "# 2026-07-13 Daily Log" header
-            if daily_text.startswith("#"):
-                lines = daily_text.split("\n", 1)
-                daily_text = lines[1] if len(lines) > 1 else ""
-            if daily_text.strip():
-                parts.append(f"\n## 今日對話紀錄\n## {daily_text.strip()}")
-
-    # 7. FTS5 recall（查 default + shared）
-    try:
-        from src.memory.recall import recall
-        results = recall("_default", query, k=3, include_shared=True)
-        if results:
-            recall_lines = ["\n## 相關歷史記憶"]
-            for r in results:
-                recall_lines.append(f"- [{r.date}] {r.title}: {r.body[:100]}")
-            parts.append("\n".join(recall_lines))
-    except Exception:
-        pass
-
-    # 8. Wiki RAG（shared wiki）
-    try:
-        from src.wiki.engine import WikiEngine
-        engine = WikiEngine()
-        wiki_result = await engine.query(query, use_rag=False)
-        if wiki_result.get("results"):
-            wiki_lines = ["\n## 知識庫參考"]
-            for r in wiki_result["results"][:3]:
-                wiki_lines.append(f"### {r['title']}\n{r['snippet'][:200]}")
-            parts.append("\n".join(wiki_lines))
-    except Exception:
-        pass
-
-    # 9. Skills 清單
-    try:
-        from src.skills.registry import SkillRegistry
-        registry = SkillRegistry()
-        registry.auto_discover("src.skills.internal")
-        skills = registry.list_skills()
-        if skills:
-            skill_lines = ["\n## 可用技能（/skill_id 觸發）"]
-            for s in skills[:10]:
-                skill_lines.append(f"- /{s['skill_id']} — {s['description'][:40]}")
-            parts.append("\n".join(skill_lines))
-    except Exception:
-        pass
-
-    # 10. Session history
-    context_str = session.get_context()
-    if context_str:
-        parts.append(f"\n{context_str}")
-
-    return "\n\n".join(parts)
-
-
-# ── 自然語言路由 ─────────────────────────────────────────
-
-
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """主對話處理：三路徑路由。
-
-    路由：
-      1. @agent-name msg → 強制指定 agent（白名單）
-      2. 自然語言 → Ark Agent（Gemini ReAct + 自動派工）（白名單）
-    """
-    text = update.message.text.strip()
-    user_id = update.effective_user.id
-
-    # ── 白名單檢查 ──
-    if not _is_authorized(user_id):
-        await update.message.reply_text(
-            f"🔒 需要權限。\n\nChat ID：`{user_id}`",
-            parse_mode="Markdown",
-        )
+        await update.message.reply_text("🔄 對話已重置。")
         return
 
-    session = session_manager.get_or_create(user_id)
-    session.add_turn("user", text)
-    log.info("📨 user=%s msg=%s", user_id, text[:100])
+    # ── L2: /skill_id [args] → 直接執行 Skill ──
+    if text.startswith("/") and not text.startswith("//"):
+        parts = text[1:].split(maxsplit=1)
+        skill_id = parts[0].lower()
+        skill_args = parts[1] if len(parts) > 1 else ""
+        result = await _execute_skill_by_id(skill_id, skill_args)
+        if result is not None:
+            result = _clean_output(result)
+            session.add_turn("agent", result)
+            await save_memory(current_agent, user_id, text, result)
+            await _set_reaction(update.message, "👍")
+            header = f"{agent_info['emoji']} [{current_agent}-agent]\n"
+            await update.message.reply_text(header + result, parse_mode="Markdown", disable_web_page_preview=True)
+            return
 
-    # ── Chat Trace: 建立記錄 ──
-    from src.memory.chat_trace import create_trace, update_trace_decision, complete_trace, fail_trace
-    trace_id = create_trace(text)
+    # ── L3: keyword → Planner 路由 ──
+    from src.agent.planner import route, IntentType
+    plan = route(text)
 
-    # ── 自動 consolidate ──
-    await _auto_consolidate_if_needed()
+    if plan.intent == IntentType.SKILL and plan.skill_id:
+        reply = await _execute_skill_by_id(plan.skill_id, text)
+        if reply:
+            reply = _clean_output(reply)
+            session.add_turn("agent", reply)
+            await save_memory(current_agent, user_id, text, reply)
+            await _set_reaction(update.message, "👍")
+            header = f"{agent_info['emoji']} [{current_agent}-agent]\n"
+            await update.message.reply_text(header + reply, parse_mode="Markdown", disable_web_page_preview=True)
+            return
 
-    # ── Reaction: 👀 收到 + typing ──
-    await _set_reaction(update.message, "👀")
+    if plan.intent == IntentType.WIKI:
+        # Wiki 查詢優先
+        pass  # 繼續到下面的 Wiki RAG 段落
+
+    # ── Reaction: 🔥 處理中 + 持續 typing ──
+    await _set_reaction(update.message, "🔥")
     done = asyncio.Event()
     timer_task = asyncio.create_task(
         _keep_action_alive(update.message.chat_id, "typing", done, context.bot)
     )
 
     try:
+        # ── L4: CLI → Wiki RAG → Gemini fallback ──
         reply: str | None = None
+        memory_context: str | None = None
 
-        # ── Path 1: @mention → 強制指定 agent ──
-        if match := re.match(r"@([\w-]+)\s*(.*)", text, re.DOTALL):
-            target = match.group(1)
-            message = match.group(2).strip() or text
-            agent_id = target.replace("-agent", "")
-            update_trace_decision(trace_id, "@mention直送", target, target)
+        # 4a. Agent CLI（優先 — 有裝 kiro-cli 時用完整 .kiro/ 配置）
+        if is_cli_available():
+            log.debug("  → trying Agent CLI...")
+            try:
+                reply = await agent_cli_chat(text, agent_id=current_agent)
+                if reply:
+                    log.info("  ✅ CLI reply (%d chars)", len(reply))
+            except Exception as e:
+                log.error("  ❌ CLI error: %s", e)
+                reply = None
 
-            if is_cli_available():
-                reply = await agent_cli_chat(message, agent_id=agent_id)
+        # 4b. Wiki RAG（CLI 沒回或沒裝時）
+        if not reply:
+            log.debug("  → trying Wiki RAG...")
+            try:
+                from src.wiki.engine import WikiEngine
+                engine = WikiEngine(agent_id=current_agent)
+                wiki_result = await engine.query(text, use_rag=True)
+                if wiki_result.get("answer"):
+                    reply = wiki_result["answer"]
+                    log.info("  ✅ Wiki RAG reply (%d chars, sources=%s)", len(reply), wiki_result.get("sources", []))
+            except Exception as e:
+                log.error("  ❌ Wiki error: %s", e)
+
+        # 4c. Memory Search（引用歷史記憶，注入 Gemini context）
+        if not reply:
+            try:
+                memory_context = _search_memory(current_agent, text)
+            except Exception:
+                memory_context = None
+
+        # 4d. Gemini API fallback
+        if not reply:
+            gemini_key = os.getenv("GEMINI_API_KEY", "")
+            if gemini_key:
+                log.debug("  → trying Gemini API...")
+                try:
+                    from src.llm.gemini_chat import gemini_chat
+                    soul = _load_soul(current_agent)
+                    context_str = session.get_context()
+                    # 注入記憶（如果有）
+                    memory_str = f"\n\n## 相關歷史記憶\n{memory_context}" if memory_context else ""
+                    full_system = f"{soul}{memory_str}\n\n{context_str}" if context_str else f"{soul}{memory_str}"
+                    reply = await gemini_chat(text, system=full_system)
+                    if reply:
+                        log.info("  ✅ Gemini reply (%d chars)", len(reply))
+                except Exception as e:
+                    log.error("  ❌ Gemini error: %s", e)
+                    reply = f"⚠️ 錯誤: {e}"
             else:
-                # fallback Gemini
-                from src.llm.chat import simple_chat
-                soul_path = Path(f"agents/{agent_id}-agent/.kiro/steering/SOUL.md")
-                soul = soul_path.read_text(encoding="utf-8") if soul_path.exists() else ""
-                reply = await simple_chat(message, system=soul)
-
-            if reply:
-                reply = _clean_output(reply)
-                session.add_turn("agent", reply)
-                complete_trace(trace_id, reply[:80], success=True)
-                await _set_reaction(update.message, "👍")
-                await update.message.reply_text(f"🤖 [{target}]\n{reply}")
-            else:
-                fail_trace(trace_id, f"{target} 不可用")
-                await _set_reaction(update.message, "👎")
-                await update.message.reply_text(f"⚠️ {target} 不可用")
-            return
-
-        # ── Path 2: 判斷模式 ──
-        # 若使用者已切換到特定 Agent（非 default），走 Agent CLI 或 fallback Gemini + Agent SOUL
-        if not session.is_default_mode and session.agent_name != "default":
-            agent_id = session.agent_name
-            update_trace_decision(trace_id, "Agent分身", agent_id, f"cli:{agent_id}")
-
-            info = AVAILABLE_AGENTS.get(agent_id, {})
-            emoji = info.get("emoji", "🤖")
-
-            # ProgressStack（即時進度回饋）
-            from src.bot.progress import ProgressStack
-            progress = ProgressStack(update.message.chat_id, context.bot)
-            await progress.init(f"{emoji} {agent_id}-agent 思考中...")
-
-            if is_cli_available():
-                from src.agent.cli import agent_cli_chat
-                reply = await agent_cli_chat(text, agent_id=agent_id, session=session)
-            else:
-                # fallback: 用該 Agent 的 SOUL 做 Gemini 對話
-                from src.llm.agent_loop import agent_loop
-                system_prompt = await _build_rich_system_prompt(agent_id, text, session)
-                result = await agent_loop(
-                    user_message=text,
-                    system_prompt=system_prompt,
-                    max_iterations=5,
+                reply = (
+                    f"🔄 echo: {text}\n\n"
+                    "💡 開啟 AI：填入 GEMINI_API_KEY 或安裝 kiro-cli"
                 )
-                reply = result.text if result else None
 
-            if reply:
-                reply = _clean_output(reply)
-                if len(reply) > 3000:
-                    reply = reply[-3000:]
-                session.add_turn("agent", reply)
-                complete_trace(trace_id, reply[:80], success=True)
-                await progress.complete(reply)
-                await _set_reaction(update.message, "👍")
-            else:
-                fail_trace(trace_id, f"{agent_id} 無回覆")
-                await progress.fail(f"{agent_id}-agent 無回應，請重試。")
-                await _set_reaction(update.message, "👎")
-            return
-
-        # ── Path 3: 自然語言 → Ark Agent（ReAct + 自動派工）──
-        from src.llm.context_builder import build_default_system_prompt
-        from src.llm.agent_loop import agent_loop
-        from src.bot.progress import ProgressStack
-        import src.llm.tools  # noqa: F401 — 確保 tools 已註冊（含 dispatch_to_agent）
-
-        # 建立 ProgressStack
-        progress = ProgressStack(update.message.chat_id, context.bot)
-        await progress.init("分析意圖中...")
-
-        # on_tool_call 回調：更新進度
-        async def _on_tool(tool_name: str):
-            if tool_name == "dispatch_to_agent":
-                await progress.update("派工中...")
-            elif tool_name == "search_wiki":
-                await progress.update("查詢知識庫...")
-            elif tool_name == "web_search":
-                await progress.update("搜尋外部資訊...")
-            elif tool_name == "recall_memory":
-                await progress.update("回憶歷史...")
-
-        system_prompt = await build_default_system_prompt(query=text, session=session)
-        result = await agent_loop(
-            user_message=text,
-            system_prompt=system_prompt,
-            session_history=None,  # context_builder 已含 history
-            max_iterations=5,
-            on_tool_call=_on_tool,
-        )
-
-        if result.text:
-            reply = _clean_output(result.text)
+        # ── 回覆 + 記憶 + Reaction ──
+        if reply:
+            reply = _clean_output(reply)
+            # 長度截斷（避免 TG 洗版）
             if len(reply) > 3000:
                 reply = reply[-3000:]
             session.add_turn("agent", reply)
-            log.info("  ✅ Agent Loop reply (%d chars, %d iterations, %d tools)",
-                     len(reply), result.iterations, len(result.tool_calls_log))
-
-            # Trace: 判斷是否有派工
-            dispatched = [t for t in result.tool_calls_log if t["tool"] == "dispatch_to_agent"]
-            if dispatched:
-                target = dispatched[-1]["args"].get("target_agent", "unknown")
-                update_trace_decision(trace_id, "派工", target, f"ark→{target}")
-            else:
-                update_trace_decision(trace_id, "直答", None, "ark")
-            complete_trace(trace_id, reply[:80], success=True)
-
-            await progress.complete(reply)
+            await save_memory(current_agent, user_id, text, reply)
             await _set_reaction(update.message, "👍")
+            header = f"{agent_info['emoji']} [{current_agent}-agent]\n"
+            # 分段發送（TG 單則上限 4096）
+            full_text = header + reply
+            for i in range(0, len(full_text), 4000):
+                await update.message.reply_text(full_text[i:i+4000])
+            log.info("  📤 sent reply to user=%s (%d chars)", user_id, len(reply))
         else:
-            update_trace_decision(trace_id, "無回應", None, "ark")
-            fail_trace(trace_id, "agent_loop 無回覆")
-            await progress.fail("無法處理，請重試")
-            await _set_reaction(update.message, "👎")
-
-        # ── 對話寫入 daily log ──
-        if reply:
-            try:
-                from src.memory.daily_log import write_daily_log
-                task_id = f"msg-{update.message.message_id}"
-                conversation = f"User: {text[:200]}\nAgent: {reply[:500]}"
-                asyncio.create_task(write_daily_log("_default", task_id, conversation))
-            except Exception as e:
-                log.warning("daily_log failed: %s", e)
-            try:
-                _update_recent(session)
-            except Exception:
-                pass
+            await _set_reaction(update.message, "💔")
+            header = f"{agent_info['emoji']} [{current_agent}-agent]\n"
+            await update.message.reply_text(header + "⚠️ 抱歉，我暫時無法回應，請稍後再試。")
+            log.error("  💔 no reply for user=%s msg=%s", user_id, text[:100])
 
     except Exception as e:
         log.error("handle_message error: %s", e)
-        fail_trace(trace_id, f"error: {type(e).__name__}")
-        await _set_reaction(update.message, "👎")
+        await _set_reaction(update.message, "💔")
         await update.message.reply_text(f"⚠️ 處理失敗：{type(e).__name__}")
     finally:
         done.set()
@@ -718,7 +332,7 @@ _TOOL_LINE_RE = re.compile(
 
 
 def _clean_output(raw: str) -> str:
-    """從 Agent CLI 輸出提取最終結論，過濾工具過程 + ANSI codes。
+    """從 kiro-cli 輸出提取最終結論，過濾工具過程 + ANSI codes。
 
     策略：
     1. 有 [DONE] 標記 → 用 summary
@@ -729,7 +343,7 @@ def _clean_output(raw: str) -> str:
     text = _ANSI_RE.sub("", raw)
     # 清殘留 [0m 等
     text = re.sub(r"\[(?:\d+;)*\d*m", "", text)
-    # 清 CLI '> ' 引用前綴
+    # 清 kiro-cli '> ' 引用前綴
     text = re.sub(r"^>\s?", "", text, flags=re.MULTILINE)
 
     # 策略 1: [DONE] 標記
@@ -908,60 +522,6 @@ def _search_memory(agent_id: str, query: str, max_results: int = 3) -> str | Non
 # ── Reaction Helper ───────────────────────────────────────
 
 
-def _update_recent(session) -> None:
-    """將 session 最近 5 輪對話寫入 memory/recent.md，供下次 system prompt 注入。"""
-    from pathlib import Path
-
-    recent_path = Path("memory/recent.md")
-    recent_path.parent.mkdir(parents=True, exist_ok=True)
-
-    # 取最近 5 輪
-    turns = session.history[-10:]  # 5 輪 = 10 條（user + agent 各一）
-    if not turns:
-        return
-
-    lines = ["# 最近對話\n"]
-    for turn in turns:
-        prefix = "👤 User" if turn.role == "user" else "🤖 Agent"
-        content = turn.content[:300]
-        lines.append(f"{prefix}: {content}\n")
-
-    recent_path.write_text("\n".join(lines), encoding="utf-8")
-
-
-# ── 自動 consolidate ─────────────────────────────────────
-
-_consolidate_done_today: str = ""  # 記錄今天是否已跑過
-
-
-async def _auto_consolidate_if_needed() -> None:
-    """每天首次對話時，自動蒸餾前一天 daily log → memory.md。"""
-    global _consolidate_done_today
-    from datetime import datetime, timedelta
-
-    today = datetime.now().strftime("%Y-%m-%d")
-    if _consolidate_done_today == today:
-        return  # 今天已經跑過
-
-    # 檢查昨天有沒有 daily log
-    yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
-    yesterday_log = Path(f"memory/daily/{yesterday}.md")
-    if not yesterday_log.exists():
-        _consolidate_done_today = today
-        return  # 昨天沒 log，跳過
-
-    # 非同步執行 consolidate（不阻塞對話）
-    try:
-        from src.memory.consolidate import consolidate
-        result = await consolidate("_default")
-        if result.get("status") == "updated":
-            log.info("Auto-consolidate: memory.md updated from %s", yesterday)
-        _consolidate_done_today = today
-    except Exception as e:
-        log.warning("Auto-consolidate failed: %s", e)
-        _consolidate_done_today = today  # 避免重複嘗試
-
-
 async def _set_reaction(message, emoji: str) -> None:
     """設定訊息 Reaction（靜默失敗）。"""
     try:
@@ -1002,145 +562,3 @@ async def _handle_news() -> str | None:
     except Exception as e:
         return f"⚠️ 新聞抓取失敗: {e}"
 
-
-# ── Team Dispatch ────────────────────────────────────────
-
-
-async def _handle_team_dispatch(text: str, update: Update, context: ContextTypes.DEFAULT_TYPE) -> str | None:
-    """團隊派工處理 — 走 A2ARouter.dispatch()。
-
-    只有 team.yaml 存在（_TEAM_MODE=1）時才啟用。
-    """
-    import os
-    if os.getenv("_TEAM_MODE") != "1":
-        return "⚠️ 團隊模式未啟用（需要 team.yaml）"
-
-    # 清除關鍵字前綴
-    clean_text = text
-    for prefix in ("派工", "assign", "分配", "指派", "@pm"):
-        clean_text = clean_text.replace(prefix, "").strip()
-
-    if not clean_text:
-        return "⚠️ 請描述要派工的任務，例如：`派工 分析老虎機競品數據`"
-
-    try:
-        from src.coordinator.a2a.router import A2ARouter
-        from src.coordinator.a2a.graph import TaskGraph
-        from src.coordinator.a2a.shared_memory import SharedMemory
-        from src.coordinator.a2a.discovery import AgentDiscovery
-        from src.coordinator.a2a.protocol import TaskHandoff
-        from datetime import datetime, timezone
-
-        # 組裝 Router（每次重建，讀最新的 profiles）
-        graph = TaskGraph()
-        memory = SharedMemory()
-        discovery = AgentDiscovery(memory)
-
-        # spawn_fn — 本地 Agent 用 agent_cli_chat
-        async def _spawn_fn(agent_name: str, message: str) -> str | None:
-            from src.agent.cli import agent_cli_chat
-            return await agent_cli_chat(message, agent_id=agent_name.replace("-agent", ""))
-
-        router = A2ARouter(graph, memory, discovery, spawn_fn=_spawn_fn)
-
-        # 建立 TaskHandoff
-        now = datetime.now(timezone.utc)
-        task_id = now.strftime("%Y-%m-%d") + f"_{now.hour:02d}{now.minute:02d}_{clean_text[:20].replace(' ', '-')}"
-        handoff = TaskHandoff(
-            task_id=task_id,
-            from_agent="user",
-            to_agent="auto",
-            title=clean_text,
-            context="",
-        )
-
-        # Discovery 匹配
-        target = discovery.match(handoff)
-        handoff.to_agent = target
-
-        # 通知使用者已派工
-        await update.message.reply_text(f"📋 已派工給 **{target}**\n任務：{clean_text[:100]}", parse_mode="Markdown")
-
-        # Dispatch（非同步執行）
-        await router.dispatch(handoff)
-
-        # 等結果（從 shared memory 讀）
-        task_path = memory.base / "tasks" / f"{task_id}.md"
-        if task_path.exists():
-            content = task_path.read_text(encoding="utf-8")
-            if "## Output" in content:
-                output_section = content.split("## Output")[-1].strip()
-                return f"✅ {target} 完成：\n\n{output_section[:2000]}"
-
-        return f"⏳ 任務 {task_id} 已提交給 {target}，可用 /board 查看進度"
-
-    except ImportError:
-        return "⚠️ coordinator 模組未安裝"
-    except Exception as e:
-        log.error("Team dispatch error: %s", e)
-        return f"⚠️ 派工失敗：{e}"
-
-
-# ── /assign /board Commands ──────────────────────────────
-
-
-async def cmd_assign(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """/assign <描述> — 派工給團隊 Agent。"""
-    text = update.message.text.strip()
-    # 移除 /assign 前綴
-    task_desc = text[len("/assign"):].strip() if text.startswith("/assign") else text
-
-    if not task_desc:
-        await update.message.reply_text(
-            "📋 用法：`/assign <任務描述>`\n\n"
-            "範例：\n"
-            "• `/assign 分析老虎機競品數據`\n"
-            "• `/assign review 主迴圈 performance`",
-            parse_mode="Markdown",
-        )
-        return
-
-    reply = await _handle_team_dispatch(f"派工 {task_desc}", update, context)
-    if reply:
-        # _handle_team_dispatch 已經回覆了中間訊息，這裡只處理最終結果
-        if not reply.startswith("📋"):  # 避免重複
-            await update.message.reply_text(reply)
-
-
-async def cmd_board(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """/board — 查看任務看板。"""
-    from pathlib import Path
-
-    tasks_dir = Path("knowledge/shared/tasks")
-    if not tasks_dir.exists() or not list(tasks_dir.glob("*.md")):
-        await update.message.reply_text("📋 任務看板為空\n\n使用 `/assign <描述>` 派工", parse_mode="Markdown")
-        return
-
-    lines = ["📋 **任務看板**\n"]
-    status_emoji = {
-        "pending": "⏳",
-        "running": "🔄",
-        "completed": "✅",
-        "failed": "❌",
-    }
-
-    tasks = sorted(tasks_dir.glob("*.md"), reverse=True)[:10]  # 最近 10 筆
-    for task_file in tasks:
-        content = task_file.read_text(encoding="utf-8")
-        # 解析 frontmatter
-        status = "pending"
-        assignee = ""
-        title = task_file.stem
-        for line in content.splitlines():
-            if line.startswith("status:"):
-                status = line.split(":", 1)[1].strip()
-            elif line.startswith("assigned_to:"):
-                assignee = line.split(":", 1)[1].strip()
-            elif line.startswith("# "):
-                title = line[2:].strip()
-
-        emoji = status_emoji.get(status, "❓")
-        assignee_str = f" → {assignee}" if assignee else ""
-        lines.append(f"{emoji} {title[:40]}{assignee_str}")
-
-    await update.message.reply_text("\n".join(lines), parse_mode="Markdown")

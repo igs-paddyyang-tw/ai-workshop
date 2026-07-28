@@ -58,11 +58,6 @@ engine = WikiEngine()
 from src.memory.api import router as memory_router
 app.include_router(memory_router)
 
-# ── A2A Router（團隊模式才掛載）──
-import os as _os
-if _os.getenv("_TEAM_MODE") == "1":
-    from src.coordinator.a2a.server import router as a2a_router
-    app.include_router(a2a_router)
 
 
 # ─── Web UI ──────────────────────────────────────────

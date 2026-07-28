@@ -19,7 +19,6 @@ class IntentType(StrEnum):
     WIKI = "wiki"            # 查詢知識庫
     CHAT = "chat"            # LLM 對話
     COMMAND = "command"       # 系統指令
-    TEAM = "team"            # 團隊派工（A2A）
 
 
 @dataclass
@@ -49,12 +48,6 @@ KEYWORD_ROUTES: dict[str, tuple[IntentType, str]] = {
     # 翻譯
     "翻譯": (IntentType.SKILL, "translate"),
     "translate": (IntentType.SKILL, "translate"),
-    # 團隊派工
-    "派工": (IntentType.TEAM, ""),
-    "assign": (IntentType.TEAM, ""),
-    "分配": (IntentType.TEAM, ""),
-    "指派": (IntentType.TEAM, ""),
-    "@pm": (IntentType.TEAM, ""),
 }
 
 

@@ -95,7 +95,7 @@ result = discovery.match_agent(["python", "web-scraping"])
 # → MatchResult(agent_id="backend", score=0.67)
 ```
 
-**練習：** 用 `/assign 抓新聞 market` 派工，然後 `/board` 看狀態。
+**練習：** 用自然語言「抓新聞 market」派工，然後 `/tasks` 看狀態。
 
 ---
 
@@ -115,7 +115,7 @@ curl http://localhost:8000/api/v1/skills
 curl http://localhost:8000/api/admin/dashboard/stats
 ```
 
-**練習：** 瀏覽器開 http://localhost:8000/board 看 Kanban 面板。
+**練習：** 瀏覽器開 http://localhost:8000/dashboard 看 Dashboard。
 
 ---
 
@@ -131,8 +131,8 @@ cat src/skills/internal/news.py
 # 03: 日報結果存進 Wiki
 curl -X POST http://localhost:8000/api/v1/wiki/ingest
 
-# 04: 用派工方式
-/assign 抓取科技新聞 market
+# 04: 用自然語言派工
+抓取科技新聞 market
 
 # 05: 看統計
 curl http://localhost:8000/api/admin/dashboard/stats
