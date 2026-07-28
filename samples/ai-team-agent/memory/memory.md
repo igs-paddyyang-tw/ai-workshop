@@ -32,7 +32,13 @@
   - Session 加 abort/restart 按鈕 + turns 分離 fetch
   - README 重寫、移除 AGENTS.md/CLAUDE.md
   - next build 通過（13 routes）
+- React 19 升級（18 → 19.2.8，零 breaking change）
+- WebSocket 修正：直接掛載 @app.websocket 繞過 include_router prefix bug
+- Board columns 對齊後端 API（queued/claimed/executing/blocked/completed）
+- 首頁路由：`/` redirect 到 `/board`（看板入口）
+- board.html 路徑修正：parents[2] → parents[3]
 - 產出 One Pager：docs/one-pagers/admin-web-dashboard.md
+- 啟動測試通過：8 agents idle、API 全通、WebSocket 連通
 
 ## 使用者偏好
 

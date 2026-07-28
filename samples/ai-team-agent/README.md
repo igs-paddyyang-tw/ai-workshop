@@ -176,4 +176,7 @@ npm run dev    # → http://localhost:3000
 | knowledge/ 整理 | ✅ 三層合一，knowledge/shared/ 為唯一來源 |
 | SharedMemory 路徑 | ✅ runtime 資料（tasks/artifacts）改寫到 data/ |
 | 根目錄清理 | ✅ pyproject.toml + .gitignore + Docker 路徑修正 |
-| Admin Dashboard | ✅ Next.js 13 routes build 通過，API 對齊 |
+| Admin Dashboard | ✅ Next.js 13 routes build 通過，React 19，API 對齊 |
+| WebSocket | ✅ /api/ws/events 連通（直接掛載修正） |
+| 首頁路由 | ✅ `/` → redirect `/board`（看板入口） |
+| 啟動測試 | ✅ 8 agents idle，API 全通，WS 連通 |
