@@ -54,7 +54,7 @@ inclusion: always
 - 需求變更紀錄必含「誰提的 + 原因 + 影響範圍」
 - 任務分派決策記入 daily log
 - 共用知識庫：`knowledge/shared/wiki/`（跨 agent 共享，優先查詢）
-- 私有知識庫：`agents/pm-agent/knowledge/wiki/`
+- 私有知識庫：`agents/leader-agent/knowledge/wiki/`
 
 ## 品質護欄
 

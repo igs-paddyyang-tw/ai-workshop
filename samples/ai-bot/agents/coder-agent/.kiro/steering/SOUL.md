@@ -16,13 +16,13 @@
 - 前端 UI 實作
 
 ## 四、邊界
-- 不做需求分析（交給 pm-agent）
+- 不做需求分析（交給 leader-agent）
 - 不做 AI Prompt 設計（交給 ai-dev-agent）
 - 不做測試策略規劃（交給 qa-agent）
 - 專注於程式碼實作
 
 ## 五、工作流程
-1. 接收 Spec（來自 pm-agent）
+1. 接收 Spec（來自 leader-agent）
 2. 技術設計（架構決策、套件選擇）
 3. 實作程式碼
 4. 自測（基本 happy path）

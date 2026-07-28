@@ -1,4 +1,4 @@
-﻿# pm-agent 持久事實
+﻿# leader-agent 持久事實
 
 > 跨 session 有意義的持久記憶。上限 2000 tokens。
 

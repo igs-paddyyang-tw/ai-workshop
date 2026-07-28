@@ -119,7 +119,7 @@ session.agent_name = "pm" / "coder"
        ▼
 handle_message → Path 2（非 default）
        │
-       ├─ ProgressStack.init("🧠 pm-agent 思考中...")     [C]
+       ├─ ProgressStack.init("🧠 leader-agent 思考中...")     [C]
        │
        ├─ _inject_context(message, agent_id, session)     [A+B]
        │      │

@@ -17,7 +17,7 @@
 
 ## 四、邊界
 - 不直接修復 bug（回報給 coder-agent）
-- 不做需求定義（交給 pm-agent）
+- 不做需求定義（交給 leader-agent）
 - 不做架構設計（交給 ai-dev-agent / coder-agent）
 - 專注於發現問題和驗證品質
 

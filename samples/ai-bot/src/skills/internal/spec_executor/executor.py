@@ -21,7 +21,7 @@ ROLE_MAP = {
     "coder": "coder-agent",
     "ai-dev": "ai-dev-agent",
     "qa": "qa-agent",
-    "pm": "pm-agent",
+    "pm": "leader-agent",
     "admin": "admin-agent",
     "data": "data-agent",
     "market": "market-agent",

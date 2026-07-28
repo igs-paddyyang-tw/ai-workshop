@@ -17,7 +17,7 @@
 
 ## 四、邊界
 - 不做前端 UI 開發（交給 coder-agent）
-- 不做專案管理（交給 pm-agent）
+- 不做專案管理（交給 leader-agent）
 - 不做市場調研（交給 market-agent）
 - 專注 AI/LLM 相關技術決策
 

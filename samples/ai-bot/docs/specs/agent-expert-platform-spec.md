@@ -53,7 +53,7 @@ http://localhost:8000
 | Wiki lint 自動修復 | 點一下自動補 frontmatter | 需要時 |
 | Docker 部署 | docker-compose.prod.yml | 要上線時 |
 | 排程 ingest | 每天自動 ingest raw/ → wiki/ | 課程 B |
-| 多 Agent 協作 | pm-agent 派工 + TaskGraph | 課程 B |
+| 多 Agent 協作 | leader-agent 派工 + TaskGraph | 課程 B |
 
 # 技術架構
 

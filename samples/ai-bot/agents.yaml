@@ -30,7 +30,7 @@ admin:
   dispatchable: true
 
 pm:
-  dir: "agents/pm-agent"
+  dir: "agents/leader-agent"
   name: "PM Agent"
   emoji: "📋"
   desc: "專案經理、需求分析、任務派工"
