@@ -1,12 +1,20 @@
 ---
 title: "ADR-004: 為什麼兩個產品架構相同"
 category: adr
-status: accepted
+status: superseded
+superseded_by: ADR-005
 created: 2026-07-09
+updated: 2026-09-14
 tags: [architecture, ai-bot, ai-team-agent, reuse, supply-chain]
 ---
 
 # ADR-004: 為什麼兩個產品架構相同
+
+> ⚠️ **本決策已被 [ADR-005](005-three-layer-division.md) 取代（2026-09-14）。**
+> 當時兩個產品確實共用手搭的底層架構；套件化之後，兩者分屬
+> `ark_bot_agent` 與 `ark_team_agent` 兩個套件，架構在 wheel 裡。
+> **仍然成立的那一半**：人格資產（SOUL/Skills/Knowledge）依然互通可搬運。
+> 本文保留原樣，記錄當時的事實與理由。
 
 ## 決策背景
 

@@ -8,6 +8,8 @@ updated: 2026-07-09
 
 # 踩坑：Kiro CLI 看不到全域知識庫
 
+> 📌 **更名說明（2026-09-11）**：文中的 `KIRO.md` 已更名為 `CODE.md`（名字綁死單一 CLI → 改成語意化的「程式碼規範」）。本文保留當時名字，實作時請用 `CODE.md`。<!-- allow-dead-ref -->
+
 ## 問題
 
 Kiro CLI 的 cwd 是 `agents/{name}-agent/`，它只能看到相對於 cwd 的檔案。根目錄的 `knowledge/shared/wiki/` 對 Agent 來說是「不存在」的。
