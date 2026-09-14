@@ -44,24 +44,31 @@
 
 ### 為什麼概念相通、架構遞進
 
-兩個產品共用相同的 **能力模組**（Memory / Wiki / Skills / .kiro steering），但 **程式碼架構不同**：
+兩個產品用**同一套人格資產**（SOUL / Skills / Knowledge / Memory），
+但**分屬兩個套件**：
 
 | | ai-bot | ai-team-agent |
 |---|---|---|
-| **src 架構** | 扁平模組（bot/ agent/ llm/ wiki/ memory/） | 四層架構（gateway/ coordinator/ runtime/ business/） |
-| **驅動方式** | Gemini ReAct Agent Loop（LLM 自行判斷） | PersistentDaemon + MCP（配置驅動） |
-| **派工** | LLM Function Calling → dispatch tool | leader-agent → A2A → workers |
+| **套件** | `ark_bot_agent` | `ark_team_agent` |
+| **是什麼** | 單一 bot 入口（TG polling + Web UI） | 多 agent 常駐 daemon（health port + 排程） |
+| **你維護的** | `agents.yaml` + `bot.yaml` + SOUL | `team.yaml` + `scheduler.yaml` + SOUL |
+| **驅動方式** | 模式路由（chat / agent / team） | 配置 + 排程驅動（`instances` / `group`） |
+| **runtime 在哪** | wheel 裡 | wheel 裡 |
+
+> 🔴 **兩邊的專案資料夾裡都沒有 runtime 程式碼。** 框架在套件裡，
+> 你維護的是**設定與人格** —— 這是整個 workshop 的核心觀念。
 
 這是刻意的遞進設計：
-1. **Course A 學會能力模組**（SOUL / Skills / Wiki / Memory），這些模組兩邊共用
-2. **Course B 學會團隊架構**（四層分離 + 多進程 + 排程），在能力模組之上架設「生產線」
-3. **Agent 能力可搬運** — 在 ai-bot 鍛造好的 Agent（agents/ 資料夾）可以直接搬到 ai-team-agent 使用
+1. **Course A 學會定義一個 agent**（SOUL / Skills / Wiki / Memory）
+2. **Course B 學會定義一個團隊**（誰在團隊、派工歸屬、何時自動做什麼）
+3. **人格資產可搬運** — 在 ai-bot 鍛造好的 `agents/<name>/.kiro/steering/SOUL.md`
+   可以直接搬到 ai-team-agent 使用（兩邊同形狀）
 
-就像學了引擎原理（Course A）再學組裝產線（Course B）。能力資產互通，架構各有特長。
+就像先學會定義一個角色，再學會編一個團隊。
 
 ### Loop Engineering — 標配五件套
 
-兩個產品都預裝了 **Loop 五件套**（`.kiro/skills/`），形成從需求到交付的自動迴圈：
+兩個產品都預裝 **Loop 底座**（`.kiro/skills/`），形成從需求到交付的自動迴圈：
 
 ```
 ark-grill-me → ark-superpowers → ark-spec-executor → ark-code-spec-validator
@@ -76,9 +83,13 @@ ark-grill-me → ark-superpowers → ark-spec-executor → ark-code-spec-validat
 | ark-superpowers | 產出 Spec / Design / Plan 標準化文件 | 「寫 spec」、「設計文件」 |
 | ark-spec-executor | 讀取 Plan 自動執行 + AC 驗收 + 報告 | `/execute plan.md` |
 | ark-code-spec-validator | 驗證 code 與 spec 一致性（Drift Report） | 「驗證 drift」 |
+| ark-prompt-spec-validator | 驗證提詞 / AI 內文（SKILL.md、SOUL.md） | 「驗提詞」、「prompt lint」 |
 | ark-wiki-engine | 知識庫四層搜尋 + RAG 問答 | 「查知識」、`/wiki` |
+| ark-md-report / ark-html-report | 產報告（給 AI 看 / 給人看，成對） | 「產出報告」 |
 
-> Skills 來源：[igs-paddyyang-tw/ark-agent-skills](https://github.com/igs-paddyyang-tw/ark-agent-skills)（57 個）
+> Skills 來源：[igs-paddyyang-tw/ark-agent-skills](https://github.com/igs-paddyyang-tw/ark-agent-skills)
+> —— 共用庫現有 **50 個 active**（這行是手寫的，**數字以 `scripts/check_docs.py` 輸出為準**）。
+> 課程 B 用 `scripts/sync_skills.py` 依角色矩陣分配，不是每個 agent 都裝全部。
 
 ---
 
@@ -93,10 +104,10 @@ ark-grill-me → ark-superpowers → ark-spec-executor → ark-code-spec-validat
 
 | 堂 | 主題 | 一句話 | Skill | 帶走的能力 |
 |---|------|--------|-------|-----------|
-| 01 | 🗣️ Agent 初始 | 改 SOUL → Bot 行為變 | — | 為任何場景設計 AI 人格 |
+| 01 | 🗣️ Agent 初始 | 改 SOUL → Bot 行為變 | ark-agent-bot-builder + ark-agent-init | 為任何場景設計 AI 人格 |
 | 02 | ⚡ Skills 開發 | 拷問 → Spec → 實作 → 驗證 | grill-me + superpowers + skill-creator + validator | Spec-Driven 開發方法 |
 | 03 | 🧠 LLM Wiki | 加知識 → 回答有依據 | ark-wiki-engine | 建立知識庫 + 自演化 |
-| 04 | 🤝 Agent Team | 一句話派工 → 自動分工 | ark-agent-team-builder + ark-kiro-init | 建立 AI 團隊 |
+| 04 | 🤝 Agent Team | 一句話派工 → 自動分工 | ark-agent-team-builder + ark-agent-init + sync_skills | 建立 AI 團隊 |
 | 05 | 🏭 營運落地 | 排程 + 費控 = 自動運作 | — | 從 Demo 到正式上線 |
 
 ```
@@ -138,20 +149,34 @@ ai-bot（LLM 判斷派工）→ 把 agents/ 搬過去 → ai-team-agent（配置
 
 ## 快速開始
 
+> 📦 **課前準備**：從 Release 下載兩個 wheel（`ark_bot_agent` / `ark_team_agent`），
+> 放進對應的 sample 目錄。
+> 🔴 **每人用自己的 Telegram Bot Token** —— 同一個 token 兩處 polling 會隨機吃訊息且不報錯。
+
 ```bash
-# 課程 A：個體 Agent
+# 課程 A：個體 Agent（ark_bot_agent 消費端）
 cd samples/ai-bot
 python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt && cp .env.example .env
-# 填入 TELEGRAM_BOT_TOKEN + GEMINI_API_KEY
+pip install './ark_bot_agent-<版本>-py3-none-any.whl[search,skills]'   # extras 不可省
+python -c "import ark_bot_agent; print(ark_bot_agent.__version__)"      # 驗 import，不看 pip 輸出
+cp .env.example .env    # 填 TELEGRAM_BOT_TOKEN + GEMINI_API_KEY
 python start.py
 
-# 課程 B：Agent Team
+# 課程 B：Agent Team（ark_team_agent 消費端）
 cd samples/ai-team-agent
 python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt && cp .env.example .env
-# 填入 TELEGRAM_BOT_TOKEN + GEMINI_API_KEY
-python start.py
+pip install './ark_team_agent-<版本>-py3-none-any.whl'
+python -c "import ark_team_agent; print(ark_team_agent.__version__)"
+python3 scripts/sync_skills.py     # 依角色矩陣裝專業技能
+cp .env.example .env               # 填 TELEGRAM_BOT_TOKEN
+python start.py                    # ⏱️ 首次冷啟到能回私訊要 2–4 分鐘
+```
+
+驗證：
+```bash
+curl -s localhost:8000/health         # 課程 A（ark_bot_agent 是 /health）
+curl -s localhost:23050/api/health    # 課程 B（ark_team_agent 是 /api/health）
+open http://localhost:28050           # 課程 B 的看板（health_port + 5000）
 ```
 
 ## 貫穿案例：遊戲競品分析
@@ -181,15 +206,24 @@ ai-workshop/
 │   ├── QUICKSTART-04-team.md       ← 第四堂（團隊派工）
 │   ├── QUICKSTART-05-platform.md   ← 第五堂（營運落地）
 │   └── build-guide.md              ← 完整規格（課後參考）
-├── samples/                        ← 完整可跑範例（帶走用）
-│   ├── ai-bot/                     ← 🏗️ AI Agent 專家系統平台（駕馭工程）
-│   └── ai-team-agent/             ← 🔄 AI Agent 遊戲開發平台（迴圈工程）
+├── samples/                        ← 完整可跑範例（帶走用，**都是套件消費端**）
+│   ├── ai-bot/                     ← 🏗️ ark_bot_agent 消費端（設定 + 人格，無 runtime）
+│   └── ai-team-agent/              ← 🔄 ark_team_agent 消費端（team.yaml 即架構）
 ├── docs/                           ← 文件
-│   ├── ai-workshop-guide.html      ← 分頁總覽（首頁+A+B+進階）
-│   └── enterprise-5-layer-architecture.html
+│   ├── quickstart-ai-bot.md        ← 課前自學：從零到第一次對話
+│   ├── quickstart-llm-wiki.md      ← 知識庫的獨立使用
+│   ├── teaching-philosophy.md      ← 教學理念
+│   ├── specs / designs / plans     ← 本 repo 自己的工程文件
+│   └── wiki/                       ← ADR + learnings
+├── reports/                        ← HTML 總覽與課程簡報
+├── scripts/check_docs.py           ← 🛡️ 教材守門（改教材後跑它）
 ├── shared/                         ← 共用資源
 └── instructor/                     ← 講師指南
 ```
+
+> 🛡️ **改完教材要跑守門**：`python3 scripts/check_docs.py`（看 rc，**不要接 pipe**
+> —— pipe 會吃掉非 0 的 rc）。它會抓已移除的 skill 名、不存在的腳本、斷掉的路徑、
+> 以及「sample 退回手搭架構」。
 
 ## 前置條件
 
