@@ -80,7 +80,7 @@ ark-grill-me → ark-superpowers → ark-skill-creator → ark-code-spec-validat
 📝 Kiro IDE 輸入：
 ```
 拷問我的設計：我想為 market-agent 開發一個「競品簡報」Skill，功能是：
-- 從 knowledge/wiki/ 搜尋目標產品的相關知識
+- 從 knowledge/shared/wiki/ 搜尋目標產品的相關知識
 - 整理成 SWOT 四象限（強項/弱項/機會/威脅）+ 建議行動
 - 每一點附上引用來源
 - 產出兩種格式：
@@ -179,7 +179,7 @@ ark-grill-me → ark-superpowers → ark-skill-creator → ark-code-spec-validat
 - `ark-competitor-brief/SKILL.md` 出現
 - 步驟含完整流程：
   1. 確認目標產品 + 觸發詞匹配
-  2. 搜尋 knowledge/wiki/ 相關內容
+  2. 搜尋 knowledge/shared/wiki/ 相關內容
   3. 整理為 SWOT 四象限 + 建議行動
   4. 產出 .md → `agents/market-agent/output/`
   5. 轉為 .html（遊戲博弈賭場風格）
@@ -252,7 +252,7 @@ agents/market-agent/.kiro/skills/ark-competitor-brief/SKILL.md，
 **為什麼**：IDE 開發完 = 能力宣告寫好了。TG 驗證 = Agent 行為真的變了。
 
 💡 **為什麼 TG 能引用知識？**
-- `knowledge/wiki/` 已預放 3 篇競品分析（clone 就有）
+- `knowledge/shared/wiki/` 已預放 3 篇競品分析（clone 就有）
 - Bot 啟動時 WikiEngine 會搜尋 wiki/ 目錄
 - 你的 Skill 定義了「讀 Wiki → SWOT 格式」的 SOP
 - **第三堂會教你怎麼自己 ingest 新知識 — 現在先用預設的**

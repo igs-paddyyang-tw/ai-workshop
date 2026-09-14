@@ -73,7 +73,7 @@ curl -X POST http://localhost:8000/api/v1/wiki/query -H "Content-Type: applicati
 📝 Kiro IDE 輸入（AI 搜尋產出知識）：
 ```
 幫我搜尋 2024-2025 老虎機市場最新趨勢，
-整理成一份知識文件存到 knowledge/raw/slot-market-trends.md
+整理成一份知識文件存到 knowledge/shared/raw/slot-market-trends.md
 
 要求：
 - 搜尋真實資料（市場規模、主要玩家、玩法趨勢）
@@ -82,13 +82,13 @@ curl -X POST http://localhost:8000/api/v1/wiki/query -H "Content-Type: applicati
 - 附上資料來源
 ```
 
-→ Kiro web search → 整理 → 存到 knowledge/raw/
+→ Kiro web search → 整理 → 存到 knowledge/shared/raw/
 
 📝 匯入到 Wiki（所有人）：
 ```
-把 knowledge/raw/slot-market-trends.md 匯入到 knowledge/wiki/
-（確認放在根目錄的 knowledge/wiki/，不是 agents/ 下面）
-並更新 knowledge/index.md
+把 knowledge/shared/raw/slot-market-trends.md 匯入到 knowledge/shared/wiki/
+（確認放在根目錄的 knowledge/shared/wiki/，不是 agents/ 下面）
+並更新 knowledge/shared/index.md
 ```
 
 📝 確認能查到（所有人）：
@@ -103,7 +103,7 @@ curl -X POST http://localhost:8000/api/v1/wiki/query -H "Content-Type: applicati
 curl -X POST http://localhost:8000/api/v1/wiki/query -H "Content-Type: application/json" -d '{"q":"老虎機市場趨勢"}'
 ```
 
-💡 **跟第二堂的串接**：02 的 `ark-competitor-brief` Skill 讀 knowledge/wiki/ 產 SWOT — 你加的知識就是它的資料來源。
+💡 **跟第二堂的串接**：02 的 `ark-competitor-brief` Skill 讀 knowledge/shared/wiki/ 產 SWOT — 你加的知識就是它的資料來源。
 
 ---
 
@@ -113,7 +113,7 @@ curl -X POST http://localhost:8000/api/v1/wiki/query -H "Content-Type: applicati
 
 📝 Kiro IDE 輸入（所有人）：
 ```
-幫我檢查 knowledge/wiki/ 的所有檔案，
+幫我檢查 knowledge/shared/wiki/ 的所有檔案，
 看看有沒有缺少 frontmatter 的（title / type / tags / created）
 ```
 
@@ -131,7 +131,7 @@ curl http://localhost:8000/api/v1/wiki/lint
 
 📝 確認最終數量：
 ```
-列出 knowledge/wiki/ 有哪些檔案
+列出 knowledge/shared/wiki/ 有哪些檔案
 ```
 
 ✅ 預期：4 篇 + 全部健康 = 可以上線
@@ -202,7 +202,7 @@ curl http://localhost:8000/api/v1/wiki/lint
 
 ## 🏠 回家練習
 
-1. 📝 Kiro：「搜尋我們公司其他產品的競品資料，整理成 knowledge/raw/ 格式並匯入」
+1. 📝 Kiro：「搜尋我們公司其他產品的競品資料，整理成 knowledge/shared/raw/ 格式並匯入」
 2. 📝 Kiro：「檢查 Wiki 健康度，修復所有問題」
 3. 思考：哪些公司文件丟進去後，新人就能自己問 Agent 找答案？
 

@@ -130,7 +130,7 @@ WIKI  → knowledge/shared/wiki/*.md（加知識 = 回答更準）
 agents/market-agent/
 ├── .kiro/steering/SOUL.md              ← 市場研究員人格
 ├── .kiro/skills/ark-market-research/   ← 多源搜尋 SOP
-└── knowledge/wiki/                     ← Agent 專屬知識
+└── knowledge/shared/wiki/                     ← Agent 專屬知識
 ```
 
 </details>
@@ -361,7 +361,7 @@ Agent 路由：
 記憶層（L5）自動運作：
 - 每次對話自動記錄到 FTS5 索引
 - 每 10 輪觸發使用者建模（偏好萃取）
-- knowledge/wiki/ 的知識持續累積 → RAG 查詢越來越準
+- knowledge/shared/wiki/ 的知識持續累積 → RAG 查詢越來越準
 
 </details>
 

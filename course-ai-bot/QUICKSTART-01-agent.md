@@ -10,8 +10,9 @@
 
 ## 📋 前置條件
 
-- Python 3.12+ / Telegram Bot Token / Gemini API Key
+- Python 3.12+ / **你自己的** Telegram Bot Token / Gemini API Key
 - Kiro IDE（或 Cursor / VS Code + AI 插件）
+- `ark_bot_agent` wheel（課前下載，或從 Release 取）
 
 ## 📖 本堂知識（2 分鐘看完）
 
@@ -22,7 +23,7 @@
 ### Agent = 有人格的 AI
 - 不只是 chatbot（能回話）
 - Agent = SOUL（人格）+ Skills（能力）+ Knowledge（知識）
-- 8 個 Agent = 8 種不同人格在同一系統裡
+- 9 個 Agent = 9 種不同人格在同一系統裡（1 個 chat 引擎 + 8 個專業角色）
 
 ### IDE 和 TG 的分工
 
@@ -34,17 +35,29 @@
 
 ---
 
-## Step 1：啟動 Bot（0-5 min）
+## Step 1：裝套件 + 啟動 Bot（0-5 min）
 
-**做什麼**：啟動 samples/ai-bot  
-**為什麼**：讓 8 Agent 系統跑起來
+**做什麼**：裝 `ark_bot_agent` wheel，啟動 samples/ai-bot  
+**為什麼**：框架在套件裡 —— 你要做的是「設定」，不是「實作」
 
 💻 Kiro IDE 終端：
 ```bash
 cd samples/ai-bot
 python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
+
+# wheel 課前已下載（也可從 Release 取）：
+#   github.com/igs-paddyyang-tw/ark_bot_agent/releases
+pip install './ark_bot_agent-<版本>-py3-none-any.whl[search,skills]'
 cp .env.example .env
+```
+
+> 🔴 **`[search,skills]` 不可省。** 只裝 base wheel 會少兩組能力而且**不報錯**：
+> 知識庫四層搜尋靜默降級成 bigram（第三堂會影響品質但看不出錯）、
+> 排程只印一行 WARNING 就跳過。
+
+💻 驗版號 —— **看 import，不看 pip 輸出**：
+```bash
+python -c "import ark_bot_agent; print(ark_bot_agent.__version__)"
 ```
 
 📝 Kiro IDE 輸入：
@@ -54,38 +67,32 @@ TELEGRAM_BOT_TOKEN=（你的 Token）
 GEMINI_API_KEY=（你的 Key）
 ```
 
+> 🔴 **Token 必須是你自己申請的。** 同一個 token 在兩台電腦 polling 會**隨機**
+> 吃掉對方的訊息，兩邊都不報錯 —— 課堂上最難查的故障就是這個。
+
 💻 啟動：
 ```bash
 python start.py
 ```
 
-✅ 預期結果：
+✅ 預期結果（關鍵四行）：
 ```
-══════════════════════════════════════════════════
-  🤖 課程 A — 個體 Agent
-══════════════════════════════════════════════════
-  Tier 0: ✅ Skills + Wiki + API（永遠可用）
-  Tier 1: ✅ Telegram Bot
-  Tier 2: ✅ Gemini AI + RAG
-══════════════════════════════════════════════════
-
-  📦 Skills: 5 個
-  📚 知識庫: 3 篇
-  🧠 SOUL: ✅ 已載入
-  🤖 Bot: @your_bot_name 已連線
-  🤖 Bot: polling 啟動
-
-  🚀 http://localhost:8000
+📦 Skills loaded: 12（來源：ark_bot_agent.skills.internal）
+使用 CLI backend: kiro, model: auto
+All 8 agents registered
+🧠 Agent 常駐服務: 8 個已啟動
 ```
+接著是 TG 連線與 `http://localhost:8000`（Web Chat）。
 
 **確認成功的 3 個關鍵**：
-- 3 個 Tier 都 ✅ → 程式啟動正常
-- 「@your_bot_name 已連線」→ Token 有效
+- `8 agents registered` → `agents.yaml` 被正確讀到
+- TG 連線沒有 `InvalidToken` → Token 有效
 - 📱 **TG 打 `/start` 有回應 → 真的能用了**
 
-⚠️ 如果顯示「❌ Bot Token 無效」→ 確認 .env 的 TELEGRAM_BOT_TOKEN
-⚠️ 如果顯示「❌ Bot 連線失敗」→ 網路問題
-⚠️ 如果 Tier 2 顯示 ⬚ → 確認 .env 的 GEMINI_API_KEY
+⚠️ `telegram.error.InvalidToken` → `.env` 的 token 還是 `your_token`，或貼錯  
+⚠️ 看到「⚠️ 注入了 skills 但一個都沒載到」→ `start.py` 被改成
+`run_bot(skills=["skills"])` 但 `skills/` 是空的（本堂不需要改它）  
+⚠️ 要看套件到底解析到哪些路徑：`python -m ark_bot_agent paths`
 
 📱 Telegram 確認 Bot 活著：
 1. 打開你的 Bot → 點「Start」
@@ -97,30 +104,45 @@ python start.py
 
 # IDE 開發
 
-## Step 2：IDE 探索 — 看專案結構（5-10 min）
+## Step 2：IDE 探索 — 看三個設定檔（5-10 min）
 
-**做什麼**：在 Kiro IDE 看專案的核心目錄  
-**為什麼**：先知道「東西放哪」，後面改東西才不迷路
+**做什麼**：在 Kiro IDE 看「你實際會改的那三個檔」  
+**為什麼**：套件化之後專案裡**沒有 runtime 程式碼** —— 只有設定與人格。
+先知道「東西放哪」，後面改東西才不迷路。
 
 📝 Kiro IDE 輸入：
 ```
 列出這個專案有哪些 Agent，各自的角色是什麼
 ```
 
-✅ 預期：8 個 Agent 各有不同角色（admin/pm/market/data...）
+✅ 預期：9 個 Agent 各有不同角色（default/leader/admin/coder/qa/market/data/report/ai-dev）
 
 💡 **一句話記住**：
 - **SOUL** = 它是誰（改這個 → 行為就變）
 - **Skills** = 它會什麼（第二堂教）
 - **Wiki** = 它知道什麼（第三堂教）
 
-💻 技術補充：
+💻 技術補充 —— 你會改的 vs 套件提供的：
+
+| 你改的 | 是什麼 |
+|---|---|
+| `agents.yaml` | 有誰（agent 定義）← 專案根哨兵 |
+| `bot.yaml` | 怎麼跑（port / 模式 / LLM / 功能開關） |
+| `.kiro/steering/SOUL.md` | 它是誰（本堂核心） |
+| `knowledge/shared/raw/` | 它知道什麼（第三堂） |
+
+| 套件提供的（不在專案裡） | 在哪 |
+|---|---|
+| TG polling、Web Chat、REST API | `ark_bot_agent` wheel |
+| 記憶系統、知識庫四層搜尋 | 同上 |
+| 12 個內建 skill | 同上（啟動時印 `Skills loaded: 12`） |
+
+```bash
+python -m ark_bot_agent paths   # 看套件實際解析到哪些路徑
 ```
-.kiro/steering/SOUL.md           = 人格檔案
-agents/*/.kiro/skills/SKILL.md    = 能力宣告（Markdown SOP）
-src/skills/internal/*.py         = 實際執行的 Python 程式碼
-knowledge/raw/ → wiki/           = 知識庫
-```
+
+> 💡 **這就是整個 workshop 的核心觀念**：以前要手搭 2 萬行才有的東西，
+> 現在是 `pip install` + 三個設定檔。人的價值移到「定義」上。
 
 ⚠️ 本堂聚焦 SOUL 設計。Skills 和 Wiki 後面教。
 
@@ -279,7 +301,7 @@ knowledge/raw/ → wiki/           = 知識庫
    - ✅ 預期：🔍/⚡/💡 三段式（Step 4 改的競品情報官）
 2. `/agents` → QA → 問「爆率 1:500 合理嗎？」
    - ✅ 預期：❌/⚠️/✅ 標記（Step 4 改的遊戲測試員）
-3. `/agents` → PM → 問「設計一個新 Boss」
+3. `/agents` → Leader → 問「設計一個新 Boss」
    - ✅ 預期：給方案 + 反問目標玩家（Step 5 改的遊戲企劃）
 4. `/agents` → Data → 問「7 日留存 15% 怎麼看」
    - ✅ 預期：數據分析 + 行業對比（Step 5 改的營運分析師）

@@ -20,16 +20,21 @@ language: zh-TW
 ## ✅ 先體驗成品？
 
 ```bash
-cd ai-workshop/sampless/ai-bot
-pip install -r requirements.txt && cp .env.example .env
+cd ai-workshop/samples/ai-bot
+python3 -m venv .venv && source .venv/bin/activate
+pip install './ark_bot_agent-<版本>-py3-none-any.whl[search,skills]'
+cp .env.example .env       # 填你自己的 TELEGRAM_BOT_TOKEN
 python start.py
 ```
 
 | Phase | sample 中對應 |
 |-------|-------------|
-| 1 Agent | `src/agent/` + `.kiro/steering/SOUL.md` + `src/bot/` |
-| 2 Skills | `src/skills/` + `agents/*/.kiro/skills/ark-*/SKILL.md` |
-| 3 Wiki | `src/wiki/` + `knowledge/` |
+| 1 Agent | `agents.yaml` + `bot.yaml` + `.kiro/steering/SOUL.md` |
+| 2 Skills | `agents/*/.kiro/skills/ark-*/SKILL.md` |
+| 3 Wiki | `knowledge/shared/`（wiki / raw / schema / index / log） |
+
+> 🔴 **這個專案裡沒有 runtime 程式碼。** TG polling / Web UI / 記憶 / 四層搜尋
+> 都在 `ark_bot_agent` wheel 裡。你維護的是**設定與人格**。
 
 ---
 
@@ -38,8 +43,8 @@ python start.py
 ```
 ── Phase 1：Agent 初始（第一堂）─────────────────
 Step 0: 環境準備 + Skills 取得
-Step 1: ark-agent-builder → 完整專案骨架
-Step 2: ark-kiro-init --standalone → .kiro/ 配置
+Step 1: 裝 ark_bot_agent wheel（ark-agent-bot-builder 產骨架）
+Step 2: ark-agent-init → .kiro/steering 人格 + 多 CLI 入口
 Step 3: SOUL.md 八段式設計 ⭐
 
 ── Phase 2：Skills 開發（第二堂）─────────────────
@@ -56,9 +61,12 @@ Step 10: Wiki 健康檢查 + 圖譜
 
 | Phase | 核心 Skills | 學什麼 |
 |-------|-----------|--------|
-| 1 | `ark-agent-builder` + `ark-kiro-init` | Bot 有靈魂 |
+| 1 | `ark-agent-bot-builder` + `ark-agent-init` | Bot 有靈魂 |
 | 2 | `ark-grill-me` + `ark-superpowers` + `ark-code-spec-validator` | Skill 有品質 |
 | 3 | `ark-wiki-engine` | 知識會成長 |
+
+> 💡 **三層分工**：① builder 定架構（裝 wheel + 設定檔）→ ② agent-init 給人格
+> → ③ skill 給工具。三者各管一層，不重疊。
 
 ---
 
@@ -79,48 +87,63 @@ git clone https://github.com/igs-paddyyang-tw/ark-agent-skills .kiro/skills/
 | Telegram Bot Token | @BotFather 取得 |
 | Gemini API Key | https://aistudio.google.com/apikeys（免費） |
 
-## Step 1：一鍵建構專案（ark-agent-builder）
+## Step 1：產骨架 + 裝套件（ark-agent-bot-builder）
 
-💻 執行：
+📝 Kiro IDE 輸入：
 
-```bash
-python3 .kiro/skills/ark-agent-builder/scripts/build_agent.py my-agent
+```
+用 ark-agent-bot-builder 幫我建一個 bot workspace：my-agent
 ```
 
-產出完整專案：
+它產出的是**設定骨架**，不是架構：
+
 ```
 my-agent/
-├── src/agent/       ← cli + session + memory + planner
-├── src/bot/         ← Inline Button + handlers
-├── src/skills/      ← 5 內建 Skills
-├── src/wiki/        ← WikiEngine
-├── src/llm/         ← Gemini Chat
-├── src/server/      ← FastAPI
-├── agents/          ← 8 Agent 預設配置
-├── config/          ← news_sources + llm_prompts
-├── knowledge/       ← Wiki 知識庫結構
-└── start.py
+├── start.py          ← 一行 run_bot()
+├── agents.yaml       ← 有誰（專案根哨兵）
+├── bot.yaml          ← 怎麼跑
+├── .env              ← 機密
+├── requirements.txt  ← 只列 wheel
+├── knowledge/shared/{wiki,raw}/   ← 🔴 Wiki 引擎讀這層
+├── memory/daily/                  ← 🔴 套件記憶落點
+├── artifacts/reports/             ← 🔴 產出落點
+└── agents/<name>-agent/
 ```
 
-## Step 2：初始化 Agent 配置（ark-kiro-init）
-
-💻 執行：
+💻 裝套件：
 
 ```bash
-python3 .kiro/skills/ark-kiro-init/scripts/build_kiro.py --standalone my-agent --name "我的助手"
+cd my-agent
+python3 -m venv .venv && source .venv/bin/activate
+pip install './ark_bot_agent-<版本>-py3-none-any.whl[search,skills]'
+python -c "import ark_bot_agent; print(ark_bot_agent.__version__)"   # 驗版號
 ```
 
-產出 `.kiro/`：
+> 🔴 **extras 不可省**，也 **不要看 pip 輸出判斷有沒有裝到** —— 驗 import。
+
+## Step 2：補上人格與多 CLI 入口（ark-agent-init）
+
+📝 Kiro IDE 輸入：
+
+```
+用 ark-agent-init 為 my-agent 的 manager 與各 agent 產 .kiro/steering 人格
+```
+
+產出：
 ```
 my-agent/.kiro/
-├── steering/SOUL.md     ← 下一步要修改
-├── steering/KIRO.md
+├── steering/SOUL.md     ← 下一步要修改（本堂核心）
+├── steering/AGENTS.md   ← 全域規範（多 CLI 共用 SSOT）
+├── steering/CODE.md     ← 程式碼規範
 ├── steering/MEMORY.md
 ├── steering/USER.md
 ├── settings/mcp.json
-├── agents/我的助手.json
 └── prompts/route-message.md
 ```
+
+> 💡 **多 CLI 共用**：`AGENTS.md` 是單一真相來源，`CLAUDE.md` 連結過去。
+> 不同 CLI 讀不同檔名（Kiro 讀 `.kiro/steering/`、Claude Code 讀 `CLAUDE.md`、
+> Codex / Cursor 讀 `AGENTS.md`）—— 各自維護三份必漂移。
 
 ## Step 3：系統提詞設計（SOUL.md）⭐ 本堂核心
 
@@ -229,11 +252,11 @@ agents/market-agent/.kiro/skills/ark-news-scraper/
 
 ## Step 8：匯入知識（Ingest）
 
-💻 把文件放入 `knowledge/raw/`：
+💻 把文件放入 `knowledge/shared/raw/`：
 
 ```bash
 # 範例文件已在 sample-docs/
-cp sample-docs/*.md my-agent/knowledge/raw/
+cp sample-docs/*.md my-agent/knowledge/shared/raw/
 ```
 
 觸發 ingest：
@@ -244,7 +267,7 @@ curl -X POST http://localhost:8000/api/v1/wiki/ingest
 
 或 📱 Telegram 輸入：「匯入知識」
 
-結果：`knowledge/wiki/` 出現結構化頁面（含 frontmatter）。
+結果：`knowledge/shared/wiki/` 出現結構化頁面（含 frontmatter）。
 
 ## Step 9：RAG 問答
 
@@ -255,7 +278,7 @@ curl -X POST http://localhost:8000/api/v1/wiki/ingest
 ```
 
 Agent 會：
-1. 搜尋 `knowledge/wiki/` 匹配頁面
+1. 搜尋 `knowledge/shared/wiki/` 匹配頁面
 2. 注入 Gemini 作為 context
 3. 回答 + 附來源引用 `📚 參考：[[python-async-guide]]`
 
@@ -275,8 +298,8 @@ curl http://localhost:8000/api/v1/wiki/lint
 ### 自演化循環
 
 ```
-Agent 完成任務 → memory.py 寫入 knowledge/raw/
-    → 定期 ingest → knowledge/wiki/ 成長
+Agent 完成任務 → memory.py 寫入 knowledge/shared/raw/
+    → 定期 ingest → knowledge/shared/wiki/ 成長
     → RAG 問答品質提升 → Agent 越用越聰明
 ```
 
@@ -311,32 +334,41 @@ Agent 完成任務 → memory.py 寫入 knowledge/raw/
 
 ---
 
-## 技術棧
+## 技術棧 —— 你維護的 vs 套件提供的
 
-| 層 | 技術 |
-|----|------|
-| Bot | python-telegram-bot 21+（Inline Button） |
-| LLM | Gemini API（httpx + system_prompt） |
-| Agent CLI | kiro-cli subprocess（.kiro/ 全生效） |
-| Skills | BaseSkill + SkillRegistry + SKILL.md |
-| Wiki | WikiEngine（query + ingest + lint） |
-| Session | SessionManager（per user_id + 10 輪歷史） |
-| Memory | save_memory → knowledge/raw/ |
-| Server | FastAPI |
-| 意圖路由 | Planner（三層降級） |
+| 能力 | 在哪 | 你要碰嗎 |
+|------|------|---------|
+| TG Bot（polling + Inline Button） | `ark_bot_agent` | ❌ |
+| Web Chat / REST API / `/admin` | `ark_bot_agent` | ❌ |
+| 三模式路由（chat / agent / team） | `ark_bot_agent` | 只在 `bot.yaml` 選 |
+| Gemini ReAct（chat 模式） | `ark_bot_agent` | 只在 `bot.yaml` 設模型 |
+| CLI backend（kiro / claude） | `ark_bot_agent` | 只在 `bot.yaml` 選 |
+| 知識庫四層搜尋 + ingest + lint | `ark_bot_agent` + `ark-wiki-engine` | 放素材、下指令 |
+| 記憶（daily / recent / consolidate） | `ark_bot_agent` | ❌ |
+| 12 個內建 skill | `ark_bot_agent` | ❌ |
+| **有誰** | `agents.yaml` | ✅ |
+| **怎麼跑** | `bot.yaml` | ✅ |
+| **是誰** | `.kiro/steering/SOUL.md` | ✅✅ 本課重點 |
+| **知道什麼** | `knowledge/shared/` | ✅ |
+
+> 💡 這張表就是套件化的意義：以前這些全部要自己寫（約 2 萬行），
+> 現在只剩右欄四個打勾的要維護。
 
 ---
 
 ## 快速複製
 
 ```bash
-# 一鍵完成 Phase 1
-python3 .kiro/skills/ark-agent-builder/scripts/build_agent.py my-agent
-python3 .kiro/skills/ark-kiro-init/scripts/build_kiro.py --standalone my-agent
+# Phase 1：骨架 → 套件 → 人格
+#   ① 在 Kiro 說「用 ark-agent-bot-builder 建 my-agent」
+#   ② 裝 wheel：
+cd my-agent
+python3 -m venv .venv && source .venv/bin/activate
+pip install './ark_bot_agent-<版本>-py3-none-any.whl[search,skills]'
+#   ③ 在 Kiro 說「用 ark-agent-init 產 my-agent 的 steering 人格」
 
 # 設定 + 啟動
-cd my-agent && cp .env.example .env
-pip install -r requirements.txt
+cp .env.example .env      # 填你自己的 TELEGRAM_BOT_TOKEN
 python start.py
 ```
 

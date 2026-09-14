@@ -23,7 +23,7 @@
 1. 幫我下載 https://github.com/igs-paddyyang-tw/ark-agent-skills/blob/main/ark-wiki-engine/SKILL.md 放到 .kiro/skills/ark-wiki-engine/SKILL.md
 2. 幫我建立 .kiro/steering/SOUL.md，角色是「遊戲產業知識管理專家」，擅長整理競品分析、市場趨勢、玩法設計等知識，回答時引用知識庫來源。
 3. 幫我用 ark-wiki-engine 建立 Wiki 知識庫系統
-4. 幫我下載 https://github.com/igs-paddyyang-tw/ai-workshop/blob/main/docs/quickstart-llm-wiki.md 放到 knowledge/raw/quickstart-llm-wiki.md
+4. 幫我下載 https://github.com/igs-paddyyang-tw/ai-workshop/blob/main/docs/quickstart-llm-wiki.md 放到 knowledge/shared/raw/quickstart-llm-wiki.md
 ```
 
 > 💡 一段話 4 件事，AI 會依序完成：下載 Skill → 建立角色 → 產出知識庫目錄 → 下載範例素材。
@@ -60,24 +60,24 @@ your-project/
 |------|------|
 | `SOUL.md` | 決定 Agent「用什麼語氣、什麼角度」回答問題 |
 | `SKILL.md` | Kiro IDE 對話時自動參考的 Wiki 建構規格 |
-| `knowledge/raw/` | 你放原始素材的地方（AI 只讀不改） |
-| `knowledge/wiki/` | AI 整理後的結構化知識頁面 |
+| `knowledge/shared/raw/` | 你放原始素材的地方（AI 只讀不改） |
+| `knowledge/shared/wiki/` | AI 整理後的結構化知識頁面 |
 
 ---
 
 ## 步驟 1：將教學檔案放到 raw
 
-在 Kiro IDE 左側檔案樹確認 `knowledge/raw/` 裡有檔案：
+在 Kiro IDE 左側檔案樹確認 `knowledge/shared/raw/` 裡有檔案：
 
 ```
-knowledge/raw/
+knowledge/shared/raw/
 └── quickstart-llm-wiki.md    ← 剛才下載的這份教學
 ```
 
 想加更多？在對話框說：
 
 ```
-📂 knowledge/raw/ 幫我建立一份「Ocean King 捕魚機競品分析」的範例文件
+📂 knowledge/shared/raw/ 幫我建立一份「Ocean King 捕魚機競品分析」的範例文件
 ```
 
 > ⚠️ `raw/` 是唯讀區 — AI 只讀不改。這是你的「原始素材庫」。
@@ -99,10 +99,10 @@ knowledge/raw/
 ```
 
 Kiro IDE 會：
-1. 讀取 `knowledge/raw/` 裡的所有 `.md`
+1. 讀取 `knowledge/shared/raw/` 裡的所有 `.md`
 2. 自動補上 frontmatter（title、type、tags、日期）
-3. 產出結構化頁面到 `knowledge/wiki/`
-4. 更新 `knowledge/index.md` 索引
+3. 產出結構化頁面到 `knowledge/shared/wiki/`
+4. 更新 `knowledge/shared/index.md` 索引
 5. 追加記錄到 `knowledge/log.md`
 
 完成後會回覆類似：
@@ -115,7 +115,7 @@ Kiro IDE 會：
 你可以在檔案樹看到新增的 wiki 頁面：
 
 ```
-knowledge/wiki/
+knowledge/shared/wiki/
 └── quickstart-llm-wiki.md    ← AI 整理後的版本（有 frontmatter）
 ```
 
@@ -138,7 +138,7 @@ knowledge/wiki/
 ```
 
 Kiro IDE 會：
-1. 搜尋 `knowledge/wiki/` 裡的相關頁面
+1. 搜尋 `knowledge/shared/wiki/` 裡的相關頁面
 2. 擷取包含答案的段落
 3. 組合回答，並附上參考來源
 
@@ -159,7 +159,7 @@ Kiro IDE 會：
 |-----------|--------|
 | `📂 knowledge/` + `檢查 Wiki` | 健康檢查 — 找出缺少欄位、孤立頁面 |
 | `Wiki 有沒有 XXX` | 搜尋知識庫 |
-| `📂 knowledge/wiki/` + `記錄：[內容]` | 新增一頁知識 |
+| `📂 knowledge/shared/wiki/` + `記錄：[內容]` | 新增一頁知識 |
 | `更新 [頁面名稱]` | 修改現有知識頁面 |
 
 ---
@@ -188,6 +188,6 @@ Kiro IDE 會：
 
 ## 本文件作為範例素材
 
-這份 `quickstart-llm-wiki.md` 本身就是一份知識文件。把它放進 `knowledge/raw/` 後匯入 Wiki，未來你問「怎麼用 Wiki」時，AI 就能直接引用這份教學來回答。
+這份 `quickstart-llm-wiki.md` 本身就是一份知識文件。把它放進 `knowledge/shared/raw/` 後匯入 Wiki，未來你問「怎麼用 Wiki」時，AI 就能直接引用這份教學來回答。
 
 > 🔗 來源：https://github.com/igs-paddyyang-tw/ai-workshop/blob/main/docs/quickstart-llm-wiki.md
