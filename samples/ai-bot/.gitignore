@@ -10,7 +10,8 @@ state/
 *.db
 .index/
 knowledge/**/.index/
-memory/daily/
+memory/daily/*
+!memory/daily/.gitkeep
 artifacts/reports/*.html
 artifacts/reports/*.md
 !artifacts/reports/.gitkeep
