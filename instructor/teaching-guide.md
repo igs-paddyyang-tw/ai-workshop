@@ -4,6 +4,20 @@
 
 ---
 
+## ✅ 開課前 Checklist（做完再進教室）
+
+| # | 項目 | 怎麼確認 |
+|---|------|---------|
+| 1 | **教材守門是綠的** | `python3 scripts/check_docs.py`（看 rc，**不接 pipe**） |
+| 2 | 兩個 wheel 已下載並放進對應 sample 目錄 | `ls samples/*/ark_*.whl` |
+| 3 | **每位學員有自己的 TG Bot Token** | 報名表收集；🔴 絕不共用（見下） |
+| 4 | 教室網路可連 api.telegram.org 與 Gemini | 課前實測一次 |
+| 5 | 離線備援：wheel 放 USB / 區網 | Release 下載不到時的 Plan B |
+| 6 | 自己完整跑過一次 01→05 | 每堂實際耗時記在下方時間表 |
+
+> 🔴 **第 3 項不是形式**。同一個 token 在兩台電腦 polling 會**隨機**吃掉對方的訊息，
+> 而且兩邊都不報錯 —— 全班共用一個 token 會製造一整堂課查不出來的「有時候會回」。
+
 ## 課程 A — AI Agent 開發入門（3 堂 × 50 min）
 
 ### 教學目標
@@ -14,9 +28,9 @@
 
 | 時間 | 動作 | 講師做什麼 |
 |------|------|-----------|
-| 0-5 | 環境確認 | 協助解決安裝問題 |
-| 5-15 | build_agent.py 產出 | 展示產出結構，解釋各目錄用途 |
-| 15-20 | ark-kiro-init --standalone | 解釋 .kiro/ 的意義 |
+| 0-5 | 環境確認 + 裝 wheel | 協助安裝問題；**強調 extras `[search,skills]` 不可省** |
+| 5-15 | 探索三個設定檔 | agents.yaml / bot.yaml / SOUL.md —— 專案裡沒有 runtime |
+| 15-20 | ark-agent-init 產人格 | 解釋 `.kiro/steering/` 與多 CLI 入口 |
 | 20-40 | ⭐ SOUL.md 設計 | 帶學員修改 SOUL，觀察風格變化 |
 | 40-50 | 實測 + Q&A | /agents 切換，體驗不同人格 |
 
@@ -26,9 +40,11 @@
 - 讓學員動手改人格、觀察變化（互動式）
 
 **常見問題**：
-- Bot Token 錯誤 → 確認 @BotFather
+- Bot Token 錯誤 → 確認 @BotFather；`InvalidToken` 多半是 `.env` 還是 `your_token`
 - Gemini 429 → 等 1 分鐘重試
-- Bot 沒回應 → 確認只有一個 instance 在跑
+- **Bot 有時回有時不回** → 🔴 同一 token 有第二處在 polling（最難查的一種）
+- 搜尋品質怪 → wheel 沒帶 `[search]` extras，靜默降級了
+- `ModuleNotFoundError: ark_bot_agent` → 驗 `python -c "import ark_bot_agent"`，不看 pip 輸出
 
 ### 第二堂：Skills 開發（Phase 2, Step 4-7）
 
@@ -71,22 +87,31 @@
 
 ### 教學目標
 
-學員完成後能管理「5 Agent 並行 + 排程 + 費控 + 知識迴圈」的完整平台。
+學員完成後能管理「8 Agent 常駐 + 排程 + 費控 + 知識迴圈」的完整團隊。
 
 ### 第四堂：Agent Team（Phase 1, Step 0-4）
 
 | 時間 | 動作 | 講師做什麼 |
 |------|------|-----------|
-| 0-10 | 環境確認 + build_team.py | 展示 110+ 檔案的產出 |
-| 10-20 | build_kiro.py | 解釋 team.yaml + Agent 角色分工 |
-| 20-30 | 設定 Telegram | 協助取得 user_id |
-| 30-40 | ⭐ 啟動 + 派工 | /assign 實測，觀察 leader 拆任務 |
+| 0-10 | 裝 wheel + `sync_skills.py` | 解釋三層分工：架構 → 人格 → 技能 |
+| 10-20 | ⭐ 讀 team.yaml 六區塊 | instances / **group** / access / cost_guard / hang_detector / kiro_files |
+| 20-30 | 設定 Telegram + allowed_users | 協助取得 user_id；**沒填誰都指揮不動** |
+| 30-40 | ⭐ 啟動 + 派工 | 🔴 **先講兩階段就緒**，再讓學員等（否則全班會以為壞了） |
 | 40-50 | 科技日報實戰 + Q&A | market + report 分工 |
 
 **教學重點**：
-- 課程 A 的 Agent 在 Team 裡「各就各位」
-- build_team.py 一鍵 = 你在課程 A 手動做的 × 5
+- 課程 A 的**人格資產可以直接搬過來**（兩邊 SOUL.md 同形狀）
+- **`team.yaml` 就是架構** —— 套件化後，架構的決定全在設定裡
+- 🔴 **`group` vs `group_members`**：寫錯套件靜默忽略，只在 log 印一行。
+  這是本課最值得帶走的一課：**設定類系統最危險的失敗不是報錯，是沒生效**
 - 故障隔離：一個 Agent 掛不影響其他
+
+**⏱️ 一定要先講的事（否則會被當成故障）**：
+| 現象 | 真相 |
+|---|---|
+| 啟動後私訊沒回 | kiro-cli 冷啟 **2–4 分鐘**，訊息在佇列裡沒掉 |
+| `/health` 404 | team 套件是 `/api/health` |
+| 看板打不開 | 在 `health_port + 5000`（23050 → 28050） |
 
 **關鍵示範**：
 - `/assign 寫 REST API` → 觀察 leader 派給 coder
@@ -129,8 +154,15 @@
 
 | 問題 | 處理 |
 |------|------|
-| 全班環境裝不好 | 直接用 sample 體驗，跳過 build 步驟 |
-| Gemini API 額度用完 | 切到 echo 模式先繼續，或共用一個 Key |
+| 全班環境裝不好 | 直接用 sample 體驗，跳過安裝步驟 |
+| **有人 Bot 時好時壞** | 🔴 查是不是兩個人用同一個 token（或同一人開了兩個 instance）——
+  它**不報錯**，只會隨機吃訊息 |
+| **第四堂啟動後全班說「壞了」** | 正常：kiro-cli 首次冷啟 2–4 分鐘。請學員看
+  `/api/health` 的 `instances.running`，或 `cat /proc/<pid>/stat` 看 CPU 時間 |
+| **搜尋結果很差 / 排程沒跑** | wheel 沒帶 extras（`[search,skills]`）——
+  它只印一行 WARNING，不會擋啟動 |
+| 下載不到 wheel | 用課前備好的 USB / 區網副本 |
+| Gemini API 額度用完 | 切到 agent 模式（走 CLI backend，零 API 費用）繼續 |
 | 50 min 講不完 | 砍「選讀」步驟，保住 ⭐ 核心 |
 | 學員程度差異大 | 快的人做「進階練習」，慢的人保底完成 ⭐ |
 
@@ -144,3 +176,19 @@
 | 課程 B 規格 | `course-ai-team-agent/build-guide.md` |
 | 體驗成品 | `samples/ai-bot/` + `samples/ai-team-agent/` |
 | 銜接全覽 | `shared/bridge-diagram.md` |
+| 故障排除 | `course-ai-team-agent/troubleshooting.md` |
+| 教材守門 | `scripts/check_docs.py`（改完教材必跑） |
+
+---
+
+## 📋 實際耗時記錄（乾跑後填）
+
+| 堂 | 設計時長 | 實際耗時 | 卡點 |
+|---|---|---|---|
+| 01 | 50 min | | |
+| 02 | 50 min | | |
+| 03 | 50 min | | |
+| 04 | 50 min | | |
+| 05 | 50 min | | |
+
+> 💡 這張表空著就代表**沒有人從頭跑過一次**。開新班前務必補上。
