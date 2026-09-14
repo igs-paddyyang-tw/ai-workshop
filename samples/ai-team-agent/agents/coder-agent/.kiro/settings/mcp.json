@@ -1,19 +1,18 @@
 {
   "mcpServers": {
     "team": {
-      "command": "py",
+      "command": "/home/paddyyang/kiro-cli/projects/paddy-bot/.venv/bin/python",
       "args": [
-        "../../src/gateway/mcp_stdio.py",
+        "-m",
+        "ark_team_agent.team_mcp",
         "--port",
-        "33333",
+        "23050",
         "--instance",
         "coder-agent",
         "--role",
         "worker",
-        "--allowed-targets",
-        "leader-agent,coder-agent,ai-dev-agent,qa-agent",
         "--home",
-        "../.."
+        "/home/paddyyang/kiro-cli/projects/ai-workshop/samples/ai-team-agent"
       ]
     }
   }

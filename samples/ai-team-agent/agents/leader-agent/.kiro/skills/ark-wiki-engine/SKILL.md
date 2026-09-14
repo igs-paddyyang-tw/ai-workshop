@@ -1,338 +1,220 @@
-﻿---
-author: paddyyang
+---
 name: ark-wiki-engine
 description: |
-  產出 Wiki 知識庫引擎，以 Markdown 為基礎的知識管理系統。
-  支援 ingest（匯入）、query（查詢）、lint（格式檢查）、schema（驗證）、
-  graph（知識圖譜）、hybrid_search（混合搜尋）、rag_bridge（RAG 橋接）、template（模板）。
-  含 Web UI Wiki 分頁（暗黑科技風格）與 Chat 整合（Wiki context 注入）。
-  使用此 Skill 當使用者提及 Wiki、知識庫、knowledge base、知識圖譜、
-  RAG、文件搜尋、知識管理、wiki Q&A、或任何需要建立 Markdown 知識庫系統的場景。
+  Agent 直接呼叫的 Wiki 知識庫 executor（捆綁可執行 scripts/，不掛 MCP、不跑 server）。
+  四層搜尋（metadata 精確 → BM25 持久索引 → 語意 → 圖譜擴散 → RRF 融合）回統一 JSON 契約，
+  Layer 0 兜底永不掛零；ingest 內建 guard-first 消毒與 tags 受控詞彙守門；兩層信任模型
+  （deterministic | llm-distilled，未審核強制 seedling 並在注入時帶 ⚠）。
+  使用此 skill 當使用者或 agent 提及：查 wiki、查知識庫、knowledge base、口徑定義在哪、
+  RAG、文件搜尋、知識圖譜、wiki ingest、匯入知識、wiki 健檢、受控詞彙、tag 白名單、
+  報告蒸餾入庫、建 wiki 骨架、ingest 安全檢查、入庫消毒、prompt injection 偵測 ——
+  即使只是「知識庫有沒有 XXX」也應呼叫本 skill 的 wiki_query.py，而非 team MCP 內建的。
+  不適用於：分析結論的 Markdown 產出請用 ark-md-report；人類視圖請用 ark-html-report；一般程式碼安全審計請用 ark-security-audit（本 skill 的 guard 只管入庫內容）。
+metadata:
+  schema_version: "1.1"
+  status: active
+  author: paddyyang
+  category: executor
+  version: "3.0"
+  updated: 2026-09-04
+  outputs:
+    # wiki_query / wiki_context 的 JSON 契約歸受控詞彙 data
+    # （`json` 不是合法 format 值，與 ark-db-query 同一判準：不為單一 skill 放寬守門）
+    - { format: data, audience: ai }
+    - { format: md, audience: both }
+  render: none
+  # consumed_by 已於 2026-09-14 廢除（全庫只有本檔填過）；反向關係由 depends_on 推導
+  depends_on: []
+  # 只取代 query —— 內建的 wiki_ingest 有可信的 role gate（見「ingest 的授權邊界」），
+  # bash 腳本無法複製那個管控，故不宣稱取代它
+  replaces: [mcp-wiki-server, team-mcp.wiki_query]
 ---
 
-# ark-wiki-engine
+# ark-wiki-engine v3
 
-產出 Wiki 知識庫引擎（8 個 Runtime Skills + Web UI + Chat 整合），以 Markdown 為基礎，可獨立運作。
+**executor 型 skill**：agent 用 bash 一行呼叫 `scripts/` 下的腳本，stdout 回統一 JSON 契約。
+不掛 MCP、不跑 FastAPI server、不 import `src.*`。
 
-## 觸發條件
+**v2 → v3 的根本改變**：四層搜尋原本只存在於 `build_wiki.py` 的模板字串（產出到消費端的
+`src/skills/wiki_skills/`），而消費端的 `src/wiki` 已被刪除 —— 等於四層邏輯在 runtime 沒有載體。
+v3 把它變成真實可執行的 `scripts/wiki_query.py`，索引落在 `knowledge/{domain}/wiki/.index/`。
 
-- 「Wiki」、「知識庫」、「knowledge base」
-- 「知識圖譜」、「RAG」、「文件搜尋」
-- 「知識管理」、「wiki ingest」、「wiki Q&A」
-
----
-
-## 產出檔案
+## 模式路由
 
 ```
-knowledge/{project-name}/          # Wiki 知識庫（多專案支援）
-├── raw/                           # 唯讀原始資料
-├── wiki/                          # 結構化知識頁面
-│   ├── overview.md                # 專案總覽（必要）
-│   └── {category}/               # 分類目錄
-├── .index/                        # 持久化搜尋索引（自動生成，加入 .gitignore）
-│   ├── metadata.json              # slug/title/aliases/tags 快速查表
-│   ├── userdict.txt               # jieba 自定義詞典（從 aliases + title 產生）
-│   ├── manifest.json              # 索引版本 + 最後重建時間 + 頁面數
-│   └── bm25s/                     # bm25s 持久化索引目錄
-├── schema.md                      # Schema 規則（v3.0）
-├── index.md                       # 索引目錄
-└── log.md                         # 操作日誌（append-only）
-
-src/skills/wiki_skills/            # 8 個 Runtime Skills + 索引建置器
-├── __init__.py
-├── wiki_indexer.py                 # 索引建置器（bm25s + metadata + userdict + embeddings）
-├── wiki_query.py
-├── wiki_ingest.py
-├── wiki_lint.py
-├── wiki_schema.py
-├── wiki_graph.py
-├── wiki_hybrid_search.py
-├── wiki_rag_bridge.py
-└── wiki_template.py
-
-src/server/api/
-├── files.py                       # 檔案列表 API（/api/files）
-└── wiki.py                        # Wiki API 端點（/api/v1/wiki/*）
-
-src/server/templates/index.html    # Wiki Tab（整合到主頁面）
-src/server/static/js/app.js        # Wiki 樹 + Markdown 渲染
-src/server/static/css/style.css    # Wiki 分頁樣式
+收到 wiki 相關任務
+├─ 專案已有 knowledge/ 目錄？
+│    ├─ 是 → operate（查詢 / ingest / lint / 蒸餾）
+│    └─ 否 → scaffold（`build_wiki.py <dir> <name>`，只產知識庫骨架）
+└─ 例外：使用者明說「重建骨架」→ scaffold 優先於目錄偵測
 ```
 
----
+與三件套的分工：本 skill 管「庫」；分析結論的產出是 `ark-md-report`（Content 軌）、
+人類視圖是 `ark-html-report`（View 軌）。報告是 wiki 的 ingest **素材**，
+**禁止**把報告複製進 `wiki/` —— 蒸餾規則見 `references/distill-rules.md`。
 
-## 產出指引
+## 準則：raw 偏人、wiki 偏 AI、目錄命名要白話
 
-### 步驟 1：Wiki 知識庫目錄（schema.md v3.0）
+| 層 | 主要讀者 | 定位 | 誰寫 |
+|----|---------|------|------|
+| `raw/` | **人** | 原始素材與來源文件，人查證的底本 | 只增不改 |
+| `wiki/` | **AI** | 結構化知識，餵四層搜尋檢索 | ingest 蒸餾產出，禁止手寫 |
 
-三層模式（Andrej Karpathy LLM Wiki）：
+> 💡 這是**偏向不是排他** —— wiki 頁面仍可給人瀏覽（`audience: both`），
+> 但它存在的目的是 AI 檢索。判準：**「這是人查證的原始出處，還是 AI 檢索的蒸餾結論？」**
 
-```
-knowledge/{project-name}/
-├── raw/          → 唯讀原始資料（LLM 只讀不改）
-├── wiki/         → 結構化知識（LLM 維護）
-│   ├── overview.md
-│   └── {category}/
-│       └── {page}.md
-├── schema.md     → 規則定義
-├── index.md      → 索引目錄
-└── log.md        → 操作日誌（append-only）
-```
-
-**多專案支援**：每個獨立專案/產品擁有自己的知識庫目錄，跨專案引用使用 `../other-project/index.md`。
-
-**頁面 Frontmatter（v3.0）**：
-
-```yaml
----
-title: "頁面標題"
-type: concept | entity | source | synthesis | comparison | overview | system
-tags: [tag1, tag2]
-sources: [raw/來源檔案]
-related: [相關頁面檔名]
-created: YYYY-MM-DD
-updated: YYYY-MM-DD
-status: seedling | developing | mature
----
-```
-
-| 欄位 | 必要 | 說明 |
-|------|------|------|
-| title | ✅ | 頁面標題（繁體中文） |
-| type | ✅ | 頁面類型 |
-| tags | ✅ | 分類標籤 |
-| sources | 建議 | 來源 raw 檔案 |
-| related | 建議 | 相關頁面（用於圖譜） |
-| aliases | 建議 | 頁面別名（中英對照詞，用於精確查找和 query expansion） |
-| created | ✅ | 建立日期 |
-| updated | ✅ | 最後更新日期 |
-| status | 建議 | 頁面成熟度 |
-
-**雙向連結**：`[[頁面檔名]]`（不含 .md、不含路徑）
-
-### 步驟 2：8 個 Wiki Runtime Skills
-
-| Skill | skill_id | 功能 |
-|-------|----------|------|
-| WikiQuerySkill | wiki_query | metadata 精確查找（slug/title/aliases 命中直接回頁面）→ BM25 持久化索引搜尋 → 空結果走子字串掃描兜底 → 段落摘要擷取 → 排序回傳。**搜尋細節**：(1) 關鍵字提取時過濾中文停用詞（的、是、了、在、有、什麼、嗎、呢）；(2) 以段落（paragraph，連續非空行）為擷取單位，非單行；(3) summary 根據 query 擷取最相關段落（含關鍵字最多的段落優先），非固定取第一段 |
-| WikiIngestSkill | wiki_ingest | raw/ 匯入 → 萃取 → 建立/更新頁面 → 更新 index + log → 觸發索引重建（bm25s + metadata + userdict）（title 優先從內容 H1 抓取；re-ingest 時若 H1 比現有 title 更語意化則更新） |
-| WikiLintSkill | wiki_lint | 檢查 frontmatter 必要欄位、孤立頁面、斷裂連結（連結目標包含 wiki/ 內頁面 + knowledge 根目錄 .md） |
-| WikiSchemaSkill | wiki_schema | 依 schema.md 驗證 type/status 合法值 |
-| WikiGraphSkill | wiki_graph | 分析 `[[wikilink]]` 知識圖譜（節點、邊、hub/orphan） |
-| WikiHybridSearchSkill | wiki_hybrid_search | 四層搜尋管線：metadata 精確層 + bm25s 持久化索引 + 語意向量 + 圖譜擴散 → RRF 融合（Layer 0 保底永不掛零） |
-| WikiRagBridgeSkill | wiki_rag_bridge | LLM 呼叫前自動注入相關 Wiki context |
-| WikiTemplateSkill | wiki_template | 產生標準化頁面（entity/concept/source 模板） |
-
-### 步驟 3：Wiki API 端點
-
-```python
-# src/server/api/files.py
-GET /api/files              # 列出 ARTIFACTS_DIR 下 .md 檔案（排除 raw/ 目錄）
-GET /api/files/{path:path}  # 讀取指定檔案內容
-
-# src/server/api/wiki.py
-POST /api/v1/wiki/query     # Wiki 查詢
-POST /api/v1/wiki/ingest    # Wiki 匯入
-POST /api/v1/wiki/lint      # Wiki 健康檢查
-```
-
-### 步驟 4：Web UI Wiki 分頁
-
-整合到主頁面 `index.html`，與 Chat 分頁並列：
-
-```html
-<!-- Tab 切換 -->
-<div class="tab-bar">
-  <button class="tab-btn active" data-tab="chat">💬 對話</button>
-  <button class="tab-btn" data-tab="wiki">📚 Wiki</button>
-</div>
-
-<!-- Wiki 分頁 -->
-<div class="tab-content" id="tab-wiki">
-  <div class="wiki-layout">
-    <aside class="wiki-sidebar">
-      <input class="wiki-search__input" placeholder="搜尋 Wiki...">
-      <nav class="wiki-tree"><!-- 動態載入 --></nav>
-    </aside>
-    <main class="wiki-content">
-      <!-- Markdown 渲染 + highlight.js -->
-    </main>
-  </div>
-</div>
-```
-
-**JS 功能**：
-- `loadWikiTree()` — 從 `/api/files` 載入檔案列表，按資料夾分組
-- `loadWikiPage(path)` — 從 `/api/files/{path}` 載入 Markdown 並渲染
-- `renderMarkdown(md)` — 簡易 Markdown → HTML（標題、粗體、表格、程式碼）
-- Wiki 搜尋過濾（前端即時篩選）
-
-### 步驟 5：Chat 整合（Wiki Context 注入）
-
-在 `chat.py` 中，一般訊息走 Gemini chat 時自動注入 Wiki context：
-
-```python
-async def _get_wiki_context(request, query: str) -> str:
-    """從 wiki_query Skill 取得相關 context 注入 LLM。
-
-    擷取規則：
-    - 以段落（paragraph）為單位，非單行
-    - 選擇與 query 關鍵字匹配度最高的段落
-    - 最多取 top_k 個結果，每個結果含完整段落
-    """
-    result = await registry.invoke("wiki_query", {"query": query, "top_k": 3})
-    if result.success and result.data:
-        snippets = [f"[{r['title']}] {r['summary']}" for r in result.data["results"][:3]]
-        return "\n".join(snippets)
-    return ""
-```
-
-### 步驟 6：操作路由規則
-
-Chat 收到訊息後的 Wiki 操作判斷：
-
-| 意圖 | 觸發詞 | 執行 |
-|------|--------|------|
-| Query | 一般提問 | wiki_query → 合成回答（附來源標記） |
-| Ingest | 「ingest」、「匯入」、「加入這篇」 | wiki_ingest → 更新 index + log |
-| Lint | 「lint」、「健康檢查」、「wiki 狀態」 | wiki_lint → 回報問題清單 |
-| Update | 「存下來」、「記錄」、「更新 [頁面]」 | 讀取 → 整合 → 更新 updated |
-
-**Query 回答格式**：
-
-合成回答的規則：
-1. 從匹配的 wiki 頁面中擷取相關段落（paragraph，非單行）
-2. 根據 query 重新組織語句，用自己的話回答（非直接拼接 title + summary）
-3. 若多個頁面有互補資訊，整合成一段連貫回答
-4. 結尾附上參考來源
+**目錄／檔名要白話**：`raw/player-analysis/`、`wiki/revenue-kpi.md` ✅；
+`raw/data1/`、`wiki/doc2.md`、`raw/tmp/` ❌。名字本身要能回答「這裡放什麼」，
+不用序號、縮寫、臨時名 —— 命名是給下一個人（和下一個 agent）看的索引。
+## Agent SOP（決策樹）
 
 ```
-[根據 Wiki 內容合成的回答，用完整句子回覆使用者的問題]
----
-📚 參考頁面：[[page1]]、[[page2]]
+需求進來
+├─ 查知識 / 找口徑 / 有沒有 XXX？ → wiki_query.py（先 --top_k 3，不夠再 --full）
+├─ 要把 wiki 內容帶進回答或提詞？ → wiki_context.py --budget_chars
+├─ meta.index_fresh = false？      → 答案照用，另提醒維護者跑 wiki_index.py build
+├─ 匯入 raw / 報告蒸餾入庫？       → wiki_ingest.py（guard/taxonomy 內建，勿 --no-guard）
+├─ 新概念沒有合法 tag？            → wiki_taxonomy.py propose（不自創）
+├─ 健檢 / CI？                     → wiki_lint.py --json（以 exit code 為準）
+├─ 圖譜 / 孤兒頁？                 → wiki_graph.py
+└─ 專案還沒有 knowledge/？          → build_wiki.py <dir> <name>
 ```
 
----
+## 呼叫範例（複製即用）
+
+```bash
+S=.kiro/skills/ark-wiki-engine/scripts
+
+python $S/wiki_query.py   --wiki_dir knowledge/shared/wiki --query "留存口徑" --top_k 3
+python $S/wiki_query.py   --knowledge_root knowledge --domains hoyeah,shared --query "DAU 定義"
+python $S/wiki_context.py --wiki_dir knowledge/shared/wiki --query "$MSG" --budget_chars 2500
+python $S/wiki_ingest.py  --source knowledge/raw/notes.md --wiki_dir knowledge/shared/wiki \
+                          --schema knowledge/shared/schema.md --by librarian-agent
+python $S/wiki_index.py   build --wiki_dir knowledge/shared/wiki
+python $S/wiki_lint.py    --wiki_dir knowledge/shared/wiki --json
+python $S/wiki_graph.py   --wiki_dir knowledge/shared/wiki --json
+python $S/build_wiki.py   ./myproject demo --install-skill ./myproject/.kiro/skills
+```
+
+完整參數、exit code 見 `references/scripts-reference.md`。
+
+## JSON 契約
+
+```json
+{"ok": true, "query": "留存口徑",
+ "results": [{"page": "kpi/retention-definition", "slug": "retention-definition",
+   "title": "留存率口徑定義", "score": 0.0328, "layers": ["L0","L1","L3"],
+   "type": "concept", "status": "mature", "trust": "deterministic",
+   "approved": true, "tags": ["kpi"], "summary": "D1 留存 = …"}],
+ "meta": {"total": 7, "top_k": 5, "truncated": false, "out_file": null, "domains": [],
+   "index_used": true, "index_fresh": true, "layers_used": ["L0","L1","L3"],
+   "layers_skipped": {"L2": "no_embeddings"}, "tokenizer": "bigram",
+   "bm25_backend": "purepy", "warnings": [], "elapsed_ms": 5}}
+```
+
+錯誤：`{"ok": false, "error": {"code": "...", "msg": "..."}}`，exit 2。
+完整 schema（欄位型別與必填）：`references/query-contract.schema.json`。
+
+| code | 意義 |
+|------|------|
+| `WIKI_DIR_NOT_FOUND` | 目錄不存在 |
+| `BAD_ARGUMENTS` | 參數互斥或缺必要組合（如多 domain 未給 `--domains`） |
+| `SCHEMA_NOT_FOUND` | `--schema` 指向的檔案不存在 |
+| `INDEX_MISSING` / `INDEX_STALE` | 索引不存在／過期（**warning，仍回答**） |
+| `TOKENIZER_MISMATCH` | 索引與本機分詞不同（warning，改記憶體重算） |
+| `GUARD_BLOCKED` | ingest 來源含注入等違規，已隔離且不落盤 |
+| `TAG_NOT_IN_WHITELIST` | tags 不在 schema 白名單，不落盤 |
+| `BUILD_LOCKED` | 另一個 index build 進行中 |
+
+> **stdout 只放機器契約，人看的進度一律 stderr。** 實作中被違反三次（進度混印、漏 import、
+> self-test 先印人類結果），每次都讓 agent 端 `json.loads` 直接炸 —— 每支腳本每條 `--json` 路徑都有測試。
+
+## 三條硬規則（由腳本強制，不靠 LLM 記得）
+
+1. **受控詞彙** —— 頁面 tags 只能用 `schema.md` 白名單；新概念 `wiki_taxonomy propose` → 人工 `approve`。
+   `wiki_ingest --schema` 遇未知 tag **exit 1 且不落盤**。
+2. **Guard-first ingest** —— 任何 raw 入庫前必過 `wiki_guard`；違規進 `raw/_quarantine/` 不入庫。
+   順序寫死在 `ingest_file`，**窮舉參數組合皆無法跳過**（測試釘住）。`--no-guard` 僅限除錯，
+   會在 stderr 警告並在 `log.md` 記 `no-guard` 供稽核。
+3. **兩層信任** —— 腳本搬運 = `trust: deterministic`；LLM 改寫／摘要 = `trust: llm-distilled`
+   + `approved`（必填）。`approved: false` 強制 `status: seedling`，`wiki_context` 注入時帶 ⚠。
+
+## 四層與降級矩陣
+
+| 層 | 資料來源 | 命中條件 | 缺失時行為 |
+|----|----------|----------|------------|
+| L0 精確 | `.index/metadata.json` | slug／title／page_id 相等 1.0（固定置頂）；alias 相等 0.95；包含 0.8 | 現場掃 frontmatter，`index_used: false` |
+| L1 BM25 | `.index/bm25/postings.json` | score > 0 | 記憶體重算；分詞不符回 `TOKENIZER_MISMATCH` |
+| L2 語意 | `.index/embeddings/` | cosine ≥ 閾值 | **預設不啟用** → `layers_skipped.L2` |
+| L3 圖譜 | `.index/graph.json` | L0∪L1 前 3 名的 1-hop 出／入鄰居 | 現場解析 `[[wikilink]]` |
+| 兜底 | `wiki/` 全文 | 子字串命中 → 0.4 | **永遠可用** |
+
+融合 RRF（k=60）→ 去重 → frontmatter 過濾 → `top_k`。
+**零第三方依賴時全功能可用**（purepy backend + CJK bigram 分詞），只有召回品質差異。
+
+## 索引生命週期
+
+- **誰建**：`wiki_ingest.py` 落盤後自動 build，或 CI／排程定期 build。**agent 只讀**。
+- **原子性**：先寫 `.index.tmp/` 再 `os.replace`；同時取 lock，第二個 build 回 `BUILD_LOCKED`。
+- **freshness**：比對 manifest `content_hash`；過期時 `index_fresh: false` + warning，**仍用舊索引回答**。
+- **查詢端不自動重建**：15 個 instance 併發會撞 lock 並拖慢查詢。要重建用 `--rebuild-if-stale` 或 `wiki_index.py build`。
+
+## 🔴 ingest 的授權邊界（executor 化弱化的地方）
+
+內建 `wiki_ingest` 有**可信的 role gate**（`tools_for_role` 讓 worker 看不到該工具，
+handler 另有 `_role not in ("admin","leader")` 擋一次；`_role` 來自 daemon 的
+`--role` 啟動參數，agent 改不了）。而 `scripts/wiki_ingest.py` 是 bash 腳本 ——
+**任何能跑 bash 的 agent 都能執行**。
+
+因此：**排他句只涵蓋查詢，不涵蓋寫入。** worker 維持「寫到 `raw/`、由排程 ingest」；
+只有 admin／leader／排程才用 `wiki_ingest.py`。
+**不要在腳本裡加 `--role` 檢查** —— 呼叫者自報的 role 不是邊界。
+完整政策表見 `references/agent-prompt-snippets.md`。
+
+> `authority.L2: wiki_ingest` 這條**不是由 DecisionManager 執行的**（matrix 未被
+> team_mcp 讀取）—— 實際管控就是上面那個 role gate。讀 matrix 的人會誤以為有拍板流程。
+
+## Multi-agent 部署（取代 MCP 掛載）
+
+1. 複製 skill 到消費端 `.kiro/skills/ark-wiki-engine/`
+   （或 `build_wiki.py ... --install-skill <.kiro/skills>`）
+2. `team.yaml` **不寫**任何 wiki 相關 `mcp` / `mcp_servers` 設定
+3. instance prompt 加排他句 —— 套件內建的 team MCP 自帶同名的 `wiki_query` 與 `wiki_ingest`，
+   不排他 agent 會亂選。片段見 `references/agent-prompt-snippets.md`
+4. 各 instance 在 prompt 裡寫死自己的 `--domains`（不預設掃全部 domain）
+5. 選配：套件若支援 pre-message hook，掛 `wiki_context.py` 自動注入
+
+## 產出檔案（scaffold 模式）
+
+```
+knowledge/{name}/
+├── raw/                    原始素材（唯讀；_quarantine/ 為 guard 隔離區）
+├── wiki/                   結構化頁面
+│   └── .index/             索引（自帶 .gitignore，不進版控）
+├── schema.md               頁面規格 + tags 白名單
+├── index.md                頁面索引
+└── log.md                  append-only：date | op | page | trust | by | note
+```
+
+> v3 **不再產** `src/skills/wiki_skills/`、`src/server/`、Web UI（那是四層引擎的第二份實作）。
+> 取回舊模板：`git show <v2 commit>:ark-wiki-engine/scripts/build_wiki.py`。
 
 ## 注意事項
 
-- Wiki `raw/` 目錄為唯讀（LLM 只讀不改）
-- `.index/` 目錄為自動生成（加入 .gitignore），不手動修改
-- ingest 完成後必須觸發索引重建（metadata + bm25s + userdict）
-- 查詢流程：metadata 精確匹配 → BM25 索引搜尋 → 子字串兜底（保證不掛零）
-- 修改 wiki 頁面後必須同步 `index.md` + `log.md`
-- `wiki_lint` 檢查 frontmatter 必要欄位（title、type、created、updated）
-- `wiki_graph` 使用 `[[page_name]]` 雙向連結建構圖譜
-- `_extract_summary` 必須跳過 frontmatter 區段（`---` 之間），只在正文中搜尋關鍵字並擷取摘要
-- 矛盾標記：`> ⚠️ **矛盾**：來源 A 說 X，來源 B 說 Y，待釐清。`
-- 不確定內容用 `(?)` 標記
-- 禁止自行解決矛盾，只能標記
-- 禁止刪除 `log.md` 舊記錄（append-only）
+- `raw/` 唯讀；`raw/_quarantine/` 人工檢視後處置
+- 改頁面後同步 `index.md`（`wiki_index.py md`）；`log.md` **append-only**，勿改欄序
+- 矛盾只標記不解決：`> ⚠️ **矛盾**：來源 A 說 X，來源 B 說 Y，待釐清。`；不確定用 `(?)`
+- summary 擷取跳過 frontmatter **與純標題段落** —— H1 通常就是 title，拿它當摘要等於沒有摘要
+- category 自動偵測分數 ≤1 時回 uncertain，要求人工指定，不靜默入庫
+- 測試**兩個解譯器都要跑**（有無 jieba 會走到不同層）：`python3 -m pytest scripts/tests -q`
 
----
+## references/
 
-## 使用現有 Wiki（操作層）
-
-> 當專案已有 knowledge/ 目錄和 FastAPI server 在跑時，用以下方式操作（不是建新系統）。
-
-### 觸發條件（使用層）
-
-- 「匯入知識」「ingest」「把 raw 匯入 wiki」
-- 「查詢 Wiki」「搜尋知識庫」「Wiki 有沒有 XXX」
-- 「檢查 Wiki」「Wiki 健康度」「lint」
-
-### 操作方式
-
-**確認 server 在跑**（port 8000）後，用終端執行：
-
-#### Ingest（匯入 raw/ → wiki/）
-```bash
-curl -X POST http://localhost:8000/api/v1/wiki/ingest
-```
-✅ 回傳：`{"ingested": ["file1.md", "file2.md"], "count": 2}`
-
-#### Query（查詢）
-```bash
-curl -X POST http://localhost:8000/api/v1/wiki/query \
-  -H "Content-Type: application/json" \
-  -d '{"q": "搜尋關鍵字"}'
-```
-✅ 回傳：`{"results": [...], "answer": "..."}`
-
-#### Lint（健康檢查）
-```bash
-curl http://localhost:8000/api/v1/wiki/lint
-```
-✅ 回傳：`{"issues": [], "healthy": true}`
-
-### 不跑 server 時的替代方式
-
-```python
-# 直接用 Python 執行
-import asyncio
-from src.wiki.engine import WikiEngine
-engine = WikiEngine()
-
-# Ingest
-engine.ingest()
-
-# Query
-result = asyncio.run(engine.query("Ocean King", use_rag=True))
-print(result)
-
-# Lint
-issues = engine.lint()
-print(issues)
-```
-
-### 判斷規則
-
-| 使用者說的 | 要做什麼 |
-|-----------|---------|
-| 「建立 Wiki 系統」「產出 Wiki 引擎」 | → 走上面的「產出指引」（建新系統） |
-| 「匯入知識」「查 Wiki」「lint」 | → 走這段「使用層」（操作現有系統） |
-
-### 三種執行模式（依環境選擇）
-
-| 模式 | 條件 | 方式 |
-|------|------|------|
-| API 模式 | server 在跑（port 8000） | curl 呼叫 API |
-| Python 模式 | 有 Python 環境 | 直接 import WikiEngine |
-| LLM 模式 | 都沒有（純 IDE 操作） | 按 SOP 讀寫檔案 |
-
-### LLM 模式 SOP（不需要 server 也不需要跑 Python）
-
-#### Ingest SOP
-1. 列出 `knowledge/raw/*.md` 所有檔案
-2. 逐檔讀取，檢查是否有 frontmatter（`---` 開頭）
-3. 沒有 frontmatter → 補上（title / type / tags / created / updated）；title 優先取內容中第一個 H1 標題
-4. 寫入 `knowledge/wiki/{filename}`（保持同名）
-5. 更新 `knowledge/index.md`（表格列出所有 wiki 頁面）
-6. 追加 `knowledge/log.md`（格式：`- [日期時間] ingest: file1, file2`）
-
-#### Query SOP
-1. 從 query 提取關鍵字（過濾停用詞：的、是、了、在、有、什麼、嗎、呢、可以、怎麼）
-2. **Layer 0 精確匹配**：查 `.index/metadata.json`，slug/title/aliases 命中 → 直接回該頁面
-3. **Layer 1 BM25**：查 `.index/bm25s/` 持久化索引，取 top 5
-4. **Layer 0 兜底**：若 Layer 1 無結果，逐檔子字串掃描（保證不掛零）
-5. 讀對應 wiki 頁面，跳過 frontmatter（`---` 之間）
-6. 以段落為單位擷取（段落 = 連續非空行，以空行分隔），選擇包含最多關鍵字的段落（最多取 3 段）
-7. 根據擷取的段落，用自己的話合成回答（非直接拼接），回答要直接對應 query 的問題
-8. 結尾附：`📚 參考：{page1}, {page2}`
-
-**搜尋範圍（按優先序，不可跳層）**：
-
-| 優先序 | 路徑 | 說明 |
-|--------|------|------|
-| 1 | `agents/{current-agent}/knowledge/wiki/` | Agent 私有知識 |
-| 2 | `knowledge/shared/wiki/` | 共用知識庫（所有 agent 共享） |
-| 3 | 外部搜尋（Web Search） | 只在 1+2 都查無時使用 |
-
-**索引位置**：`knowledge/shared/.index/`（metadata.json + bm25s/）
-
-#### Lint SOP
-1. 列出 `knowledge/wiki/*.md` 所有頁面
-2. 逐檔檢查 frontmatter 必要欄位（title / type / tags / created / updated）
-3. 回報缺少欄位的頁面清單
-4. 檢查孤立頁面（沒被 index.md 列出的）
+| 檔案 | 內容 |
+|------|------|
+| `page-schema.md` | frontmatter v3.1 欄位、type／status／trust 枚舉、wikilink、aliases 為何重要 |
+| `scripts-reference.md` | 每支腳本完整參數、exit code、範例 |
+| `query-contract.schema.json` | JSON Schema（測試與下游 agent 共用） |
+| `agent-prompt-snippets.md` | instance prompt 排他句、hook 範例、與其他 skill 的對接 |
+| `distill-rules.md` | 報告 → wiki 的蒸餾規則 |
+| `schema-template.md` | schema.md 範本 |

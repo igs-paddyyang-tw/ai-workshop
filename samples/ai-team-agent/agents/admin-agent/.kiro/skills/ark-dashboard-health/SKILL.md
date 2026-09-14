@@ -1,5 +1,4 @@
 ---
-author: paddyyang
 name: ark-dashboard-health
 description: |
   自動化測試 Dashboard 所有 API 端點 + SSE 連線 + 前端頁面可用性。
@@ -7,7 +6,15 @@ description: |
   使用此 Skill 當使用者提及 dashboard 正常嗎、API 測試、SSE 測試、
   健康檢查、端點測試、dashboard health、服務可用性、
   或任何需要驗證 Web Dashboard 是否正常運作的場景。
+  不適用於：本機環境跑不起來（缺套件／venv／版本）請用 ark-env-doctor（本 skill 測的是已部署服務的端點）。
 metadata:
+  schema_version: 1
+  status: active
+  category: ops
+  outputs:
+    - format: md
+      audience: ai
+  author: paddyyang
   version: "1.0"
   updated: 2026-06-07
 ---
@@ -39,7 +46,7 @@ metadata:
 ```python
 import httpx, asyncio, time
 
-BASE = "http://localhost:33333"
+BASE = "http://localhost:13030"
 
 async def check():
     results = []
@@ -94,6 +101,6 @@ API 全過時進一步檢查 HTML：
 
 ## 注意事項
 
-- 服務須已啟動（port 33333）
+- 服務須已啟動（port 13030）
 - SSE 只驗連線不等事件
 - 報告產出到 `docs/dashboard-health-report.md`

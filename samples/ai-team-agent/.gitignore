@@ -1,14 +1,28 @@
+# 機密
+.env
+secrets/*
+!secrets/.gitkeep
+
+# 執行環境與產物（重啟自動重生，不進版控）
 .venv/
 __pycache__/
 *.pyc
-.env
-data/*.db
-data/.wiki_index/
-.pytest_cache/
-knowledge/shared/.index/
-output/
-logs/*.log
-apps/web/node_modules/
-apps/web/.next/
-instances/
 state/
+*.db
+.index/
+knowledge/**/.index/
+memory/daily/
+instances/
+artifacts/reports/*.html
+artifacts/reports/*.md
+!artifacts/reports/.gitkeep
+logs/
+
+# skill 是複本，由 scripts/sync_skills.py 從上游重建 —— 不進版控
+agents/*/.kiro/skills/
+tasks/
+team.pid/
+team.pid
+
+# 套件依「本機實況」產生（含絕對路徑），每次啟動重產 —— 不進版控
+agents/*/AGENTS.md

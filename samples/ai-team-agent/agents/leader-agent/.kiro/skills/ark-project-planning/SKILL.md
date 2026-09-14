@@ -1,13 +1,21 @@
 ---
 name: ark-project-planning
-author: paddyyang
 description: |
   標準化專案計畫流程。收到新功能需求時使用：釐清需求、撰寫規格文件、拆解任務、
   分派給 Agent、追蹤進度、驗收交付。
   Use when receiving new feature requests, project planning, task delegation to agents.
   觸發條件：新功能、新需求、派工、拆任務、專案規劃、project plan。
+  不適用於：規格與 ADR 文件本身請用 ark-superpowers；照既有 plan 自動執行請用 ark-spec-executor；跨 session 的任務狀態持久化請用 ark-planning-with-files。
 metadata:
+  schema_version: 1
+  status: active
+  category: process
+  outputs:
+    - format: md
+      audience: both
+  author: paddyyang
   version: "2.0"
+  updated: 2026-08-19
 ---
 
 # 專案計畫 v2.0
@@ -144,3 +152,5 @@ ASSUMPTIONS：
 | 任務很明顯不用拆 | 寫下來才能追蹤，也能發現遺漏 |
 | Agent 自己會知道 | 明確指令減少來回，省 token 省時間 |
 | 驗收太麻煩 | 不驗收就不知道做對沒 |
+
+**不適用於**：產文件/Spec/Design 請用 `ark-superpowers`。

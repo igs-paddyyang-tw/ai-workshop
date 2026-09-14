@@ -1,5 +1,4 @@
-﻿---
-author: paddyyang
+---
 name: ark-security-audit
 description: |
   產出 security_audit.py 安全性掃描 Skill，對專案進行程式碼安全性檢查與弱點偵測。
@@ -8,6 +7,16 @@ description: |
   使用此 Skill 當使用者提及安全性掃描、security audit、弱點偵測、
   vulnerability scan、程式碼安全、依賴檢查、
   或任何需要檢查專案安全性的場景。
+  不適用於：風格與可讀性的人工審查請用 ark-code-review（本 skill 只找安全弱點）。
+metadata:
+  schema_version: 1
+  status: active
+  updated: 2026-08-19
+  category: pipeline
+  outputs:
+    - format: md
+      audience: ai
+  author: paddyyang
 ---
 
 # ark-security-audit

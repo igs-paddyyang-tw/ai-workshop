@@ -1,5 +1,4 @@
-﻿---
-author: paddyyang
+---
 name: ark-chart-generator
 description: |
   產出 chart_generator.py 標準化圖表 Skill，使用 Matplotlib 將結構化數據轉換為圖表，
@@ -8,6 +7,16 @@ description: |
   使用此 Skill 當使用者提及圖表、chart、視覺化、折線圖、長條圖、圓餅圖、
   散點圖、直方圖、matplotlib、報表圖表、數據圖表、
   或任何需要將數據轉換為圖片的場景。
+  不適用於：可篩選排序的互動式儀錶板請用 ark-html-dashboard；報告內嵌的視覺區塊請用 ark-html-report（本 skill 產的是靜態圖檔）。
+metadata:
+  schema_version: 1
+  status: active
+  updated: 2026-08-19
+  category: pipeline
+  outputs:
+    - format: md
+      audience: ai
+  author: paddyyang
 ---
 
 # ark-chart-generator

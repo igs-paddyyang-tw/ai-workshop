@@ -1,11 +1,19 @@
-﻿---
-author: paddyyang
+---
 name: ark-cost-tracker
 description: |
   產出 API 呼叫成本追蹤 Skill，記錄 LLM API 的 token 使用量和費用。
   支援 Gemini、Ollama 等多個 LLM 後端的成本計算。
   使用此 Skill 當使用者提及成本追蹤、API 費用、token 使用量、
   cost tracking、或任何需要監控 LLM 呼叫成本的場景。
+metadata:
+  schema_version: 1
+  status: active
+  updated: 2026-08-19
+  category: pipeline
+  outputs:
+    - format: md
+      audience: ai
+  author: paddyyang
 ---
 
 # ark-cost-tracker

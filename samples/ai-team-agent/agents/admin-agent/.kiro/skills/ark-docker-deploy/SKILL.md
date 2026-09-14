@@ -7,6 +7,12 @@ description: |
   Dockerfile、部署腳本、containerize、打包部署、
   或任何需要將專案容器化的場景。
 metadata:
+  schema_version: 1
+  status: active
+  category: scaffolder
+  outputs:
+    - format: code
+      audience: ai
   author: paddyyang
   version: "1.0"
   updated: 2026-05-18
@@ -229,7 +235,7 @@ services:
     build: .
     command: python start.py
     env_file: .env
-    ports: ["33333:33333"]
+    ports: ["13030:13030"]
     restart: unless-stopped
 
   webbot:

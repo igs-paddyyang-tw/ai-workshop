@@ -1,5 +1,4 @@
-﻿---
-author: paddyyang
+---
 name: ark-test-runner
 description: |
   產出 test_runner.py 自動化測試執行 Skill，執行 pytest 測試並產生覆蓋率報告。
@@ -8,6 +7,16 @@ description: |
   使用此 Skill 當使用者提及測試執行、test runner、跑測試、
   覆蓋率、coverage、pytest、自動化測試、
   或任何需要執行測試並產生報告的場景。
+  本 skill 專責 line coverage（pytest --cov）。驗收條件覆蓋分析請用 ark-code-spec-validator。
+metadata:
+  schema_version: 1
+  status: active
+  updated: 2026-08-19
+  category: pipeline
+  outputs:
+    - format: md
+      audience: ai
+  author: paddyyang
 ---
 
 # ark-test-runner

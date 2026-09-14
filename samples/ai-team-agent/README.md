@@ -1,182 +1,135 @@
-# Ark Agent Team Platform
+# ai-team-agent — 🔄 AI Agent 團隊平台
 
-> 多 Agent 協作平台 — 8 agents 遊戲開發場景，四層架構（Gateway / Coordinator / Runtime / Business）
+> `ark_team_agent` **套件消費端**：8 個 agent 的常駐 daemon + A2A 派工 + 排程 +
+> 費控 + 看板。框架在 wheel 裡，這個資料夾只有**設定與人格**。
 
-## 快速開始
+---
+
+## 這裡面沒有 runtime —— 那是刻意的
+
+| 你在別處看過的 | 在這裡 |
+|---|---|
+| `src/runtime/`（daemon / 進程管理） | 在 `ark_team_agent` 套件裡 |
+| `src/coordinator/`（A2A / EventBus / TaskLifecycle） | 同上 |
+| `src/gateway/`（TG + REST 21 端點） | 同上 |
+| `apps/web/`（Next.js Dashboard） | 套件內建 website（`health_port + 5000`） |
+| 你要維護的 | **`team.yaml`**、`scheduler.yaml`、各 agent 的 `SOUL.md` |
+
+**`team.yaml` 就是架構。** 第四堂讀的六個區塊：
+`instances` · `group` · `access` · `cost_guard` · `hang_detector` · `kiro_files`。
+
+---
+
+## 快速啟動
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate   # Linux/Mac
-# .venv\Scripts\activate    # Windows
+# 1. 建環境
+python3 -m venv .venv && source .venv/bin/activate
 
-pip install -r requirements.txt
-cp .env.example .env        # 填入 TELEGRAM_BOT_TOKEN + ALLOWED_USERS
+# 2. 裝 wheel（從 Release 下載後放本目錄）
+#    github.com/igs-paddyyang-tw/ark_team_agent/releases
+pip install './ark_team_agent-<版本>-py3-none-any.whl'
 
+# 3. 驗版號 —— 🔴 看 import，不看 pip 輸出
+python -c "import ark_team_agent; print(ark_team_agent.__version__)"
+
+# 4. 裝各 agent 的專業技能（三層分工的第三層）
+python3 scripts/sync_skills.py
+
+# 5. 填機密與權限
+cp .env.example .env          # TELEGRAM_BOT_TOKEN
+#   team.yaml 的 access.allowed_users 填你自己的 TG user_id
+
+# 6. 跑
 python start.py
 ```
 
-## 架構
+---
 
-```
-src/
-├── gateway/          # 入口層：Telegram Bot、FastAPI、MCP stdio
-├── coordinator/      # 協調層：A2A、DB、Events、Memory、Wiki、Services
-├── runtime/          # 執行層：PersistentDaemon、Config、Scheduler
-└── business/         # 業務層：Skills、News、Web Search
-```
+## 🔴 啟動就緒分兩階段 —— 「送了沒回」通常不是故障
 
-## 團隊配置
+| 階段 | 要多久 | 怎麼確認 |
+|---|---|---|
+| ① daemon + TG | 約 20 秒 | `curl localhost:23050/api/health` 回 200、log 出現 `Application started` |
+| ② kiro-cli backend 冷啟 | **首次 2–4 分鐘** | 它要 spawn team MCP、握手、印就緒訊號 `All tools are now trusted` |
 
-3 種 team.yaml 場景：
+**第一階段完成不代表私訊會回。** 訊息會先進佇列（log 有 `Queued message`），
+等第二階段就緒才被處理（`Delivered message`）。
 
-| 設定 | 指令 | 成員 |
-|------|------|------|
-| **完整 8 人（預設）** | `python start.py` | admin + leader + coder + qa + ai-dev + market + data + report |
-| 研發 5 人 | `cp team-dev.yaml team.yaml` | admin + leader + ai-dev + coder + qa |
-| 營運 8 人 | `cp team-ops.yaml team.yaml` | admin + leader + market + data + report（+ others） |
-
-### Agent 角色與指揮鏈
-
-```
-使用者(TG) → leader-agent（入口+派工）→ workers（執行）→ leader-agent（驗收）→ reply
-admin-agent（背景：服務監控、成本控制，不處理使用者需求）
-```
-
-| Agent | 角色 | 職責 | 模式 | 可被派工 |
-|-------|------|------|------|---------|
-| admin-agent | admin | 服務監控、重啟、成本控制 | 常駐 | ❌ |
-| leader-agent | leader | **使用者入口**、需求分析、任務拆解、派工驗收 | 常駐 | ❌ |
-| coder-agent | worker | 全端開發、API 實作 | 動態 | ✅ |
-| qa-agent | worker | 測試策略、Code Review | 動態 | ✅ |
-| ai-dev-agent | worker | LLM 整合、Prompt 工程、MCP 開發 | 動態 | ✅ |
-| market-agent | worker | 競品監控、輿情分析、新聞爬取 | 動態 | ✅ |
-| data-agent | worker | 數據分析、KPI 追蹤、遊戲指標 | 動態 | ✅ |
-| report-agent | worker | 報告產出、圖表渲染、定期摘要 | 動態 | ✅ |
-
-## 進程模式
-
-透過 `team.yaml` 的 `persistent` 欄位控制：
-
-| 模式 | 說明 | MCP Tools |
-|------|------|-----------|
-| 常駐 (Persistent) | 啟動時即開，stdin pipe 送訊 | ✅ |
-| 動態 (Spawn on demand) | 收到訊息時自動啟動，閒置後回收 | ✅ |
-
-## .kiro 駕馭架構（5 檔制）
-
-每個 Agent 的 `.kiro/steering/` 有 5 個檔案：
-
-| 檔案 | 職責 | 載入 |
-|------|------|------|
-| SOUL.md | 人格、身份、核心使命、來源標記規則 | 常駐 |
-| BRAIN.md | 三層資源規則、Wiki 速查表、品質護欄 | 常駐 |
-| MEMORY.md | 專案狀態、技術決策、踩坑 | 常駐 |
-| TEAM.md | 完整 8 人清單 + 指揮鏈 + 可派工標記 | 常駐 |
-| KIRO.md | Python 程式碼規範 | fileMatch（src/**/*.py）|
-
-## Skills 配置
-
-每個 Agent 的 `.kiro/skills/` 含角色專屬 skills + 共用 skills：
-
-| 共用（所有 agent） | 角色專屬範例 |
-|-------------------|-------------|
-| ark-wiki-engine | leader: ark-superpowers, ark-project-planning |
-| ark-code-spec-validator | coder: ark-webapp-generator, ark-db-query |
-| ark-doc-coauthoring | qa: ark-test-runner, ark-code-review |
-
-## 知識庫
-
-```
-knowledge/
-└── shared/          ← 唯一來源（single source of truth）
-    ├── raw/         ← 唯讀原始資料（人類丟入，AI 不改）
-    ├── wiki/        ← 結構化知識頁面（AI ingest 產出）
-    ├── .index/      ← 搜尋索引（自動生成）
-    ├── schema.md    ← 知識庫規範
-    ├── index.md     ← 所有 wiki 頁面索引
-    └── log.md       ← 操作日誌
-
-agents/{name}/knowledge/
-├── wiki/    ← 私有知識
-└── raw/     ← 原始文件
-```
-
-> runtime 資料（tasks/artifacts/decisions/agent_profiles）存放於 `data/`，不在 knowledge/。
-
-## MCP 工具（11 tools）
-
-`reply` / `send_to_instance` / `delegate_task` / `query_team_status` / `broadcast_all` / `create_task` / `update_task` / `list_tasks` / `wiki_query` / `record_spend` / `log_to_leader`
-
-## MCP 注意事項（Windows）
-
-1. **stderr = 死亡** — MCP server stderr 有輸出 → Transport closed
-2. **UTF-8 BOM = 死亡** — mcp.json 有 BOM → JSON parser 失敗
-3. **cp950 encode = 死亡** — stdout 含非 ASCII 且未 `ensure_ascii=True` → crash
-
-修正：`ensure_ascii=True` + `NullHandler` + Python `write_bytes()` 寫入 mcp.json
-
-## .env 設定
+送了沒回先查這個，再懷疑壞掉：
 
 ```bash
-TELEGRAM_BOT_TOKEN=your-bot-token
-API_PORT=33333
-ALLOWED_USERS=your-telegram-user-id   # 取得方式：對 Bot 傳 /start
+cat /proc/<kiro-cli pid>/stat     # CPU 時間有沒有在動
 ```
 
-## Admin Dashboard
+---
 
-```bash
-cd apps/web
-cp .env.local.example .env.local
-npm install
-npm run dev    # → http://localhost:3000
+## 目錄結構
+
+```
+ai-team-agent/
+├── start.py              asyncio.run(run_team(team.yaml))
+├── team.yaml             🏗️ 團隊設定（唯一集中點）＝ 架構本身
+├── scheduler.yaml        ⏰ 排程（第五堂）
+├── .env                  🔑 機密（不進版控）
+├── scripts/sync_skills.py  🛠️ 角色 × skill 矩陣同步
+├── .kiro/steering/       🧠 全域規範（TEAM.md 由 daemon 每次啟動重產，手改會被覆寫）
+├── agents/<name>-agent/  各 instance 的 working_directory
+│   ├── .kiro/steering/   人格（SOUL.md）
+│   ├── .kiro/skills/     專業技能（sync 產生，**不進版控**）
+│   ├── knowledge/        私有知識
+│   └── memory/           私有記憶
+├── knowledge/shared/     📚 團隊共用知識庫（wiki / raw / schema / index / log）
+├── memory/               🧠 團隊記憶
+├── artifacts/reports/    📄 產出落點
+└── docs/                 📝 課堂產出的 spec / design / plan
 ```
 
-| 頁面 | 功能 |
-|------|------|
-| Dashboard | KPI + 7日趨勢 + Agent Grid + Activity Feed (WebSocket) |
-| Agents | 列表 + 詳情（費用、sessions） |
-| Sessions | 對話列表 + 回放 + 中止/重啟 |
-| Queue | 任務佇列 + 優先級 + 批次操作 |
-| Board | Kanban 看板 |
-| Costs | 成本圖表 + CSV 匯出 |
-| Audit | 稽核日誌 + 篩選 |
-| Settings | Budget 設定 |
+---
 
-## API
+## 端點
 
-| 分類 | 端點 |
-|------|------|
-| Agents | `GET /api/agents` / `GET /api/agents/{id}/health` / `PATCH /api/agents/{id}/persistent` |
-| Chat | `POST /api/chat/reply` / `POST /api/chat/send` / `POST /api/chat/notify` |
-| Tasks | `POST /api/tasks` / `GET /api/board` / `PATCH /api/tasks/{id}/complete` / `PATCH /api/tasks/{id}/unblock` |
-| Memory | `POST /api/v1/memory/recall` / `GET /api/v1/memory/daily/{agent}` |
-| Wiki | `GET /api/v1/wiki/search` / `POST /api/v1/wiki/ingest` |
-| Skills | `GET /api/v1/skills` / `POST /api/v1/skills/invoke` |
-| Health | `GET /api/health` |
-| Issues *(deprecated)* | `GET /api/issues` / `POST /api/issues` / `PATCH /api/issues/{id}/complete` |
+| 用途 | URL |
+|---|---|
+| 健康檢查 | `http://localhost:23050/api/health` 🔴 是 `/api/health`，`/health` 回 404 |
+| 狀態 | `http://localhost:23050/api/status` |
+| 看板（給人看） | `http://localhost:28050`（= `health_port + 5000`，套件內建） |
 
-## 品質指標（2026-07-28）
+---
 
-| 指標 | 狀態 |
-|------|------|
-| smoke_test | ✅ 36 passed |
-| Spec Drift Score | ✅ ~97/100 |
-| API 端點覆蓋 | ✅ 100% |
-| 依賴規則違規 | ✅ 0 |
-| leader-agent 回覆 | ✅ 修復（7-8 秒，MCP reply 正常）|
-| config.py health loop | ✅ 修復（idle_timeout_minutes AttributeError）|
-| 指揮鏈 | ✅ IDE→ai-team-agent / TG→leader-agent（雙入口分離）|
-| Skills 安裝 | ✅ 所有 agent 補齊共用 skills + leader 核心 skills |
-| 駕馭工程 | ✅ BRAIN/SOUL/TEAM/MEMORY 全面強化（from ai-bot 移植）|
-| .kiro 主入口 | ✅ ai-team-agent.json（通用 orchestrator）|
-| 根目錄記憶架構 | ✅ memory/ 目錄建立（memory.md / recent.md / daily/）|
-| 任務系統統一 | ✅ MCP tools 改寫 tasks 表，看板正確顯示 completed |
-| /api/issues | ✅ 標記 Deprecated，fallback 仍可用 |
-| knowledge/ 整理 | ✅ 三層合一，knowledge/shared/ 為唯一來源 |
-| SharedMemory 路徑 | ✅ runtime 資料（tasks/artifacts）改寫到 data/ |
-| 根目錄清理 | ✅ pyproject.toml + .gitignore + Docker 路徑修正 |
-| Admin Dashboard | ✅ Next.js 13 routes build 通過，React 19，API 對齊 |
-| WebSocket | ✅ /api/ws/events 連通（直接掛載修正） |
-| 首頁路由 | ✅ `/` → redirect `/board`（看板入口） |
-| 啟動測試 | ✅ 8 agents idle，API 全通，WS 連通 |
+## 編制（8 agent）
+
+| | 角色 | group | 能改 code |
+|---|---|---|---|
+| 👑 | admin-agent（預設入口、維運） | — | ✅ 限維運面 |
+| 🧠 | leader-agent（拆解、派工、驗收） | — | ❌ |
+| 🤖 | ai-dev-agent（Prompt / RAG / MCP） | leader-agent | ✅ 限 AI 層 |
+| 💻 | coder-agent（業務邏輯） | leader-agent | ✅✅ 唯一寫手 |
+| 🧪 | qa-agent（測試 / 反證） | leader-agent | ✅ 限測試 |
+| 🗺️📊📝 | market / data / report | leader-agent | ❌ 只讀不寫 |
+
+> 🔴 worker 用 **`group: leader-agent`** 指向所屬 leader ——
+> **不是** bot 端 `agents.yaml` 的 `group_members`。寫錯套件會**靜默忽略**：
+> log 只印一行「欄位不存在 → 已忽略」，派工歸屬不生效。
+> 這是「設定看起來生效了其實沒有」最典型的一種。
+
+想跑精簡編制（營運 5 人 / 研發 5 人）→ 把 `team.yaml` 裡不需要的 instance 整段註解掉。
+
+---
+
+## 常見狀況
+
+| 現象 | 不是故障，是 | 怎麼確認 |
+|---|---|---|
+| 私訊送了沒回 | kiro-cli 首次冷啟（2–4 分鐘） | 看 CPU 時間 + 就緒訊號 |
+| `/health` 回 404 | team 套件的端點是 `/api/health` | `curl .../api/health` |
+| `authority-matrix.yml not found` | 決策鎖是選配 | 非致命，可忽略 |
+| 各 agent 的 skill 又變回預設 | `kiro_files.skills.policy` 不是 `skip` | 看 `team.yaml` |
+| 派工不照 group 走 | 寫成 `group_members`（bot 端寫法） | 看啟動 log 的「欄位不存在」 |
+| 看板打不開 | website 在 `health_port + 5000` | `curl localhost:28050` |
+
+---
+
+## 上一步
+
+還沒做過單 bot？→ `../ai-bot/`（`ark_bot_agent` 消費端）
