@@ -20,7 +20,7 @@
 
 | 堂 | 主題 | 核心操作 |
 |----|------|---------|
-| 04 | 合作 | Kiro 加 Agent → `/assign` vs `@pm` 派工 → 捕魚機競品分析 |
+| 04 | 合作 | Kiro 加 Agent → `/assign` vs `@leader` 派工 → 捕魚機競品分析 |
 | 05 | 自己跑 | 設排程 → 設費控 → 手動觸發 → 產出自動進知識庫 → 迴圈成長 |
 
 ## 快速啟動
@@ -28,16 +28,23 @@
 ```bash
 cd ../samples/ai-team-agent
 python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt && cp .env.example .env
+pip install './ark_team_agent-<版本>-py3-none-any.whl'
+python3 scripts/sync_skills.py        # 裝各 agent 的專業技能
+cp .env.example .env                  # 填你自己的 TELEGRAM_BOT_TOKEN
 python start.py
 ```
 
+⏱️ 首次啟動兩階段：daemon + TG 約 20 秒，kiro-cli backend 冷啟 **2–4 分鐘**。
+
 ## 團隊配置
+
+完整 8 人在 `team.yaml`；想精簡就**把不需要的 instance 整段註解掉**：
 
 | 配置 | 成員 | 場景 |
 |------|------|------|
-| 營運 | admin + pm + market + data + report | 市場 + 數據 + 報告 |
-| 研發 | admin + pm + ai-dev + coder + qa | 開發 + 測試 |
+| 完整 | admin + leader + ai-dev + coder + qa + market + data + report | 全場景 |
+| 營運 5 人 | admin + leader + market + data + report | 市場 + 數據 + 報告 |
+| 研發 5 人 | admin + leader + ai-dev + coder + qa | 開發 + 測試 |
 
 ## 完成後
 

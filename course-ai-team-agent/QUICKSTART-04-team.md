@@ -17,7 +17,10 @@
 | Skill | 觸發方式 |
 |-------|---------|
 | `ark-agent-team-builder` | 📝「建立團隊」「加 Agent」「改配置」 |
-| `ark-kiro-init` | 📝「初始化 .kiro 配置」 |
+| `ark-agent-init` | 📝「初始化 agent 配置」「產 steering 人格」 |
+| `scripts/sync_skills.py` | 💻 依角色矩陣裝專業技能 |
+
+> 💡 **三層分工**：① builder 定架構 → ② agent-init 給人格 → ③ sync_skills 給工具。
 
 ---
 
@@ -25,32 +28,52 @@
 
 ## Step 1：啟動團隊平台（0-5 min）
 
-**做什麼**：打開 samples/ai-team-agent 專案，啟動平台  
-**為什麼**：讓 5 Agent 平台跑起來
+**做什麼**：裝 `ark_team_agent` wheel，啟動團隊 daemon  
+**為什麼**：讓 8 Agent 的常駐團隊跑起來
 
 💻 Kiro IDE 終端：
 ```bash
 cd samples/ai-team-agent
 python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
+pip install './ark_team_agent-<版本>-py3-none-any.whl'
+python -c "import ark_team_agent; print(ark_team_agent.__version__)"   # 驗版號
+python3 scripts/sync_skills.py        # 裝各 agent 的專業技能
 cp .env.example .env
 ```
 
 📝 Kiro IDE 輸入：
 ```
-打開 .env，填入 TELEGRAM_BOT_TOKEN=（你的 Token）和 GEMINI_API_KEY=（你的 Key）
+打開 .env 填 TELEGRAM_BOT_TOKEN；
+打開 team.yaml 把 access.allowed_users 填成我的 TG user_id
 ```
+
+> 🔴 沒填 `allowed_users` = **誰都指揮不動這個團隊**（包括你自己）。
+> 取得 user_id：先對 Bot 發一則訊息，然後
+> `curl -s "https://api.telegram.org/bot<你的TOKEN>/getUpdates"` 找 `"from":{"id":...}`。
 
 💻 啟動：
 ```bash
 python start.py
 ```
 
-✅ 預期結果：
-- 「✅ Ark Agent Platform 全部服務已啟動」
-- 「5 Agents ready」
+✅ 第一階段（約 20 秒）：
+```bash
+curl -s localhost:23050/api/health
+# {"ok":true,"instances":{"running":2,"alive":2,...},"website":{"port":28050,...}}
+```
 
-⚠️ port 被佔 → `fuser -k 33333/tcp`
+### 🔴 就緒分兩階段 —— 「送了沒回」通常不是故障
+
+| 階段 | 多久 | 怎麼確認 |
+|---|---|---|
+| ① daemon + TG | 約 20 秒 | `/api/health` 回 200 |
+| ② kiro-cli backend 冷啟 | **首次 2–4 分鐘** | 要 spawn team MCP、握手、印 `All tools are now trusted` |
+
+訊息會先進佇列（`Queued message`），第二階段就緒才處理（`Delivered message`）。
+**先查 kiro-cli 的 CPU 時間有沒有在動**（`cat /proc/<pid>/stat`），再懷疑壞掉。
+
+⚠️ port 被佔 → 改 `team.yaml` 的 `health_port`（記得看板會跟著變成 +5000）
+⚠️ `/health` 回 404 → 正常，team 套件的端點是 `/api/health`
 
 ---
 
@@ -112,14 +135,14 @@ python start.py
 
 📝 Kiro IDE 輸入：
 ```
-用 ark-kiro-init 幫 designer-agent 初始化完整 .kiro/ 配置：
+用 ark-agent-init 幫 designer-agent 初始化完整 .kiro/ 配置：
 - SOUL：遊戲設計師，熟悉手遊 UI 設計、玩法機制、視覺風格分析
 - MEMORY：記住使用者關注的遊戲類型和設計偏好
 - 專屬能力方向：競品 UI 分析、玩法拆解、設計建議
 - knowledge/raw/ 放一份「手遊設計原則」作為種子知識
 ```
 
-✅ 預期結果（對照 ark-kiro-init 產出結構）：
+✅ 預期結果（對照 ark-agent-init 產出結構）：
 ```
 agents/designer-agent/
 ├── .kiro/
@@ -127,10 +150,12 @@ agents/designer-agent/
 │   ├── prompts/route-message.md      ← 路由提示
 │   ├── settings/mcp.json             ← MCP 配置
 │   ├── steering/
-│   │   ├── SOUL.md                   ← 人格定義
+│   │   ├── SOUL.md                   ← 人格定義（🔴 soul_md: once → 不會被套件覆蓋）
+│   │   ├── AGENTS.md                 ← 全域規範（多 CLI 共用）
+│   │   ├── CODE.md                   ← 程式碼規範
 │   │   ├── MEMORY.md                 ← 記憶策略
 │   │   └── USER.md                   ← 使用者資訊
-│   └── skills/                       ← Skill 目錄（.kiro/skills/ark-*/SKILL.md）
+│   └── skills/                       ← 由 sync_skills.py 依矩陣裝（不手動放）
 └── knowledge/
     ├── raw/ui-design-principles.md   ← 種子知識
     └── wiki/                         ← RAG 用（ingest 後產出）

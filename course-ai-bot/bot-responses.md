@@ -50,7 +50,7 @@ AI 對話：
 🟢 LLM: gemini (available)
 
 ⏰ 排程: 每日 09:00 (Asia/Taipei)
-📁 產出目錄: output/tech-daily-news/
+📁 產出目錄: artifacts/reports/
 🕐 上次日報: {date}
 
 版本: ai-bot v0.1.0
@@ -108,7 +108,7 @@ async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
 🟢 LLM: gemini (available)
 
 ⏰ 排程: 每日 09:00 (Asia/Taipei)
-📁 產出目錄: output/tech-daily-news/
+📁 產出目錄: artifacts/reports/
 
 版本: ai-bot v0.1.0"""
     await update.message.reply_text(status_msg)

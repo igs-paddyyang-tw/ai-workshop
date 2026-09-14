@@ -181,7 +181,7 @@ ark-grill-me → ark-superpowers → ark-skill-creator → ark-code-spec-validat
   1. 確認目標產品 + 觸發詞匹配
   2. 搜尋 knowledge/shared/wiki/ 相關內容
   3. 整理為 SWOT 四象限 + 建議行動
-  4. 產出 .md → `agents/market-agent/output/`
+  4. 產出 .md → `agents/market-agent/artifacts/`
   5. 轉為 .html（遊戲博弈賭場風格）
   6. TG send_document 傳送 HTML
 - frontmatter 觸發詞：「競品簡報」「SWOT」「競品分析報告」
