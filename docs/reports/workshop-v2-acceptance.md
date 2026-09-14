@@ -5,7 +5,7 @@ status: complete
 created: 2026-09-14
 plan: ../plans/workshop-v2-plan.md
 baseline: 987d00d
-head: 0390331
+head: 5a63276
 ---
 
 # AI Workshop v2 套件化翻新 — 驗收報告
@@ -19,7 +19,7 @@ head: 0390331
 | 驗收條件（AC） | 31 條 |
 | 通過 | **28 ✅** · 3 ⚠️（需真人 / 需 Telegram token） |
 | 通過率 | **90.3%** |
-| commit | 13（`987d00d..0390331`） |
+| commit | 13（`c678cff..5a63276`） |
 | 版控大小 | 9 MB → **2.29 MiB** |
 
 ### 一句話
@@ -45,6 +45,11 @@ head: 0390331
 | T10 | ADR 與歷史資產 | ✅ | ADR-004 superseded；新增 ADR-005~008 |
 | T11 | HTML 報告 | ✅ | 5 份加更新橫幅 + 修過時內容 |
 | T12 | 全案守門與端到端 | ✅ | rc=0、反證雙向驗證、舊名殘留歸零 |
+
+> 📌 基準之後另有一個**不是本批**的 commit `58d518e`（19:46，另一 session 加的
+> `scripts/check_skills_residue.sh`）。兩支守門互補不重疊：那支掃「上游已移除的
+> skill 複本殘留」，本批的 `check_docs.py` 掃教材內容。
+> 實跑該支：**掃 19 個引用面、懸空 0 ✅**（本批清掉 `settings/skills.json` 之後）。
 | T13 | 乾跑 | ⚠️ 部分 | 指令層乾跑完成；**真人五堂乾跑未執行** |
 
 ---
