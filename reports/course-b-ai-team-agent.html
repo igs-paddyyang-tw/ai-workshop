@@ -41,6 +41,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
 <body>
 
 <h1>🎓 課程 B：AI Agent Team 實戰</h1>
+<div style="background:#fff4e5;border-left:4px solid #ff9800;padding:12px 16px;margin:16px 0;border-radius:4px;font-size:14px;line-height:1.7"><strong>📦 2026-09-14 套件化更新</strong><br>本課程已全面改為 <code>ark_bot_agent</code> / <code>ark_team_agent</code> 兩個套件的消費端：<strong>裝 wheel + 寫設定檔</strong>，專案裡不再有手搭的 runtime 程式碼。角色初始化一律用 <code>ark-agent-init</code>。最新內容以 repo 的 Markdown 教材為準。</div>
 
 <div class="hero">
 <h2>🎯 體驗目的</h2>
@@ -84,7 +85,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
 <h2>📚 兩堂課總覽</h2>
 <table>
 <tr><th>#</th><th>主題</th><th>一句話</th><th>用到的 Skill</th></tr>
-<tr><td>04</td><td>Agent Team</td><td>一句話派工，leader 自動分工</td><td>ark-agent-team-builder + ark-kiro-init</td></tr>
+<tr><td>04</td><td>Agent Team</td><td>一句話派工，leader 自動分工</td><td>ark-agent-team-builder + ark-agent-init</td></tr>
 <tr><td>05</td><td>營運落地</td><td>排程 + 費控 = 自動運作</td><td>—（平台設定）</td></tr>
 </table>
 
@@ -109,7 +110,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
 <p><span class="badge badge-term">💻 終端</span></p>
 <pre><code>cd samples/ai-team-agent
 python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
+pip install './ark_bot_agent-&lt;版本&gt;-py3-none-any.whl[search,skills]'
 cp .env.example .env
 python start.py</code></pre>
 <p>✅ 預期：「5 Agents ready」+「Telegram Bot 已啟動」</p>
@@ -131,7 +132,7 @@ python start.py</code></pre>
 - description: "🎮 遊戲設計師 — 遊戲 UI、視覺風格、玩法體驗分析"
 - role: worker
 - working_directory: agents/designer-agent</code></pre>
-<pre><code>用 ark-kiro-init 幫 designer-agent 初始化完整 .kiro/ 配置：
+<pre><code>用 ark-agent-init 幫 designer-agent 初始化完整 .kiro/ 配置：
 - SOUL：遊戲設計師，熟悉手遊 UI 設計、玩法機制
 - knowledge/raw/ 放一份「手遊設計原則」作為種子知識</code></pre>
 <p>✅ 預期產出完整結構：<code>.kiro/steering/SOUL.md</code> + <code>MEMORY.md</code> + <code>USER.md</code> + <code>knowledge/raw/</code></p>

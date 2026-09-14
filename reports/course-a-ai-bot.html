@@ -39,6 +39,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
 <body>
 
 <h1>🎓 課程 A：AI Agent 開發入門</h1>
+<div style="background:#fff4e5;border-left:4px solid #ff9800;padding:12px 16px;margin:16px 0;border-radius:4px;font-size:14px;line-height:1.7"><strong>📦 2026-09-14 套件化更新</strong><br>本課程已全面改為 <code>ark_bot_agent</code> / <code>ark_team_agent</code> 兩個套件的消費端：<strong>裝 wheel + 寫設定檔</strong>，專案裡不再有手搭的 runtime 程式碼。角色初始化一律用 <code>ark-agent-init</code>。最新內容以 repo 的 Markdown 教材為準。</div>
 
 <div class="hero">
 <h2>🎯 體驗目的</h2>
@@ -89,7 +90,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
 <p><span class="badge badge-term">💻 終端</span></p>
 <pre><code>cd samples/ai-bot
 python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
+pip install './ark_bot_agent-&lt;版本&gt;-py3-none-any.whl[search,skills]'
 cp .env.example .env
 python start.py</code></pre>
 <p>✅ 預期：「📦 Skills: 5 個」+「🤖 Bot: polling 啟動」</p>

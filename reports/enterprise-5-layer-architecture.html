@@ -156,6 +156,8 @@
             基於 Git 與 Wiki 演化的<br>
             <span class="text-gradient-primary">企業級 AI 五層架構系統</span>
         </h1>
+<div style="background:#fff4e5;border-left:4px solid #ff9800;padding:12px 16px;margin:16px 0;border-radius:4px;font-size:14px;line-height:1.7"><strong>📦 2026-09-14 套件化更新</strong><br>本課程已全面改為 <code>ark_bot_agent</code> / <code>ark_team_agent</code> 兩個套件的消費端：<strong>裝 wheel + 寫設定檔</strong>，專案裡不再有手搭的 runtime 程式碼。角色初始化一律用 <code>ark-agent-init</code>。最新內容以 repo 的 Markdown 教材為準。</div>
+<div style="background:#e8f4fd;border-left:4px solid #2196f3;padding:12px 16px;margin:16px 0;border-radius:4px;font-size:14px;line-height:1.7"><strong>📍 這份文件現在的定位</strong><br>這五層（Gateway / Coordinator / Services / Runtime / Knowledge）<strong>現在全部在 <code>ark_team_agent</code> 套件裡</strong> —— 它仍然是理解「一個 agent 團隊平台由什麼組成」的好地圖，但<strong>你不需要自己實作它</strong>。學員實際操作的是 <code>team.yaml</code> 的六個區塊（instances · group · access · cost_guard · hang_detector · kiro_files）。</div>
         <p class="text-lg text-slate-400 max-w-3xl mx-auto">
             我們將 AI 團隊的管理職責徹底解耦。全新架構不僅涵蓋入口、系統調度與團隊協作，更將「知識與技能」獨立為底層 DNA。Agent 每次執行任務、反思，都將為整間公司累積可重用的程式化技能。
         </p>

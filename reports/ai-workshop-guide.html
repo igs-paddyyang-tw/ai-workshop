@@ -184,6 +184,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
 <div class="container">
 
 <h1>📗 課程 A：AI Agent 開發入門</h1>
+<div style="background:#fff4e5;border-left:4px solid #ff9800;padding:12px 16px;margin:16px 0;border-radius:4px;font-size:14px;line-height:1.7"><strong>📦 2026-09-14 套件化更新</strong><br>本課程已全面改為 <code>ark_bot_agent</code> / <code>ark_team_agent</code> 兩個套件的消費端：<strong>裝 wheel + 寫設定檔</strong>，專案裡不再有手搭的 runtime 程式碼。角色初始化一律用 <code>ark-agent-init</code>。最新內容以 repo 的 Markdown 教材為準。</div>
 
 <div class="hero" style="border-color: var(--purple);">
 <h2 style="color: var(--purple); margin-top: 0;">🏗️ 駕馭工程（Steering Engineering）</h2>
@@ -215,7 +216,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
 <p><span class="badge badge-term">💻 終端</span></p>
 <pre><code>cd samples/ai-bot
 python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt && cp .env.example .env
+pip install './ark_*-&lt;版本&gt;-py3-none-any.whl' && cp .env.example .env
 python start.py</code></pre>
 </div>
 
@@ -404,7 +405,7 @@ python start.py</code></pre>
 
 <table>
 <tr><th>#</th><th>主題</th><th>Skill</th><th>核心體驗</th></tr>
-<tr><td>04</td><td>Agent Team</td><td>ark-agent-team-builder + ark-kiro-init</td><td>一句話派工 → 自動分工</td></tr>
+<tr><td>04</td><td>Agent Team</td><td>ark-agent-team-builder + ark-agent-init</td><td>一句話派工 → 自動分工</td></tr>
 <tr><td>05</td><td>營運落地</td><td>—（平台設定）</td><td>排程 + 費控 + 知識迴圈</td></tr>
 </table>
 
@@ -420,7 +421,7 @@ python start.py</code></pre>
 <p><span class="badge badge-term">💻 終端</span></p>
 <pre><code>cd samples/ai-team-agent
 python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt && cp .env.example .env
+pip install './ark_*-&lt;版本&gt;-py3-none-any.whl' && cp .env.example .env
 python start.py</code></pre>
 </div>
 
@@ -435,7 +436,7 @@ python start.py</code></pre>
 <h3>Step 3：加新 Agent（15-25 min）⭐</h3>
 <p><span class="badge badge-kiro">📝 Kiro</span></p>
 <pre><code>在 team.yaml 加入 designer-agent（🎮 遊戲設計師）</code></pre>
-<pre><code>用 ark-kiro-init 初始化完整 .kiro/ 配置</code></pre>
+<pre><code>用 ark-agent-init 初始化完整 .kiro/ 配置</code></pre>
 <p>✅ 產出：SOUL.md + MEMORY.md + USER.md + knowledge/raw/ 種子知識</p>
 </div>
 
