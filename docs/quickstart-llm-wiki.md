@@ -2,6 +2,15 @@
 
 > 3 分鐘在 Kiro IDE 裡建好一個 AI 知識庫，讓你的 Agent 有記憶、能引用。
 
+## 📍 這份文件的定位
+
+**知識庫的獨立使用** —— 不需要跑 bot，只用 `ark-wiki-engine` 管一個知識庫。
+適合「我只想要一個 AI 查得到的筆記本」。
+
+課堂第三堂（[`course-ai-bot/QUICKSTART-03-wiki.md`](../course-ai-bot/QUICKSTART-03-wiki.md)）
+教的是**知識庫 + Agent 的迴圈**（產出 → raw → ingest → RAG 引用）。
+🔴 兩份重疊的部分（ingest / query / lint 三動作）以課堂教材為準。
+
 ---
 
 ## 前置條件

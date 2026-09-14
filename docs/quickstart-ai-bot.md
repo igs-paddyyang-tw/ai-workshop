@@ -2,6 +2,21 @@
 
 > 10 分鐘建好一個有人格、有能力、有記憶的 AI Agent 系統，能上網搜尋產出競品分析。
 
+## 📍 這份文件的定位（與課堂教材的分工）
+
+| 這份（自學） | 課堂教材 |
+|---|---|
+| **從零安裝到第一次對話** —— 一個人看著做就能跑起來 | 50 分鐘教案，帶你**設計**而不只是跑起來 |
+| 安裝 · 初始化 · 啟動 · 第一次 IDE/TG 對話 | SOUL 設計（01）· Skill 開發（02）· 知識庫（03） |
+
+🔴 **重疊主題以課堂教材為準**（單一真相），這份只留「怎麼跑起來」：
+- Agent 人格怎麼設計 → [`course-ai-bot/QUICKSTART-01-agent.md`](../course-ai-bot/QUICKSTART-01-agent.md)
+- Skill 怎麼開發 → [`course-ai-bot/QUICKSTART-02-skills.md`](../course-ai-bot/QUICKSTART-02-skills.md)
+- 知識庫怎麼經營 → [`course-ai-bot/QUICKSTART-03-wiki.md`](../course-ai-bot/QUICKSTART-03-wiki.md)
+
+> 架構說明：這個系統是 `ark_bot_agent` 套件的消費端 —— 專案裡只有設定與人格，
+> runtime 在 wheel 裡。完整骨架見 [`samples/ai-bot/README.md`](../samples/ai-bot/README.md)。
+
 ---
 
 ## 前置條件
@@ -22,10 +37,12 @@
 ```
 1. 幫我下載 https://github.com/igs-paddyyang-tw/ai-workshop/tree/main/samples/ai-bot 的完整專案到當前目錄
 2. 打開 .env.example 複製成 .env，讓我填 Token
-3. 安裝 Python 套件（pip install -r requirements.txt）
+3. 建 venv，並安裝我放在這個目錄的 ark_bot_agent wheel（要帶 [search,skills]）
 ```
 
-> 💡 一段話 3 件事：下載專案 → 準備環境設定 → 安裝套件。
+> 💡 一段話 3 件事：下載設定 → 準備環境 → 裝套件。
+> 🔴 **wheel 要先下載**（github.com/igs-paddyyang-tw/ark_bot_agent/releases）——
+> 這個專案本身沒有 runtime 程式碼，框架全在 wheel 裡。
 
 📝 填入你的 Token — 打開 `.env`：
 
@@ -45,23 +62,22 @@ git clone https://github.com/igs-paddyyang-tw/ai-workshop.git
 cd ai-workshop/samples/ai-bot
 cp .env.example .env
 python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
+pip install './ark_bot_agent-<版本>-py3-none-any.whl[search,skills]'
+python -c "import ark_bot_agent; print(ark_bot_agent.__version__)"   # 驗版號
 ```
 
-專案結構：
+專案結構（**沒有 src/** —— runtime 在套件裡）：
 ```
 samples/ai-bot/
-├── .kiro/steering/SOUL.md         ← 主 Agent 人格
-├── .kiro/skills/                   ← 5 個 IDE 技能（已內建）
-│   ├── ark-wiki-engine/           ← 知識庫管理
-│   ├── ark-grill-me/              ← 拷問設計
-│   ├── ark-superpowers/           ← 規格書產出
-│   ├── ark-skill-creator/         ← Skill 建立
-│   └── ark-code-spec-validator/   ← 品質驗證
+├── start.py                        ← 一行 run_bot()
+├── agents.yaml                     ← 有誰（9 個 agent）
+├── bot.yaml                        ← 怎麼跑
+├── .kiro/steering/SOUL.md          ← 主 Agent 人格
+├── .kiro/skills/                   ← IDE 層通用技能（Loop 五件套 + wiki-engine）
 ├── agents/                         ← 8 個 Agent（各有 SOUL + Skills + Wiki）
-├── knowledge/shared/               ← 共用知識庫（7 篇）
-├── src/                            ← Bot 程式碼
-└── start.py                        ← 啟動入口
+├── knowledge/shared/               ← 共用知識庫（wiki / raw / schema / index / log）
+├── memory/                         ← 記憶落點
+└── artifacts/reports/              ← 產出落點
 ```
 
 </details>
@@ -383,10 +399,13 @@ Agent 路由：
 
 | 問題 | 解法 |
 |------|------|
-| Bot 無回應 | 確認 TELEGRAM_BOT_TOKEN 正確 |
+| Bot 無回應 | ① 確認 TELEGRAM_BOT_TOKEN 正確 ② **確認沒有第二個地方在用同一個 token**（會隨機吃訊息且不報錯） |
 | 搜不到東西 | 確認網路正常 + GEMINI_API_KEY 有效 |
-| 回答沒引用知識 | 確認 `knowledge/shared/wiki/` 有檔案 |
-| `ModuleNotFoundError` | `pip install -r requirements.txt` |
+| 回答沒引用知識 | 確認 `knowledge/shared/wiki/` 有檔案（🔴 少一層 `shared` 會靜默讀不到） |
+| 搜尋結果品質差 | wheel 沒帶 `[search]` extras → 四層搜尋降級成 bigram，重裝 |
+| 排程沒跑 | wheel 沒帶 `[skills]` extras → 啟動時只印一行 WARNING |
+| `ModuleNotFoundError: ark_bot_agent` | wheel 沒裝進這個 venv：`python -c "import ark_bot_agent"` 驗，**不要看 pip 輸出** |
+| 不確定套件讀到哪些路徑 | `python -m ark_bot_agent paths` |
 
 ---
 
