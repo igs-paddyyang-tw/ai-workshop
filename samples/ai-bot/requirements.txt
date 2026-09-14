@@ -1,20 +1,17 @@
-python-telegram-bot==21.6
-fastapi==0.115.0
-uvicorn[standard]==0.30.0
-httpx==0.27.0
-pydantic==2.9.0
-python-dotenv==1.0.1
-pyyaml==6.0.1
-google-genai>=1.0.0
-
-# 選配：Skills 使用（沒裝也能跑核心功能）
-openai>=1.0.0
-beautifulsoup4>=4.12.0
-jinja2>=3.1.0
-feedparser>=6.0.0
-apscheduler>=3.10.0
-
-# 選配：Wiki 搜尋優化（沒裝也能跑，graceful fallback）
-bm25s>=0.3.0
-jieba>=0.42.1
-PyStemmer>=2.2.0
+# 套件消費端只需裝 ark_bot_agent wheel（其餘依賴由套件帶入）。
+#
+# 🔴 一定要帶 extras —— 只裝 base wheel 會少兩組能力，而且**不會報錯**：
+#   [search] bm25s / jieba / PyStemmer
+#            → 缺了四層搜尋「靜默降級」成 purepy + CJK bigram（第三堂會看不出差別，但品質掉）
+#   [skills] apscheduler / jinja2 / markdown / feedparser / bs4 / openai
+#            → 缺 apscheduler 時 schedule_engine 只印一行 WARNING 就跳過
+#
+# 安裝（wheel 從 Release 下載：github.com/igs-paddyyang-tw/ark_bot_agent/releases）：
+#   python3 -m venv .venv && source .venv/bin/activate
+#   pip install './ark_bot_agent-<版本>-py3-none-any.whl[search,skills]'
+#
+# 換裝後驗 import 版號，**不看 pip 輸出**：
+#   .venv/bin/python -c "import ark_bot_agent; print(ark_bot_agent.__version__)"
+#
+# 業務 skill 若有額外依賴，另建 skills/<name>/requirements.txt。
+ark_bot_agent[search,skills]   # 由 wheel 安裝，不從 PyPI

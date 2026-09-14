@@ -1,226 +1,126 @@
 # ai-bot — 🏗️ AI Agent 專家系統平台
 
-> 8 Agent + Gemini ReAct 自動派工 + 四層搜尋 Wiki + Web UI 6 頁 + Telegram 互動。帶走就能用。
+> `ark_bot_agent` **套件消費端**：9 個 agent 定義 + 四層搜尋 Wiki + Web UI + Telegram。
+> 框架在 wheel 裡，這個資料夾只有**設定與人格**。帶走就能用。
+
+---
+
+## 這裡面沒有 runtime —— 那是刻意的
+
+| 你在別處看過的 | 在這裡 |
+|---|---|
+| `src/bot/`、`src/llm/`、`src/wiki/`、`src/server/` | 在 `ark_bot_agent` 套件裡 |
+| 2 萬行手搭架構 | `start.py` 一行 `run_bot()` |
+| 你要維護的 | `agents.yaml`（有誰）、`bot.yaml`（怎麼跑）、`.kiro/steering/SOUL.md`（是誰） |
+
+**這是整個 workshop 的核心觀念**：套件化之後，人要做的是「定義」，不是「實作」。
+
+---
 
 ## 快速啟動
 
 ```bash
-# macOS / Linux
+# 1. 建環境
 python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env   # 填入 TELEGRAM_BOT_TOKEN + GEMINI_API_KEY
+
+# 2. 裝 wheel（從 Release 下載後放本目錄）
+#    github.com/igs-paddyyang-tw/ark_bot_agent/releases
+pip install './ark_bot_agent-<版本>-py3-none-any.whl[search,skills]'
+
+# 3. 驗版號 —— 🔴 看 import，不看 pip 輸出
+python -c "import ark_bot_agent; print(ark_bot_agent.__version__)"
+
+# 4. 填機密
+cp .env.example .env      # TELEGRAM_BOT_TOKEN（必填）+ GEMINI_API_KEY
+
+# 5. 跑
 python start.py
-
-# Windows
-start_bot.bat
 ```
 
-啟動成功畫面：
-```
-══════════════════════════════════════════════════
-  🤖 AI Agent 專家開發平台
-══════════════════════════════════════════════════
-  Tier 0: ✅ Skills + Wiki + API（永遠可用）
-  Tier 1: ✅ Telegram Bot
-  Tier 2: ✅ Gemini AI + RAG
-══════════════════════════════════════════════════
+> 🔴 **extras `[search,skills]` 不可省。** 只裝 base wheel 會少兩組能力而且**不報錯**：
+> 四層搜尋靜默降級成 purepy + CJK bigram、排程只印一行 WARNING 就跳過。
+>
+> 🔴 **TG token 必須是你自己的。** 同一個 token 兩處 polling 會**隨機**吃掉對方的訊息，
+> 而且兩邊都不會報錯 —— 課堂上最難查的故障就是這個。
 
-  📦 Skills: 5 個
-  📚 知識庫: 6 篇
-  🧠 SOUL: ✅ 已載入
-  🤖 Bot: @your_bot_name 已連線
-
-  📌 個體模式
-
-  🚀 API:  http://localhost:8000
-  📖 Docs: http://localhost:8000/api-docs
-```
+診斷指令：`python -m ark_bot_agent paths`（看套件實際解析到哪些路徑）
 
 ---
 
-## Web UI（6 頁）
-
-| URL | 頁面 | 功能 |
-|-----|------|------|
-| `/` | 💬 Chat | 聊天室 — 8 Agent 切換 + Wiki 查詢 |
-| `/admin` | ⚙️ Dashboard | KPI + Agent 列表 + 知識庫管理 |
-| `/wiki` | 📖 Wiki | 瀏覽器 — 段落搜尋 + 關鍵字高亮 |
-| `/graph` | 🕸️ Graph | 知識圖譜 — Agent→Skill→Wiki 力導向圖 |
-| `/builder` | 🏗️ Builder | SOUL 編輯 + 知識綁定 + 預覽對話 |
-| `/api-docs` | 📡 API | API 文件 + Try 按鈕 |
-
----
-
-## 三層知識庫
-
-```
-knowledge/
-└── shared/                         ← 全 Agent 共用
-    ├── raw/                        ← 原始素材（AI 只讀不改）
-    ├── wiki/                       ← 結構化知識（四層搜尋）
-    ├── .index/                     ← 搜尋索引（自動生成）
-    ├── schema.md + index.md + log.md
-
-agents/{name}-agent/knowledge/      ← Agent 私有
-├── raw/                            ← 記憶寫入處
-├── wiki/                           ← 私有知識頁面
-├── schema.md + index.md + log.md
-```
-
-查詢優先順序：**私有 → shared → {project}**
-
-### 四層搜尋金字塔
-
-```
-Layer 3: LLM Rerank（有 Gemini 時啟用）
-Layer 2: 語意向量 + 圖譜擴散 + RRF 融合
-Layer 1: BM25 持久化索引（jieba + bigram 保險絲）
-Layer 0: Metadata 精確 + 子字串兜底（永不掛零）
-```
-
----
-
-## 8 個 Agent（每個都有 SOUL + Skills + Wiki）
-
-| Agent | 角色 | Wiki 知識 |
-|-------|------|-----------|
-| 👑 Admin | 服務管理、部署、費控 | 5 頁（SOP、部署、監控、費控、故障排除） |
-| 🧠 Leader | 需求分析、派工、驗收 | 5 頁（需求、派工、驗收、SDD、溝通） |
-| 🤖 AI Dev | LLM/Prompt/MCP/Agent 設計 | 4 頁（Prompt、RAG、MCP、Agent 模式） |
-| 💻 Coder | 全端開發、API、DB | 4 頁（Python 規範、API、DB、Review） |
-| 🧪 QA | 測試、Review、品質 | 4 頁（測試策略、Review、CI/CD、Bug） |
-| 📊 Data | 數據分析、KPI 追蹤 | 1 頁（分析方法論） |
-| 🗺️ Market | 競品監控、市場研究 | 1 頁（研究方法） |
-| 📝 Report | 報告產出、圖表渲染 | 1 頁（報告規範） |
-
----
-
----
-
-## Telegram 互動
-
-### 指令
-
-| 指令 | 功能 |
-|------|------|
-| `/start` | 啟動 + 清空 |
-| `/agents` | Inline Button 選 Agent |
-| `/recall <query>` | 查詢 Agent 歷史經驗（FTS5） |
-| `/skills` | 列出已生效 Skills |
-| `/skills pending` | 待審 Skill 提案 |
-| `/consolidate` | 手動蒸餾 daily → memory.md |
-| `/mode` | 執行模式 |
-| `/help` | 指令清單 |
-
-### Reaction 動態
-
-```
-👀 收到 → 🔥 處理中 → 👍 完成 / 💔 失敗
-```
-
----
-
-## 專案結構
+## 目錄結構
 
 ```
 ai-bot/
-├── start.py                        ← 一鍵啟動（含自檢）
-├── start_bot.bat / stop_bot.bat    ← Windows
-├── requirements.txt
-├── .env.example
-├── requirements.txt
-├── data/                           ← 運行資料
-│   ├── memory.db                   ← FTS5 統一索引
-│   └── proposals.json              ← Skill 審批狀態
+├── start.py              一行 run_bot()
+├── agents.yaml           👤 有誰（9 個 agent）← 專案根哨兵
+├── bot.yaml              ⚙️ 怎麼跑（port / modes / llm / features）
+├── .env                  🔑 機密（不進版控）
 ├── .kiro/
-│   ├── steering/SOUL.md + USER.md + BRAIN.md
-│   ├── agents/ai-agent.json        ← AI Agent 開發助手
-│   ├── prompts/route-message.md    ← 意圖路由
-│   └── skills/ark-wiki-engine/ + ark-superpowers/ + ark-grill-me/ + ...
-├── agents/                         ← 8 Agent（.kiro/ + knowledge/ + memory/）
-│   └── {name}-agent/
-│       ├── .kiro/steering/         ← SOUL + USER + BRAIN + GUARDRAILS
-│       ├── .kiro/skills/           ← 程序記憶（審批後落地）
-│       ├── memory/                 ← 情節 + 語意記憶
-│       │   ├── daily/             ← append-only daily log
-│       │   ├── memory.md          ← 蒸餾持久事實
-│       │   └── recent.md          ← session context
-│       └── knowledge/              ← 參考資料
-├── knowledge/shared/               ← 全域知識庫
-├── templates/                      ← Web UI 6 頁
-├── src/
-│   ├── agent/                      ← process + cli + planner + session
-│   ├── bot/                        ← TG handlers（L1-L4 路由）
-│   ├── llm/                        ← Gemini ReAct Agent Loop + Function Calling
-│   ├── memory/                     ← 🆕 記憶子系統（daily_log + recall + recommend + ...）
-│   ├── wiki/                       ← WikiEngine + indexer + search/（四層）
-│   ├── skills/internal/            ← 實際 Python Skills
-│   ├── server/                     ← FastAPI + Memory API
-│   ├── tools/                      ← MCP Tool handlers + dispatch
-│   └── llm/providers/              ← 多 Provider（Gemini / Anthropic / OpenAI）
-├── docs/                           ← 工程文件（spec + design + plan）
-├── logs/
-└── tests/
+│   ├── steering/         🧠 根目錄人格（= default agent 讀的）
+│   └── skills/           🛠️ IDE 層通用能力（Loop 五件套 + wiki-engine）
+├── agents/<name>-agent/  各角色：.kiro/steering + knowledge + memory
+├── knowledge/shared/     📚 共用知識庫（🔴 Wiki 引擎讀這層，少一層 shared 會靜默失效）
+│   ├── wiki/             結構化頁面（給 AI 讀）
+│   ├── raw/              原始素材（給人讀）
+│   └── schema.md / index.md / log.md
+├── memory/               🧠 套件記憶落點（daily/ + recent.md + memory.md）
+├── artifacts/reports/    📄 產出落點（取代舊 output/）
+├── docs/                 📝 課堂產出的 spec / design / plan 落點
+└── skills/               業務 skill（空的；第二堂做出來後才掛）
 ```
 
 ---
 
-## 🧠 自我成長系統（NEW）
+## 三個你會改的檔案
 
-Agent 具備跨 session 記憶 + Skill 自動推薦能力：
-
-```
-任務完成
-  ├→ 自動寫 daily log（情節記憶）
-  └→ tool calls ≥ 5？
-       └→ LLM 生成 Skill 草稿 → TG 推送審批
-            ├→ ✅ 核准 → .kiro/skills/ 落地
-            └→ ❌ 駁回 → 歸檔
-```
-
-### 記憶層次
-
-| 層 | 檔案 | 用途 |
-|----|------|------|
-| 情節 | `memory/daily/YYYY-MM-DD.md` | 每次任務自動記錄 |
-| 語意 | `memory/memory.md` | 蒸餾後持久事實（≤ 2000tk） |
-| context | `memory/recent.md` | session 啟動自動注入 |
-| 程序 | `.kiro/skills/*/SKILL.md` | 審批後生效的可重用流程 |
-
-### Steering 4 檔制
-
-每個 Agent 的 `.kiro/steering/`：
-
-| 檔案 | 職責 |
-|------|------|
-| `SOUL.md` | 我是誰（人格、邊界） |
-| `USER.md` | 我服務誰（偏好） |
-| `BRAIN.md` | 我怎麼工作 + 安全紅線 |
-| `GUARDRAILS.md` | 品質標準（核心規則 + 禁止事項） |
-
-### Memory API
-
-| Method | Path | 功能 |
-|--------|------|------|
-| POST | `/api/v1/memory/recall` | FTS5 查詢 |
-| GET | `/api/v1/memory/daily` | 取得 daily log |
-| POST | `/api/v1/memory/consolidate` | 手動蒸餾 |
-| GET | `/api/v1/skills/list` | 列出 skills |
-| GET | `/api/v1/skills/pending` | 待審清單 |
-| POST | `/api/v1/skills/approve` | 核准提案 |
-| POST | `/api/v1/skills/reject` | 駁回提案 |
+| 檔案 | 改什麼 | 哪一堂 |
+|---|---|---|
+| `.kiro/steering/SOUL.md` | Agent 是誰（八段式人格） | 01 |
+| `agents.yaml` | 有誰、誰能派工給誰 | 01 / 04 |
+| `knowledge/shared/raw/` | 放進知識素材 → ingest | 03 |
 
 ---
 
-## Tier 分級
+## 模式（`bot.yaml` 的 `modes.default`）
 
-| Tier | 條件 | 能力 |
-|------|------|------|
-| 0 | 零設定 | Skills + Wiki + API + Web UI |
-| 1 | + TG Token | Bot + Inline Button + 8 Agent |
-| 2 | + Gemini Key | AI 對話 + RAG + SOUL |
-| 3 | + kiro-cli | 8 Agent 常駐 + 完整 .kiro/ |
+| 模式 | 走誰 | 費用 | 適合 |
+|---|---|---|---|
+| `chat` | Gemini ReAct（`llm:` 區塊） | 有 API 費用 | 快答、查知識 |
+| `agent` | CLI backend（kiro / claude） | 零 API 費用 | 做事、改檔案 |
+| `team` | leader 統籌三階段工作流 | 依 backend | 多角色協作（第四堂） |
+
+TG 指令 `/mode` 可即時切換。
 
 ---
 
-*改 SOUL 改風格、改 knowledge/ 改知識、改 memory/ 改記憶。帶走直接用。*
+## 編制：以「能不能改 code」當組織軸
+
+| | 角色 | 能改 code |
+|---|---|---|
+| 🚀 | Ark Agent（總管，chat 引擎） | 限一次性 bug fix |
+| 📋 | Leader（隊長，拆解派工） | ❌ |
+| 🧠 | AI Dev（Prompt / RAG / MCP） | ✅ 限 AI 層 |
+| 💻 | Coder（業務邏輯） | ✅✅ 唯一寫手 |
+| 🧪 | QA（測試 / 反證） | ✅ 限測試 |
+| 📊📝🗺️ | Data / Report / Market | ❌ 只讀不寫 |
+| 👑 | Admin（維運） | ✅ 限維運面 |
+
+> 主題會重疊（「這算企劃還是工程？」），寫入權限不會。
+
+---
+
+## 常見狀況
+
+| 現象 | 不是故障，是 | 怎麼確認 |
+|---|---|---|
+| 啟動橫幅說知識庫 0 篇 | 知識放在 `knowledge/wiki/` 而不是 `knowledge/shared/wiki/` | `python -m ark_bot_agent paths` |
+| 搜尋結果怪怪的 | 沒裝 `[search]` extras，降級成 bigram | `pip show bm25s` |
+| 排程沒跑 | 沒裝 `[skills]` extras，啟動時只印一行 WARNING | 看啟動日誌 |
+| Bot 有時不回 | 同一個 token 有兩個地方在 polling | 關掉另一個再試 |
+| `/health` 回 404 | `ark_bot_agent` 的健康端點是 `/health`；team 套件才是 `/api/health` | `curl localhost:8000/health` |
+
+---
+
+## 下一步
+
+想從一個 bot 變一個團隊 daemon？→ `../ai-team-agent/`（`ark_team_agent` 消費端）

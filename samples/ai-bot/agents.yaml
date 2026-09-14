@@ -1,79 +1,118 @@
-# ═══════════════════════════════════════════════════════
-# Agent 定義檔 — 所有可用 Agent 的唯一來源
-# ═══════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════
+# agents.yaml — Agent 定義（唯一來源，專案根哨兵）
+# TG Bot / Web API / dispatch_to_agent 都讀這份。
 #
-# TG Bot、Web API、dispatch_to_agent tool 都讀這份檔案。
-# 新增/移除 Agent 只需修改這裡。
+# 欄位：dir / name / codename / emoji / desc / dispatchable
+#       persistent（常駐）/ resume（保留記憶）/ role / timeout
+#       group_members（僅 leader，⚔️ team 模式可派工範圍）
 #
-# 欄位說明：
-#   dir:   working directory（相對於專案根目錄）
-#   name:  顯示名稱
-#   emoji: TG 顯示 emoji
-#   desc:  一句話描述
-#   dispatchable: 是否可被 Ark Agent 自動派工（dispatch_to_agent）
+# 🔴 **未知欄位會被靜默丟掉** —— 自創欄位不會報錯，但套件上根本沒有那個屬性，
+#    也就是「設定看起來生效了其實沒有」。任何想讓 agent「看到」的約束，
+#    要寫進 `desc`（會進派工名單與 context）或該 agent 的 SOUL.md。
 #
+# ── 本 workshop 的編制：以「能不能改 code」當組織軸 ──
+#
+#   角色       做什麼                                能改 code
+#   ─────────  ────────────────────────────────────  ──────────────────
+#   🚀 總管     總入口：問答、小改、決定該找誰        ✅ 限一次性 bug fix
+#   📋 隊長     需求拆解、派工、驗收                  ❌
+#   🧠 AI 工程  Prompt / RAG / MCP 設計               ✅ 限 AI 層
+#   💻 工程師   業務邏輯 + 對等測試                   ✅✅ 唯一的業務邏輯寫手
+#   🧪 QA       測試、Code Review、反證               ✅ 限測試
+#   📊 數據     KPI、趨勢、報表數據                   ❌ 只讀不寫
+#   🗺️ 市場     競品、輿情、市場研究                  ❌ 只讀不寫
+#   📝 報告     MD → HTML → TG 報告產出               ❌ 只產文件
+#   👑 管家     維運：監控、費控、發布                ✅ 限維運面
+#
+# 🔴 **為什麼用寫入權限當軸，而不是用主題**：主題會重疊（「這算企劃還是工程？」），
+#    寫入權限不會。分不清主題最多是問錯人；分不清寫入權限是兩個人各改各的、
+#    然後對不起來。
+#
+# 📌 **第一堂會改的就是這份檔案 + 各 agent 的 SOUL.md。**
+#    加人只改 leader.group_members，勿寫進 prompt。
+# ═══════════════════════════════════════════════════════════════
 
-# ── 預設（Ark Agent，走 Gemini ReAct）──
+# ── 💬 chat 引擎（Gemini ReAct，讀根目錄 .kiro/，不可派工）──
 default:
   dir: "."
   name: "Ark Agent"
+  codename: "小方"
   emoji: "🚀"
-  desc: "通用 AI 助手（Gemini ReAct + 自動派工）"
+  desc: "通用 AI 助手 —— 問答、知識查詢、決定該找誰"
   dispatchable: false
 
-# ── 專業 Agent（透過 CLI 執行）──
-admin:
-  dir: "agents/admin-agent"
-  name: "Admin Agent"
-  emoji: "👑"
-  desc: "系統管理、監控、費控、SOP"
-  dispatchable: true
-
+# ── 🎯 統籌與維運 ──────────────────────────────────────────────
 leader:
   dir: "agents/leader-agent"
   name: "Leader Agent"
+  codename: "隊長"
   emoji: "📋"
-  desc: "需求分析、任務拆解、派工驗收"
-  dispatchable: false  # 派工由 Ark Agent 統一處理
+  desc: "需求分析、任務拆解、派工驗收（不直接改 code）"
+  role: leader
+  dispatchable: false          # 派工由 default 統一處理
+  group_members: [ai-dev, coder, qa, data, market, report]
 
+admin:
+  dir: "agents/admin-agent"
+  name: "Admin Agent"
+  codename: "管家"
+  emoji: "👑"
+  desc: "系統管理、監控、費控、SOP（能改 code，限維運面）"
+  role: admin
+  dispatchable: true
+
+# ── 💻 能改 code 的 ────────────────────────────────────────────
 ai-dev:
   dir: "agents/ai-dev-agent"
   name: "AI Dev Agent"
+  codename: "阿腦"
   emoji: "🧠"
-  desc: "AI 工程師、Prompt 設計、RAG、MCP"
+  desc: "AI 工程師 —— Prompt 設計、RAG、MCP（能改 AI 層 code）"
+  role: worker
   dispatchable: true
 
 coder:
   dir: "agents/coder-agent"
   name: "Coder Agent"
+  codename: "阿碼"
   emoji: "💻"
-  desc: "全端開發、API、DB、程式碼實作"
+  desc: "全端開發 —— API、DB、業務邏輯實作（唯一的業務邏輯寫手）"
+  role: worker
   dispatchable: true
 
 qa:
   dir: "agents/qa-agent"
   name: "QA Agent"
+  codename: "阿測"
   emoji: "🧪"
-  desc: "品質保證、測試、Code Review"
+  desc: "品質保證 —— 測試、Code Review、反證（能改測試，不改業務邏輯）"
+  role: worker
   dispatchable: true
 
+# ── 📖 只讀不寫的 ──────────────────────────────────────────────
 data:
   dir: "agents/data-agent"
   name: "Data Agent"
+  codename: "阿數"
   emoji: "📊"
-  desc: "數據分析、KPI 追蹤、趨勢洞察"
+  desc: "數據分析、KPI 追蹤、趨勢洞察（只讀不寫 code）"
+  role: worker
   dispatchable: true
 
 market:
   dir: "agents/market-agent"
   name: "Market Agent"
+  codename: "阿市"
   emoji: "🗺️"
-  desc: "市場研究、競品分析、社群輿情"
+  desc: "市場研究、競品分析、社群輿情（只讀不寫 code）"
+  role: worker
   dispatchable: true
 
 report:
   dir: "agents/report-agent"
   name: "Report Agent"
+  codename: "阿報"
   emoji: "📝"
-  desc: "報告產出、圖表渲染、定期摘要"
+  desc: "報告產出 —— MD → HTML → TG，定期摘要（只產文件）"
+  role: worker
   dispatchable: true

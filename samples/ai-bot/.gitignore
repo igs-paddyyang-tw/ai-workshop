@@ -1,16 +1,17 @@
+# 機密
+.env
+secrets/
+
+# 執行環境與產物（重啟自動重生，不進版控）
 .venv/
 __pycache__/
 *.pyc
-.env
+state/
+*.db
+.index/
 knowledge/**/.index/
-knowledge/wiki/slot-market-trends.md
-!knowledge/wiki/ocean-king-analysis.md
-!knowledge/wiki/super-ace-analysis.md
-!knowledge/wiki/fishing-vs-slot-comparison.md
-logs/*.log
-bot.pid
-
-venv/
-__pycache__/
-*.pyc
-data/memory.db
+memory/daily/
+artifacts/reports/*.html
+artifacts/reports/*.md
+!artifacts/reports/.gitkeep
+logs/
