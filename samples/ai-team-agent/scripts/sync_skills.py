@@ -9,6 +9,10 @@ skill 是**複本**不是 symlink（symlink 指向 repo 外的絕對路徑，clo
 同時做**角色邊界**：每個 agent 只裝該職責用得到的 skill —— skill 會進 agent 的
 context window，裝了用不到的等於稀釋它的注意力。
 
+🔴 **skill 分配的唯一真相是本檔的 MATRIX。**
+舊版每個 agent 各有一份 `.kiro/settings/skills.json`，與這裡的矩陣**重複且已經對不上**
+（其中還列著上游早已移除的 skill）。那些檔案已移除 —— 兩份真相的代價永遠是漂移。
+
 這是「三層分工」的第三層：
     ① ark-agent-team-builder  架構（team.yaml / start.py）
     ② ark-agent-init          人格（.kiro/steering/SOUL.md）
