@@ -149,35 +149,75 @@ ai-bot（LLM 判斷派工）→ 把 agents/ 搬過去 → ai-team-agent（配置
 
 ## 快速開始
 
-> 📦 **課前準備**：從 Release 下載兩個 wheel（`ark_bot_agent` / `ark_team_agent`），
-> 放進對應的 sample 目錄。
-> 🔴 **每人用自己的 Telegram Bot Token** —— 同一個 token 兩處 polling 會隨機吃訊息且不報錯。
+### 🚀 一鍵（90 秒，產出當場能跑的專案）
 
 ```bash
-# 課程 A：個體 Agent（ark_bot_agent 消費端）
-cd samples/ai-bot
+# 課前下載兩個 wheel 放進本目錄：github.com/igs-paddyyang-tw/{ark_bot_agent,ark_team_agent}/releases
+
+./create.sh bot  my-bot  --wheel ./ark_bot_agent-<版本>-py3-none-any.whl
+./create.sh team my-team --wheel ./ark_team_agent-<版本>-py3-none-any.whl
+```
+
+它一次做完七件事 —— 這七件事裡只有最後一件對學習有價值：
+
+| | 步驟 | |
+|---|---|---|
+| 1 | 產骨架（`knowledge/shared` · `memory` · `artifacts` 三個缺口都補齊） | 機械 |
+| 2 | 建 venv + 裝 wheel（**自動帶 `[search,skills]`**） | 機械 |
+| 3 | **驗 import 版號**（不看 pip 輸出） | 機械 |
+| 4 | 驗 extras 真的裝到（缺了會靜默降級，不報錯） | 機械 |
+| 5 | 依 preset 產出**每個 agent 的 SOUL.md** | 機械 |
+| 6 | 跑上游 validator 驗交叉引用 | 機械 |
+| 7 | 印「還差什麼才能跑」 | — |
+| → | **填 token + 改 SOUL** | 🎯 這才是課程 |
+
+### 三個 preset（`presets/*.yaml`）
+
+| preset | 編制 | 給誰 |
+|---|---|---|
+| `general`（預設） | 通用開發團隊 6 角色 | 大多數專案 |
+| `gamedev` | 遊戲開發團隊 8 角色 | 本 workshop 的貫穿案例 |
+| `minimal` | 單一 agent | 想自己從零設計編制 |
+
+```bash
+./create.sh bot my-bot --preset gamedev
+./create.sh bot my-bot --dry-run        # 先看它會做什麼
+```
+
+### 🎨 客製化只有三個地方
+
+| 專案 | 改什麼 |
+|---|---|
+| bot | `agents.yaml`（有誰） · `bot.yaml`（怎麼跑） · `.kiro/steering/SOUL.md`（是誰） |
+| team | `team.yaml`（誰在團隊 + 派工歸屬） · `scheduler.yaml`（何時） · 各 `SOUL.md` |
+
+**其他都不用碰** —— runtime 在套件裡。
+
+### 或者直接跑現成範例
+
+```bash
+cd samples/ai-bot          # ark_bot_agent 消費端
 python3 -m venv .venv && source .venv/bin/activate
-pip install './ark_bot_agent-<版本>-py3-none-any.whl[search,skills]'   # extras 不可省
-python -c "import ark_bot_agent; print(ark_bot_agent.__version__)"      # 驗 import，不看 pip 輸出
-cp .env.example .env    # 填 TELEGRAM_BOT_TOKEN + GEMINI_API_KEY
+pip install './ark_bot_agent-<版本>-py3-none-any.whl[search,skills]'
+cp .env.example .env       # 填你自己的 TELEGRAM_BOT_TOKEN
 python start.py
 
-# 課程 B：Agent Team（ark_team_agent 消費端）
-cd samples/ai-team-agent
+cd samples/ai-team-agent   # ark_team_agent 消費端
 python3 -m venv .venv && source .venv/bin/activate
 pip install './ark_team_agent-<版本>-py3-none-any.whl'
-python -c "import ark_team_agent; print(ark_team_agent.__version__)"
-python3 scripts/sync_skills.py     # 依角色矩陣裝專業技能
-cp .env.example .env               # 填 TELEGRAM_BOT_TOKEN
-python start.py                    # ⏱️ 首次冷啟到能回私訊要 2–4 分鐘
+python3 scripts/sync_skills.py
+cp .env.example .env
+python start.py            # ⏱️ 首次冷啟到能回私訊要 2–4 分鐘
 ```
 
 驗證：
 ```bash
-curl -s localhost:8000/health         # 課程 A（ark_bot_agent 是 /health）
-curl -s localhost:23050/api/health    # 課程 B（ark_team_agent 是 /api/health）
-open http://localhost:28050           # 課程 B 的看板（health_port + 5000）
+curl -s localhost:8000/health         # bot（ark_bot_agent 是 /health）
+curl -s localhost:23050/api/health    # team（ark_team_agent 是 /api/health）
+open http://localhost:28050           # team 看板（health_port + 5000）
 ```
+
+> 🔴 **每人用自己的 Telegram Bot Token** —— 同一 token 兩處 polling 會隨機吃訊息且不報錯。
 
 ## 貫穿案例：遊戲競品分析
 
@@ -216,7 +256,11 @@ ai-workshop/
 │   ├── specs / designs / plans     ← 本 repo 自己的工程文件
 │   └── wiki/                       ← ADR + learnings
 ├── reports/                        ← HTML 總覽與課程簡報
-├── scripts/check_docs.py           ← 🛡️ 教材守門（改教材後跑它）
+├── create.sh                       ← 🚀 一鍵產出可跑的專案
+├── presets/                        ← general / gamedev / minimal 編制範本
+├── scripts/
+│   ├── create_project.py           ← 一鍵的實作
+│   └── check_docs.py               ← 🛡️ 教材守門（改教材後跑它）
 ├── shared/                         ← 共用資源
 └── instructor/                     ← 講師指南
 ```

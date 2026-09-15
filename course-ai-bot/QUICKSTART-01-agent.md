@@ -40,7 +40,13 @@
 **做什麼**：裝 `ark_bot_agent` wheel，啟動 samples/ai-bot  
 **為什麼**：框架在套件裡 —— 你要做的是「設定」，不是「實作」
 
-💻 Kiro IDE 終端：
+💻 **最快的路**（課前就該做完）：
+```bash
+./create.sh bot my-bot --preset gamedev --wheel ./ark_bot_agent-<版本>-py3-none-any.whl
+```
+一個指令做完：產骨架 → 建 venv → 裝 wheel（含 extras）→ 驗版號 → 產 9 份 SOUL → 驗證。
+
+💻 或用現成範例（手動版，看得到每一步）：
 ```bash
 cd samples/ai-bot
 python3 -m venv .venv && source .venv/bin/activate

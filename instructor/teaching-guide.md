@@ -9,7 +9,8 @@
 | # | 項目 | 怎麼確認 |
 |---|------|---------|
 | 1 | **教材守門是綠的** | `python3 scripts/check_docs.py`（看 rc，**不接 pipe**） |
-| 2 | 兩個 wheel 已下載並放進對應 sample 目錄 | `ls samples/*/ark_*.whl` |
+| 2 | 兩個 wheel 已下載 | `ls ark_*.whl` |
+| 2b | **學員課前跑過 `./create.sh`**（或直接用 samples） | 他們的目錄有 `.venv` 且 `import` 驗得過 |
 | 3 | **每位學員有自己的 TG Bot Token** | 報名表收集；🔴 絕不共用（見下） |
 | 4 | 教室網路可連 api.telegram.org 與 Gemini | 課前實測一次 |
 | 5 | 離線備援：wheel 放 USB / 區網 | Release 下載不到時的 Plan B |

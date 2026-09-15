@@ -31,7 +31,12 @@
 **做什麼**：裝 `ark_team_agent` wheel，啟動團隊 daemon  
 **為什麼**：讓 8 Agent 的常駐團隊跑起來
 
-💻 Kiro IDE 終端：
+💻 **最快的路**（課前就該做完）：
+```bash
+./create.sh team my-team --preset gamedev --wheel ./ark_team_agent-<版本>-py3-none-any.whl
+```
+
+💻 或用現成範例：
 ```bash
 cd samples/ai-team-agent
 python3 -m venv .venv && source .venv/bin/activate

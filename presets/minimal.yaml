@@ -1,0 +1,25 @@
+# ═══════════════════════════════════════════════════════════════
+# preset: minimal —— 只有一個 agent
+#
+# 給「想自己從零設計編制」的人。骨架與設定都在，人格只有一份，
+# 其餘由你自己加（改 agents.yaml / team.yaml 就是了）。
+# ═══════════════════════════════════════════════════════════════
+name: minimal
+description: 單一 agent，適合自己從零設計編制
+codename: 助手
+
+agents:
+  - id: default
+    dir: "."
+    name: My Agent
+    codename: 助手
+    emoji: "🤖"
+    role: manager
+    desc: "通用助手（請依你的領域改寫這段描述與 SOUL.md）"
+    dispatchable: false
+    soul:
+      identity: 通用助手（⚠️ 這是佔位人格，第一堂的任務就是把它改掉）
+      traits: [待填, 待填]
+      can: [回答問題, 查知識庫]
+      cannot: [待填]
+      output: 待填 —— 決定你要的回覆風格與格式
