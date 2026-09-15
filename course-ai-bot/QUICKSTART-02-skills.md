@@ -1,5 +1,9 @@
 # 🚀 第二堂：Skills 開發 — 它能「做事」
 
+> ⏱️ **本堂 50 分鐘，Step 2 拷問是唯一的 ⭐。**
+> 時間不夠時砍 Step 3 的細節（AI 產 Spec 很快，人審才慢），**不要砍 Step 2** ——
+> 拷問是這堂唯一無法外包給 AI 的部分。
+
 ## 🎯 課堂目標
 
 完成後你能：
@@ -112,7 +116,7 @@ ark-grill-me → ark-superpowers → ark-skill-creator → ark-code-spec-validat
 
 ---
 
-## Step 3：產出 Spec（20-35 min）
+## Step 3：產出 Spec（20-30 min）
 
 **做什麼**：用自然語言觸發 ark-superpowers，產出規格書  
 **為什麼**：有 Spec 才能驗證、才能分享、才能維護
@@ -155,7 +159,7 @@ ark-grill-me → ark-superpowers → ark-skill-creator → ark-code-spec-validat
 
 ---
 
-## Step 4：依 Spec 產出 Skill（35-45 min）
+## Step 4：依 Spec 產出 Skill（30-40 min）
 
 **做什麼**：用自然語言觸發 ark-skill-creator，依 Spec 產出 Skill  
 **為什麼**：Spec 驅動實作 = 產出跟規格一致（不需要重複描述需求）
@@ -198,7 +202,7 @@ ark-grill-me → ark-superpowers → ark-skill-creator → ark-code-spec-validat
 
 ---
 
-## Step 5：驗證一致性（45-50 min）
+## Step 5：驗證一致性（40-45 min）
 
 **做什麼**：讓 AI 幫你打分數 — 做出來的跟規格書一不一致  
 **為什麼**：有打分數才知道能不能上線（90 分以上 = 及格）
@@ -246,7 +250,7 @@ agents/market-agent/.kiro/skills/ark-competitor-brief/SKILL.md，
 
 💻 重啟：Ctrl+C → `python start.py`
 
-## Step 6：TG 驗證 — Skill 有用（50-55 min）
+## Step 6：TG 驗證 — Skill 有用（45-50 min）
 
 **做什麼**：重啟 Bot，在 TG 問同一個問題，觀察回答品質提升  
 **為什麼**：IDE 開發完 = 能力宣告寫好了。TG 驗證 = Agent 行為真的變了。

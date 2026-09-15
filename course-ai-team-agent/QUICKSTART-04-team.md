@@ -26,7 +26,7 @@
 
 # 前半段：Kiro IDE 開發 + 設定（開發者視角）
 
-## Step 1：啟動團隊平台（0-5 min）
+## Step 1：啟動團隊（0-10 min，含冷啟等待）
 
 **做什麼**：裝 `ark_team_agent` wheel，啟動團隊 daemon  
 **為什麼**：讓 8 Agent 的常駐團隊跑起來
@@ -72,12 +72,36 @@ curl -s localhost:23050/api/health
 訊息會先進佇列（`Queued message`），第二階段就緒才處理（`Delivered message`）。
 **先查 kiro-cli 的 CPU 時間有沒有在動**（`cat /proc/<pid>/stat`），再懷疑壞掉。
 
+### ⏳ 等冷啟的這 2–4 分鐘，剛好拿來講一件事
+
+**team 端寫 `group`，bot 端寫 `group_members`。** 打開 `team.yaml` 對照：
+
+```yaml
+  coder-agent:
+    role: worker
+    group: leader-agent      # ← team 端：worker 指向所屬 leader
+```
+```yaml
+# 課程 A 的 agents.yaml（bot 端）——方向相反
+leader:
+  group_members: [coder, qa, ...]   # ← leader 列出成員
+```
+
+寫錯會怎樣？套件**不報錯**，只在啟動 log 印一行
+「欄位 'group_members' 不存在 → 已忽略。你是不是想寫 'group'？」，
+然後派工歸屬**安靜地不生效**。
+
+> 💡 這是本堂最值得帶走的一句：**設定類系統最危險的失敗不是報錯，是沒生效。**
+> 改完設定要去 log 找證據，不要只看有沒有紅字。
+
+（講完差不多就就緒了。用 `curl -s localhost:23050/api/health` 看 `instances.running`。）
+
 ⚠️ port 被佔 → 改 `team.yaml` 的 `health_port`（記得看板會跟著變成 +5000）
 ⚠️ `/health` 回 404 → 正常，team 套件的端點是 `/api/health`
 
 ---
 
-## Step 2：理解團隊配置（5-15 min）
+## Step 2：理解團隊配置（10-20 min）
 
 **做什麼**：用 Kiro 分析 team.yaml，理解「誰做什麼」  
 **為什麼**：team.yaml = 團隊的組織圖，改這個就改了分工
@@ -108,7 +132,7 @@ curl -s localhost:23050/api/health
 
 ---
 
-## Step 3：修改團隊配置（15-25 min）⭐ 核心
+## Step 3：修改團隊配置（20-30 min）⭐ 核心
 
 **做什麼**：用 Kiro 修改 team.yaml，改變團隊行為  
 **為什麼**：證明「改 yaml = 改組織」— 不需要寫程式
@@ -171,7 +195,7 @@ SOUL.md 有內容、MEMORY.md 有策略、knowledge/raw/ 有種子文件
 
 # 後半段：Telegram 上線驗證（使用者視角）
 
-## Step 4：派工驗證 — 團隊能合作（25-40 min）
+## Step 4：派工驗證 — 團隊能合作（30-42 min）
 
 **做什麼**：重啟平台，在 Telegram 驗證派工系統  
 **為什麼**：Kiro 改完 = 開發完成。Telegram 驗證 = 可上線。
@@ -213,7 +237,7 @@ SOUL.md 有內容、MEMORY.md 有策略、knowledge/raw/ 有種子文件
 
 ---
 
-## Step 5：驗證新 Agent — 複合任務（40-50 min）
+## Step 5：驗證新 Agent — 複合任務（42-50 min）
 
 **做什麼**：派一個需要 designer 參與的複合任務，驗證新 Agent 能協作  
 **為什麼**：加了 Agent 就要驗證它能被派工、能跟團隊合作

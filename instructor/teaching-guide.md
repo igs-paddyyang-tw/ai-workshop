@@ -54,7 +54,11 @@
 | 5-20 | ⭐ 拷問設計 | 帶學員被 AI 拷問，示範「主動參與」 |
 | 20-30 | 產出 Spec | 展示 Spec 格式，解釋驗收條件 |
 | 30-40 | 實作 Skill | 用 ark-skill-creator 產出 |
-| 40-50 | 驗證 + Q&A | 跑 code-spec-validator，解讀 Drift Report |
+| 40-45 | 驗證 | 跑 code-spec-validator，解讀 Drift Report |
+| 45-50 | TG 驗證 + Q&A | 對比「有 Skill / 沒 Skill」的輸出差異 |
+
+> ⏱️ 本堂原本排到 55 分（超時）。壓縮點在 Step 3 ——
+> **AI 產 Spec 很快，慢的是人審**。時間不夠砍 Step 3 細節，**絕不砍拷問**。
 
 **教學重點**：
 - Spec-Driven = 先想清楚再寫（不是先寫再改）
@@ -93,11 +97,14 @@
 
 | 時間 | 動作 | 講師做什麼 |
 |------|------|-----------|
-| 0-10 | 裝 wheel + `sync_skills.py` | 解釋三層分工：架構 → 人格 → 技能 |
-| 10-20 | ⭐ 讀 team.yaml 六區塊 | instances / **group** / access / cost_guard / hang_detector / kiro_files |
-| 20-30 | 設定 Telegram + allowed_users | 協助取得 user_id；**沒填誰都指揮不動** |
-| 30-40 | ⭐ 啟動 + 派工 | 🔴 **先講兩階段就緒**，再讓學員等（否則全班會以為壞了） |
-| 40-50 | 科技日報實戰 + Q&A | market + report 分工 |
+| 0-10 | 啟動 + **等冷啟** | 🔴 先講兩階段就緒；等待的 2–4 分鐘拿來講 `group` vs `group_members` |
+| 10-20 | ⭐ 讀 team.yaml 六區塊 | instances / group / access / cost_guard / hang_detector / kiro_files |
+| 20-30 | ⭐ 修改團隊配置 | 加一個 agent，觀察 log 有沒有「欄位不存在」 |
+| 30-42 | 派工驗證 | `/assign` 與自然語言派工 |
+| 42-50 | 新 Agent 複合任務 + Q&A | market + report 分工 |
+
+> ⏱️ **裝 wheel 與 `sync_skills.py` 移到課前**（用 `create.sh` 一鍵完成）。
+> 課堂第 0 分鐘就是 `python start.py` —— 裝機不該吃掉核心時間。
 
 **教學重點**：
 - 課程 A 的**人格資產可以直接搬過來**（兩邊 SOUL.md 同形狀）
